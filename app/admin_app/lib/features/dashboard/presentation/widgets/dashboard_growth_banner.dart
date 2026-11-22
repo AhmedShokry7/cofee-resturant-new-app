@@ -6,10 +6,9 @@ import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/dashboard/domain/entities/admin_dashboard_metrics.dart';
 import 'package:admin_app/features/dashboard/presentation/utils/dashboard_display.dart';
-import 'package:admin_app/features/dashboard/presentation/widgets/dashboard_growth_headline.dart';
-import 'package:admin_app/shared/widgets/admin_icon_badge.dart';
+import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/shared/widgets/admin_highlight_line.dart';
 import 'package:admin_app/shared/widgets/admin_metric_card.dart';
-import 'package:admin_app/shared/widgets/admin_surface.dart';
 
 /// شريط النمو فوق اللوحة: جملة واحدة تفرح برقم حقيقي، أو لا جملة.
 ///
@@ -39,35 +38,85 @@ class DashboardGrowthBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
     final trend = _trend;
     if (trend == null || !trend.positive) return const SizedBox.shrink();
+    // شريط النمو شريط متدرّج بلون الهوية: البشكلة تُقرأ فرحًا قبل الرقم.
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.px16,
-        vertical: AppSizes.px12,
+        horizontal: AppSizes.px18,
+        vertical: AppSizes.px14,
       ),
       decoration: BoxDecoration(
-        color: adminFlagBackground(
-          theme,
-          AppColor.trendPositive,
-          AppColor.adminAccentSurface,
-        ),
+        gradient: dark
+            ? null
+            : LinearGradient(
+                colors: [
+                  AppColor.primaryColor,
+                  Color.lerp(AppColor.primaryColor, AppColor.whiteColor, .18)!,
+                ],
+                begin: AlignmentDirectional.topStart,
+                end: AlignmentDirectional.bottomEnd,
+              ),
+        color: dark ? AppColor.primaryColor.withValues(alpha: .16) : null,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: adminCardBorderColor(theme)),
+        border: Border.all(
+          color: dark
+              ? AppColor.primaryColor.withValues(alpha: .45)
+              : Colors.transparent,
+        ),
       ),
       child: Row(
         children: [
-          Expanded(
-            child: DashboardGrowthHeadline(
-              percent: trend.label,
-              period: _period,
+          Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: dark
+                  ? AppColor.primaryColor.withValues(alpha: .28)
+                  : AppColor.whiteColor.withValues(alpha: .22),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              AppIcons.sparkles,
+              size: 20,
+              color: dark ? AppColor.secondaryColor : AppColor.whiteColor,
             ),
           ),
-          const SizedBox(width: AppSizes.px12),
-          const AdminIconBadge(
-            icon: AppIcons.sparkles,
-            color: AppColor.trendPositive,
-            surface: AppColor.tintGreenSurface,
+          const SizedBox(width: AppSizes.px14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  S.dashboardGrowthHeadline,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: dark ? AppColor.darkText : AppColor.whiteColor,
+                    fontSize: AppFontSizes.size11,
+                    fontWeight: AppFontWeights.bold,
+                    height: AppTextHeights.line1_5,
+                  ),
+                ),
+                AdminHighlightLine(
+                  before: S.dashboardGrowthUp,
+                  value: trend.label,
+                  after: '$_period. ${S.dashboardGrowthKeepGoing}',
+                  valueColor: dark
+                      ? AppColor.secondaryColor
+                      : AppColor.whiteColor,
+                  style: TextStyle(
+                    color: dark
+                        ? AppColor.darkTextSecondary
+                        : AppColor.whiteColor.withValues(alpha: .88),
+                    fontSize: AppFontSizes.size9_5,
+                    height: AppTextHeights.line1_5,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
