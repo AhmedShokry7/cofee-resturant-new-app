@@ -212,6 +212,17 @@ class PropertiesInspectorPanel extends StatelessWidget {
                         onBrowseImages,
                       ),
                     ] else ...[
+                      // تعديل البنارات أول ما يفتح: قائمة البانرات
+                      // ومفاتيح التنقل والنقاط فوق كل شيء — الموظف
+                      // لا يبحث عنها تحت مجموعات عامة.
+                      if (component.componentType == 'bannerCarousel')
+                        _BannerDraftControls(
+                          component: component,
+                          onChanged: onPropertyChanged,
+                          onPropertiesChanged: onPropertiesChanged,
+                          pickImage:
+                              onPickImage ?? DesignImageUpload.pickAndUpload,
+                        ),
                       // Keep common content controls visible; layout and visual
                       // polish remain available under the advanced section.
                       for (final groupKey in grouped.keys.where(
@@ -232,14 +243,6 @@ class PropertiesInspectorPanel extends StatelessWidget {
                                   )
                                   .firstOrNull ==
                               groupKey,
-                        ),
-                      if (component.componentType == 'bannerCarousel')
-                        _BannerDraftControls(
-                          component: component,
-                          onChanged: onPropertyChanged,
-                          onPropertiesChanged: onPropertiesChanged,
-                          pickImage:
-                              onPickImage ?? DesignImageUpload.pickAndUpload,
                         ),
                       if (grouped.keys.any(_isAdvancedPropertyGroup) ||
                           extraProps.isNotEmpty)
@@ -326,7 +329,8 @@ class PropertiesInspectorPanel extends StatelessWidget {
     Future<String?> Function()? onBrowseImages, {
     bool initiallyExpanded = false,
   }) {
-    if (splashGroup != null && splashGroup != title) return const SizedBox.shrink();
+    if (splashGroup != null && splashGroup != title)
+      return const SizedBox.shrink();
     final fields = properties.entries
         .where((entry) => keys.contains(entry.key))
         .toList();
@@ -340,7 +344,9 @@ class PropertiesInspectorPanel extends StatelessWidget {
       onPickImage: onPickImage,
       onBrowseImages: onBrowseImages,
       initiallyExpanded:
-          splashGroup == title || initiallyExpanded || title == S.visualEditorSplashImageSettings,
+          splashGroup == title ||
+          initiallyExpanded ||
+          title == S.visualEditorSplashImageSettings,
     );
   }
 }
@@ -983,11 +989,72 @@ class _BannerDraftControlsState extends State<_BannerDraftControls> {
   @override
   Widget build(BuildContext context) {
     final count = _count;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
+    bool flag(String key) => widget.component.properties[key] as bool? ?? true;
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // مفاتيح السلوك داخل كتلة البانرات نفسها: التنقل التلقائي
+          // والنقاط — أقرب قرار للموظف من مجموعة خصائص عامة.
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              start: AppSpacing.xs,
+              bottom: AppSpacing.xs,
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.motion_photos_on_outlined, size: 13, color: muted),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    AppLocale.instance.isArabic
+                        ? 'التنقل التلقائي'
+                        : 'Autoplay',
+                    style: TextStyle(fontSize: 11, color: muted),
+                  ),
+                ),
+                Switch(
+                  value: flag('autoplay'),
+                  onChanged: (value) => widget.onChanged(
+                    componentId: widget.component.componentId,
+                    propertyKey: 'autoplay',
+                    value: value,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              start: AppSpacing.xs,
+              bottom: AppSpacing.xs,
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.more_horiz_rounded, size: 13, color: muted),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    AppLocale.instance.isArabic
+                        ? 'نقاط عدد البانرات'
+                        : 'Banner count dots',
+                    style: TextStyle(fontSize: 11, color: muted),
+                  ),
+                ),
+                Switch(
+                  value: flag('showDots'),
+                  onChanged: (value) => widget.onChanged(
+                    componentId: widget.component.componentId,
+                    propertyKey: 'showDots',
+                    value: value,
+                  ),
+                ),
+              ],
+            ),
+          ),
           if (_loadingBanners && count == 0)
             const Padding(
               padding: EdgeInsets.all(AppSpacing.sm),
