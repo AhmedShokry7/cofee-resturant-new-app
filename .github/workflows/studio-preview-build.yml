@@ -1,20 +1,23 @@
 name: Publish Customer App Studio Preview
+
 on:
   push:
     branches: [refactor/code-audit]
   workflow_dispatch:
+
 permissions:
   contents: read
+
 concurrency:
   group: customer-app-studio-pages
   cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: refactor/code-audit
           path: source
       - uses: actions/checkout@v4
         with:
@@ -24,17 +27,30 @@ jobs:
         with:
           channel: stable
           cache: true
-      - name: Install dependencies
+      - name: Install customer dependencies
         working-directory: source
         run: flutter pub get --enforce-lockfile
       - name: Build customer preview
         working-directory: source
         run: flutter build web --target=lib/main_preview.dart --base-href=/cofee-resturant-new-app/preview/ --output=build/studio-preview-package/preview --no-pub
+      - name: Install admin dependencies
+        working-directory: source/app/admin_app
+        run: flutter pub get --enforce-lockfile
+      - name: Build current admin app
+        working-directory: source/app/admin_app
+        run: flutter build web --base-href=/cofee-resturant-new-app/admin/ --output=build/studio-admin-package/admin --no-pub
+      - name: Verify both builds
+        shell: bash
+        run: |
+          test -s source/build/studio-preview-package/preview/main.dart.js
+          test -s source/app/admin_app/build/studio-admin-package/admin/main.dart.js
+          grep -F '<base href="/cofee-resturant-new-app/preview/">' source/build/studio-preview-package/preview/index.html
+          grep -F '<base href="/cofee-resturant-new-app/admin/">' source/app/admin_app/build/studio-admin-package/admin/index.html
       - name: Prepare complete Pages site
         shell: bash
         run: |
           mkdir -p site
-          cp -a current-site/admin site/admin
+          cp -a source/app/admin_app/build/studio-admin-package/admin site/admin
           if [ -f current-site/index.html ]; then cp current-site/index.html site/index.html; fi
           cp -a source/build/studio-preview-package/preview site/preview
           touch site/.nojekyll
