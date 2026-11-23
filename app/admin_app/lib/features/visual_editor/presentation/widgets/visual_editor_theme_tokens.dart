@@ -19,6 +19,12 @@ class VisualEditorTokens {
   static const Color surfaceSoftCreamSecondary = Color(0xFFF6F2EB);
   static const Color canvasBg = Color(0xFFEFECE6);
 
+    // FlutterFlow inspired primary colors
+  static const Color ffPrimary = Color(0xFF0FA284);
+  static const Color ffPrimaryLight = Color(0xFF87E1C5);
+  static const Color ffSecondary = Color(0xFF087F68);
+  static const Color ffSecondaryLight = Color(0xFF5CD1B1);
+  // Existing primary colors kept for backward compatibility
   static const Color primaryOliveGreen = AppColor.primaryColor;
   static const Color primaryOliveGreenLight = AppColor.secondaryColor;
   static const Color secondaryCoffeeBrown = Color(0xFF6E473B);
@@ -50,37 +56,88 @@ class VisualEditorTokens {
   static const Color darkText = AppColor.darkText;
   static const Color darkTextMuted = AppColor.darkTextSecondary;
 
+  // --- ألوان مستوحاة من FlutterFlow للوضع الاحترافي الداكن والفاتح ---
+  static const Color ffDarkRail = Color(0xFF12161B);
+  static const Color ffDarkSurface = Color(0xFF181D24);
+  static const Color ffDarkSurfaceSecondary = Color(0xFF1F252E);
+  static const Color ffDarkBorder = Color(0xFF28323E);
+  static const Color ffDarkCanvas = Color(0xFF0E1216);
+  static const Color ffLightRail = Color(0xFF1E2822);
+  static const Color ffLightCanvas = Color(0xFFF0EBE1);
+
   // --- أدوات المساعدة للحصول على الألوان حسب السمة ---
   static Color bg(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark ? darkBg : bgWarmOffWhite;
+      Theme.of(context).brightness == Brightness.dark ? ffDarkCanvas : bgWarmOffWhite;
+
+  static Color railBg(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? ffDarkRail
+          : ffLightRail;
 
   static Color surface(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-      ? darkSurface
+      ? ffDarkSurface
       : AppColor.whiteColor;
 
   static Color surfaceSecondary(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-      ? darkSurfaceSecondary
+      ? ffDarkSurfaceSecondary
       : surfaceSoftCreamSecondary;
 
   static Color canvas(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark ? darkCanvasBg : canvasBg;
+      Theme.of(context).brightness == Brightness.dark ? ffDarkCanvas : canvasBg;
 
   static Color border(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-      ? darkBorder
+      ? ffDarkBorder
       : borderWarmGray;
 
   static Color text(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-      ? darkText
+      ? const Color(0xFFF8FAFC)
       : textDarkCharcoal;
 
   static Color textMuted(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-      ? darkTextMuted
+      ? const Color(0xFF94A3B8)
       : textMutedGray;
+
+  /// لون مميز بحسب نوع المكوّن (مثل شجرة FlutterFlow)
+  static Color widgetTypeColor(String type, {bool isDark = true}) {
+    switch (type) {
+      case 'text':
+      case 'heading':
+      case 'nativeLabel':
+      case 'welcomeTitle':
+      case 'welcomeBody':
+        return const Color(0xFF10B981); // Emerald
+      case 'button':
+      case 'welcomeCta':
+        return const Color(0xFF8B5CF6); // Purple
+      case 'image':
+      case 'bannerCarousel':
+      case 'promoBanner':
+      case 'welcomeHero':
+        return const Color(0xFFF59E0B); // Amber
+      case 'header':
+      case 'searchBar':
+        return const Color(0xFF06B6D4); // Cyan
+      case 'column':
+      case 'row':
+      case 'spacer':
+      case 'divider':
+        return const Color(0xFF38BDF8); // Sky blue
+      case 'categoryList':
+      case 'productStrip':
+      case 'productGrid':
+      case 'bundleList':
+        return const Color(0xFF6366F1); // Indigo
+      case 'splashSettings':
+        return const Color(0xFFEC4899); // Pink
+      default:
+        return const Color(0xFF14B8A6); // Teal
+    }
+  }
 
   /// سطح مائل للون الأساسي — خلفيات الشارات والأزرار النشطة.
   static Color accentSurface(BuildContext context) =>

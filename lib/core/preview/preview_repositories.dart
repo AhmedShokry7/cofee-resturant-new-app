@@ -198,7 +198,16 @@ class PreviewAuthRepository implements AuthRepository {
   Future<AuthUser> signIn({
     required String email,
     required String password,
-  }) async => throw _blocked;
+  }) async {
+    // The editor's interactive preview must let the user explore screens
+    // behind authentication. This identity exists only in memory; preview
+    // mode never creates a Supabase session or records customer credentials.
+    if (email.trim().isEmpty || password.isEmpty) {
+      throw const AuthException('invalid_credentials');
+    }
+    return AuthUser(id: 'visual-editor-preview-user', email: email.trim());
+  }
+
   @override
   Future<AuthUser> signUp({
     required String name,

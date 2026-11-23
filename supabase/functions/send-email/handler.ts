@@ -236,6 +236,19 @@ export type EmailDeps = {
   unsubscribeToken: (userId: string, secret: string) => Promise<string>;
 };
 
+export type MarketingConsentStatus = "granted" | "revoked" | "missing";
+
+export type MarketingConsentCheck = {
+  status: MarketingConsentStatus;
+};
+
+export type VerifiedEmailCheck = {
+  address: string;
+  authEmail: string | null;
+  verified: boolean;
+  matchesProfile: boolean;
+} | null;
+
 /// The database side of the handler.
 export type EmailStore = {
   readCustomer: (userId: string) => Promise<EmailCustomer | null>;
@@ -244,7 +257,53 @@ export type EmailStore = {
   /// Turns the mail gate off, the one thing an unsubscribe link is allowed to
   /// change without a session.
   setEmailDisabled: (userId: string) => Promise<boolean>;
+  readMarketingConsent?: (
+    userId: string,
+    channel: "email",
+    purpose: "promotions" | "loyalty_marketing",
+  ) => Promise<MarketingConsentCheck>;
+  readVerifiedEmail?: (userId: string) => Promise<VerifiedEmailCheck>;
+  readMarketingRecipient?: (
+    notificationId: string,
+  ) => Promise<{ channel: string; purpose: string } | null>;
 };
+
+async function marketingChannelSkip(
+  store: EmailStore,
+  notificationId: string,
+): Promise<string | null> {
+  if (!store.readMarketingRecipient) return null;
+  const recipient = await store.readMarketingRecipient(notificationId);
+  if (!recipient) return null;
+  return recipient.channel === "email" ? null : "channel_not_targeted";
+}
+
+function marketingPurposeFor(type: string): "promotions" | "loyalty_marketing" | null {
+  if (type === "promo") return "promotions";
+  if (type === "loyalty") return "loyalty_marketing";
+  return null;
+}
+
+async function marketingEmailSkipReason(
+  store: EmailStore,
+  userId: string,
+  type: string,
+): Promise<string | null> {
+  const purpose = marketingPurposeFor(type);
+  if (!purpose) return null;
+  if (!store.readMarketingConsent) return "marketing_consent_required";
+  const check = await store.readMarketingConsent(userId, "email", purpose);
+  if (check.status !== "granted") {
+    return check.status === "revoked"
+      ? "marketing_consent_revoked"
+      : "marketing_consent_required";
+  }
+  const verified = store.readVerifiedEmail
+    ? await store.readVerifiedEmail(userId)
+    : null;
+  const verifiedOk = verified !== null && verified.verified && verified.matchesProfile;
+  return verifiedOk ? null : "email_not_verified";
+}
 
 export type EmailResult = {
   sent: number;
@@ -437,6 +496,18 @@ export async function deliverEmail(
       system: true,
     };
 
+  const marketingSkip = (await marketingChannelSkip(store, notification.notificationId)) ??
+    await marketingEmailSkipReason(store, notification.userId, notification.type);
+  if (marketingSkip) {
+    await store.recordDelivery({
+      notificationId: notification.notificationId,
+      userId: notification.userId,
+      status: "skipped",
+      error: marketingSkip,
+    });
+    return { sent: 0, failed: 0, skipped: true, reason: marketingSkip };
+  }
+
   const preferenceKey = preferenceKeyFor(notification.type);
   const skipReason = !address
     ? "no_address"
@@ -617,6 +688,55 @@ export function createSupabaseStore(
       if (error) {
         // The log is a diagnostic, never a reason to fail the delivery.
         console.error("email delivery log failed:", error.message);
+      }
+    },
+
+    async readMarketingRecipient(notificationId) {
+      const { data, error } = await (client as any)
+        .schema("marketing")
+        .from("campaign_recipients")
+        .select("channel, purpose")
+        .eq("notification_id", notificationId)
+        .maybeSingle();
+      if (error || !data) return null;
+      return { channel: data.channel, purpose: data.purpose };
+    },
+
+    async readMarketingConsent(userId, channel, purpose) {
+      const { data, error } = await (client as any)
+        .schema("marketing")
+        .from("consent_states")
+        .select("status")
+        .eq("user_id", userId)
+        .eq("channel", channel)
+        .eq("purpose", purpose)
+        .maybeSingle();
+      if (error) return { status: "missing" as const };
+      if (!data) return { status: "missing" as const };
+      return { status: data.status === "granted" ? "granted" : "revoked" };
+    },
+
+    async readVerifiedEmail(userId: string) {
+      const { data: profileData, error: profileError } = await client
+        .from("profiles")
+        .select("email")
+        .eq("id", userId)
+        .maybeSingle();
+      if (profileError || !profileData) return null;
+      const profileEmail = ((profileData as any).email ?? "").trim();
+      try {
+        const { data: userData, error: userError } = await (client as any).auth.admin.getUserById(userId);
+        if (userError || !userData?.user) return null;
+        const authEmail = ((userData.user.email ?? "") as string).trim();
+        const confirmed = (userData.user as any).email_confirmed_at != null;
+        return {
+          address: profileEmail,
+          authEmail: authEmail || null,
+          verified: confirmed,
+          matchesProfile: authEmail.toLowerCase() === profileEmail.toLowerCase() && profileEmail !== "",
+        };
+      } catch {
+        return null;
       }
     },
 

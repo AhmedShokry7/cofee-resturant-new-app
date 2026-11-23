@@ -39,7 +39,9 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   OutboundMessage? _pendingMessage;
   final _outbound = <OutboundMessage>[];
   int _messageSequence = 0;
+  /// Current preview page ID getter
   String _previewPageId = 'home';
+  String get previewPageId => _previewPageId;
   Map<String, dynamic>? _externalPreviewDocument;
   String? _unconfirmedPreviewId;
   Timer? _previewAckTimeout;
@@ -53,11 +55,20 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
 
   OutboundMessage? get pendingMessage => _pendingMessage;
 
-  /// الصفحة المفتوحة حاليًا في المعاينة — نطاق نشر «الصفحة الحالية».
-  String get previewPageId => _previewPageId;
+  /// اختيار صفحة من الـ TreeView وتحديث الحالة.
+  void selectPage(String pageId) {
+    _previewPageId = pageId;
+    emit(state.copyWith(previewPageId: pageId));
+  }
+
 
   /// هل توجد تعديلات غير محفوظة على الصفحة المفتوحة.
   bool get currentPageHasUnsavedEdits => _dirtyPages.contains(_previewPageId);
+
+  /// صفحات أخرى تحمل تعديلات لم تُحفظ. النشر بنطاق «الصفحة الحالية» يحفظها
+  /// ولا ينشرها، فيُنبَّه الموظف صراحةً بدل أن يظن تعديله وصل للتطبيق.
+  Set<String> get otherPagesWithUnsavedEdits =>
+      _dirtyPages.where((page) => page != _previewPageId).toSet();
 
   /// هل يوجد مستند معاينة كامل (قالب/استرجاع/استيراد) بانتظار القرار.
   bool get hasWholePreviewDocument => _externalPublishDocument != null;

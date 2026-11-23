@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_copy.dart';
+import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/features/auth/data/model/auth_exception.dart';
 import 'package:new_coffee/features/auth/data/model/auth_user.dart';
@@ -82,7 +83,9 @@ class AuthCubit extends Cubit<AuthState> {
       emit(const AuthFailure(AppCopy.logoutFailed));
       return;
     }
-    final cleared = await session.markSignedOutConfirmed();
+    final cleared = SupabaseService.isPreviewMode
+        ? true
+        : await session.markSignedOutConfirmed();
     if (!cleared) {
       debugPrint('[Auth] signed-out marker could not be persisted.');
     }
@@ -132,6 +135,7 @@ class AuthCubit extends Cubit<AuthState> {
   /// punish them for a storage failure. The only cost is that the next launch
   /// asks again.
   Future<void> _recordAuthenticatedSession() async {
+    if (SupabaseService.isPreviewMode) return;
     final saved = await session.markAuthenticatedConfirmed();
     if (!saved) {
       debugPrint('[Auth] session marker could not be persisted.');

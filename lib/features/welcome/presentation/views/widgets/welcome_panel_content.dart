@@ -32,6 +32,7 @@ class WelcomePanelContent extends StatelessWidget {
       _ => MainAxisAlignment.end,
     };
     final widgets = <Widget>[];
+    Widget? cta;
     var titleRendered = false;
 
     for (final section in sections) {
@@ -50,7 +51,17 @@ class WelcomePanelContent extends StatelessWidget {
         case DesignWidgetTypes.welcomeBody:
           widget = const WelcomeViewTextBody();
         case DesignWidgetTypes.welcomeCta:
-          widget = _WelcomeCta(node: section);
+          // الزر يثبت أسفل اللوحة خارج منطقة التمرير: مخرج الشاشة لا يعتمد
+          // على طول ترجمة ولا على مساحة تبقّت.
+          cta = previewSectionWrap(
+            section,
+            pageId: 'welcome',
+            child: _WelcomeSection(
+              section: section,
+              child: _WelcomeCta(node: section),
+            ),
+          );
+          continue;
         default:
           widget = DesignSectionRenderers.build(section);
       }
@@ -75,15 +86,30 @@ class WelcomePanelContent extends StatelessWidget {
       widgets.add(const WelcomeViewTextBody());
     }
 
+    // مستند قديم أو غائب بلا عقدة زر لا يشترط أن يترك الزبون بلا مخرج:
+    // الزر البديل بنصّ التطبيق، وإخفاء العقدة وحده يُسقطه.
+    final hasCtaNode = sections.any(
+      (section) => section.type == DesignWidgetTypes.welcomeCta,
+    );
+    if (!hasCtaNode) cta = const _WelcomeCta(node: null);
+
     return LayoutBuilder(
-      builder: (context, constraints) => SingleChildScrollView(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: constraints.maxHeight),
-          child: Column(
-            mainAxisAlignment: alignment,
-            mainAxisSize: MainAxisSize.min,
-            children: widgets,
-          ),
+      builder: (context, constraints) => ConstrainedBox(
+        constraints: BoxConstraints(minHeight: constraints.maxHeight),
+        child: Column(
+          mainAxisAlignment: alignment,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: widgets,
+                ),
+              ),
+            ),
+            ?cta,
+          ],
         ),
       ),
     );
@@ -105,10 +131,11 @@ class _WelcomeSection extends StatelessWidget {
 class _WelcomeCta extends StatelessWidget {
   const _WelcomeCta({required this.node});
 
-  final PublishedSection node;
+  /// عقدة `welcome.cta` المنشورة، أو null حين يحمل المستند زرًا بديلًا.
+  final PublishedSection? node;
 
   Color? _color(String key) {
-    final value = node.property(key);
+    final value = node?.property(key);
     if (value == null ||
         !RegExp(r'^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$').hasMatch(value)) {
       return null;
@@ -119,23 +146,29 @@ class _WelcomeCta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = node.localizedText('label')?.trim();
+    final label = node?.localizedText('label')?.trim();
     return BlocBuilder<WelcomeCubit, WelcomeState>(
-      builder: (context, state) => SizedBox(
-        width: double.infinity,
-        child: CustomBtn(
-          text: label == null || label.isEmpty ? S.letsGetStarted : label,
-          height: node.numberProperty('height'),
-          borderRadius: node.numberProperty('borderRadius'),
-          backgroundColor: _color('backgroundColor'),
-          textColor: _color('textColor'),
-          variant: switch (node.property('style')) {
-            'secondary' => BtnVariant.secondary,
-            'outlined' => BtnVariant.outlined,
-            _ => BtnVariant.primary,
-          },
-          isLoading: state.isStarting,
-          onPressed: () => context.read<WelcomeCubit>().startOnboarding(),
+      builder: (context, state) => Padding(
+        padding: EdgeInsetsDirectional.only(
+          top: node?.numberProperty('marginTop') ?? AppSpacing.md,
+          bottom: node?.numberProperty('marginBottom') ?? AppSpacing.sm,
+        ),
+        child: SizedBox(
+          width: double.infinity,
+          child: CustomBtn(
+            text: label == null || label.isEmpty ? S.letsGetStarted : label,
+            height: node?.numberProperty('height'),
+            borderRadius: node?.numberProperty('borderRadius'),
+            backgroundColor: _color('backgroundColor'),
+            textColor: _color('textColor'),
+            variant: switch (node?.property('style')) {
+              'secondary' => BtnVariant.secondary,
+              'outlined' => BtnVariant.outlined,
+              _ => BtnVariant.primary,
+            },
+            isLoading: state.isStarting,
+            onPressed: () => context.read<WelcomeCubit>().startOnboarding(),
+          ),
         ),
       ),
     );

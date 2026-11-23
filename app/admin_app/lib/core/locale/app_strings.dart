@@ -19,6 +19,56 @@ class S {
   static String get studioUnavailable =>
       _ar ? 'غير متاح في النسخة الحالية' : 'Unavailable in this version';
 
+  // ---------- Marketing Hub ----------
+  static String get marketingHub => _ar ? 'مركز التسويق' : 'Marketing Hub';
+  static String get marketingOverview => _ar ? 'نظرة عامة' : 'Overview';
+  static String get marketingCampaigns => _ar ? 'الحملات' : 'Campaigns';
+  static String get marketingAudience => _ar ? 'الجمهور' : 'Audience';
+  static String get marketingConsent => _ar ? 'الموافقات' : 'Consent';
+  static String get marketingDelivery => _ar ? 'التسليم' : 'Delivery';
+  static String get marketingTemplates => _ar ? 'القوالب' : 'Templates';
+  static String get marketingTools => _ar ? 'الأدوات' : 'Tools';
+  static String get marketingNewCampaign => _ar ? 'حملة جديدة' : 'New campaign';
+  static String get marketingNoCampaigns =>
+      _ar ? 'لا توجد حملات بعد' : 'No campaigns yet';
+  static String get marketingTotalCampaigns =>
+      _ar ? 'إجمالي الحملات' : 'Total campaigns';
+  static String get marketingActive => _ar ? 'نشطة' : 'Active';
+  static String get marketingScheduled => _ar ? 'مجدولة' : 'Scheduled';
+  static String get marketingCompleted => _ar ? 'مكتملة' : 'Completed';
+  static String get marketingRecipients => _ar ? 'المستلمون' : 'Recipients';
+  static String get marketingSent => _ar ? 'أُرسلت' : 'Sent';
+  static String get marketingRecentActivity =>
+      _ar ? 'أحدث الأنشطة' : 'Recent activity';
+  static String get marketingCustomerUserId =>
+      _ar ? 'معرف المستخدم' : 'Customer user ID';
+  static String get marketingLoadConsents =>
+      _ar ? 'تحميل الموافقات' : 'Load consents';
+  static String get marketingNoDeliveryData =>
+      _ar ? 'لا توجد بيانات تسليم بعد' : 'No delivery data yet';
+  static String get marketingDeliveryAttempts =>
+      _ar ? 'محاولات التسليم' : 'Delivery attempts';
+  static String get marketingTemplatesNote => _ar
+      ? 'القوالب موجودة في نسخ الحملة'
+      : 'Templates live in campaign versions';
+  static String get marketingAttempt => _ar ? 'محاولة' : 'attempt';
+  static String get marketingGranted => _ar ? 'ممنوحة' : 'granted';
+  static String get marketingRevoked => _ar ? 'مسحوبة' : 'revoked';
+  static String get marketingHintFirstCampaign => _ar
+      ? 'أنشئ حملتك الأولى لعرض النشاط التسويقي هنا'
+      : 'Create your first campaign to see marketing activity here.';
+  static String get marketingHintDraft =>
+      _ar ? 'أنشئ مسودة حملة للبدء' : 'Create a draft campaign to start.';
+  static String get marketingConsentRequired => _ar
+      ? 'مكتبة الموافقات تتطلب صلاحية marketing.consent.read'
+      : 'Consent library requires marketing.consent.read';
+  static String get marketingHintDelivery => _ar
+      ? 'اختر حملة لعرض المستلمين ومحاولات التسليم'
+      : 'Select a campaign to inspect recipients and delivery attempts.';
+  static String get marketingHintTemplate => _ar
+      ? 'أنشئ نسخة حملة لتحديد محتوى Push / Email'
+      : 'Create a campaign version to define Push / Email content.';
+
   static bool get _ar => AppLocale.instance.isArabic;
 
   static String get appName => _ar ? 'غيم وسحب' : 'Ghem & Sohob';
@@ -5578,6 +5628,14 @@ class S {
   static String get visualEditorPublishUnsavedWarning => _ar
       ? 'لديك تعديلات غير محفوظة على هذه الصفحة — النشر يعتمد آخر مسودة محفوظة؛ احفظ أولًا لتضمينها.'
       : 'You have unsaved edits on this page — publishing approves the last saved draft; save first to include them.';
+
+  /// الصفحة التي سيُنشرها فعليًا النطاق الحالي — بلا اسمها يظن الموظف أن ما
+  /// أمامه في المعاينة هو ما يُنشر، ويبقى تعديله مسودة.
+  static String visualEditorPublishTarget(String page) =>
+      _ar ? 'سيُنشر: «$page»' : 'Publishing: "$page"';
+  static String visualEditorPublishOtherPagesPending(String pages) => _ar
+      ? 'تعديلات على صفحات أخرى ستُحفظ ولا تُنشر مع هذا النشر: $pages'
+      : 'Edits on other pages are saved but NOT published here: $pages';
   static String get visualEditorConflictTitle =>
       _ar ? 'تعارض في مراجعة الصفحة' : 'Page revision conflict';
   static String get visualEditorConflictLoadServer =>

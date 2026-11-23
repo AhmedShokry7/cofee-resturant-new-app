@@ -85,6 +85,21 @@ function makeStore(
       store.disabled.push(userId);
       return true;
     },
+    async readMarketingConsent() {
+      return { status: "granted" as const };
+    },
+    async readMarketingRecipient() {
+      return null;
+    },
+    async readVerifiedEmail() {
+      const address = store.customer?.address.trim() ?? "customer@example.com";
+      return {
+        address,
+        authEmail: address,
+        verified: true,
+        matchesProfile: true,
+      };
+    },
   };
   return store;
 }
@@ -164,6 +179,54 @@ Deno.test("the type switch closes one kind and leaves the others open", async ()
 
   const other = makeDeps(store);
   assertEquals((await deliverEmail(makeNotification({ type: "promo" }), other, FUNCTION_URL)).sent, 1);
+});
+
+Deno.test("promo without explicit marketing consent is skipped", async () => {
+  const store = makeStore();
+  store.readMarketingConsent = async () => ({ status: "missing" as const });
+  const deps = makeDeps(store);
+  const result = await deliverEmail(makeNotification({ type: "promo" }), deps, FUNCTION_URL);
+  assertEquals(result.reason, "marketing_consent_required");
+  assertEquals(deps.sent.length, 0);
+  assertEquals(store.deliveries[0]?.status, "skipped");
+  assertEquals(store.deliveries[0]?.error, "marketing_consent_required");
+});
+
+Deno.test("promo with an unverified email is skipped even if consented", async () => {
+  const store = makeStore();
+  store.readVerifiedEmail = async () => ({
+    address: "customer@example.com",
+    authEmail: "customer@example.com",
+    verified: false,
+    matchesProfile: true,
+  });
+  const deps = makeDeps(store);
+  const result = await deliverEmail(makeNotification({ type: "promo" }), deps, FUNCTION_URL);
+  assertEquals(result.reason, "email_not_verified");
+  assertEquals(deps.sent.length, 0);
+});
+
+Deno.test("promo with mismatched profile and auth email is skipped", async () => {
+  const store = makeStore();
+  store.readVerifiedEmail = async () => ({
+    address: "customer@example.com",
+    authEmail: "other@example.com",
+    verified: true,
+    matchesProfile: false,
+  });
+  const deps = makeDeps(store);
+  const result = await deliverEmail(makeNotification({ type: "promo" }), deps, FUNCTION_URL);
+  assertEquals(result.reason, "email_not_verified");
+  assertEquals(deps.sent.length, 0);
+});
+
+Deno.test("notification targeted to another channel is not sent by email", async () => {
+  const store = makeStore();
+  store.readMarketingRecipient = async () => ({ channel: "push", purpose: "promotions" });
+  const deps = makeDeps(store);
+  const result = await deliverEmail(makeNotification({ type: "promo" }), deps, FUNCTION_URL);
+  assertEquals(result.reason, "channel_not_targeted");
+  assertEquals(deps.sent.length, 0);
 });
 
 Deno.test("the customer's language decides the subject and the body", async () => {

@@ -89,6 +89,12 @@ function makeStore(
     async deleteToken(token) {
       deletedTokens.push(token);
     },
+    async readMarketingConsent() {
+      return { status: "granted" as const };
+    },
+    async readMarketingRecipient() {
+      return null;
+    },
   };
   return store;
 }
@@ -235,6 +241,32 @@ Deno.test("a skip is logged on every device of the customer", async () => {
   const result = await deliver(makeNotification({ type: "promo" }), makeDeps(store));
   assertEquals(result.reason, "type_disabled");
   assertEquals(store.deliveries.map((row) => row.platform), ["android", "ios"]);
+});
+
+Deno.test("promo without explicit marketing consent is skipped", async () => {
+  const store = makeStore();
+  store.readMarketingConsent = async () => ({ status: "missing" as const });
+  const result = await deliver(makeNotification({ type: "promo" }), makeDeps(store));
+  assertEquals(result.skipped, true);
+  assertEquals(result.reason, "marketing_consent_required");
+  assertEquals(store.deliveries[0].status, "skipped");
+  assertEquals(store.deliveries[0].error, "marketing_consent_required");
+});
+
+Deno.test("promo with revoked consent is skipped", async () => {
+  const store = makeStore();
+  store.readMarketingConsent = async () => ({ status: "revoked" as const });
+  const result = await deliver(makeNotification({ type: "promo" }), makeDeps(store));
+  assertEquals(result.skipped, true);
+  assertEquals(result.reason, "marketing_consent_revoked");
+});
+
+Deno.test("notification targeted to another channel is not sent by push", async () => {
+  const store = makeStore();
+  store.readMarketingRecipient = async () => ({ channel: "email", purpose: "promotions" });
+  const result = await deliver(makeNotification({ type: "promo" }), makeDeps(store));
+  assertEquals(result.reason, "channel_not_targeted");
+  assertEquals(store.deliveries[0].error, "channel_not_targeted");
 });
 
 Deno.test("a customer without a device gets a skipped log row", async () => {

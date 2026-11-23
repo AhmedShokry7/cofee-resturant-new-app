@@ -25,9 +25,15 @@ class VisualEditorState {
     this.previewStatusMessage,
     this.previewLanguage = PreviewLanguage.arabic,
     this.previewThemeMode = PreviewThemeMode.light,
+    this.previewPageId = 'home',
   });
 
   final VisualEditorStatus status;
+  final String previewPageId;
+
+
+
+
   final String? errorMessage;
 
   /// معرف الجلسة المشترك بين Admin وCustomer Preview.
@@ -89,6 +95,7 @@ class VisualEditorState {
     String? previewStatusMessage,
     PreviewLanguage? previewLanguage,
     PreviewThemeMode? previewThemeMode,
+    String? previewPageId,
     bool clearError = false,
     bool clearSelectedComponent = false,
     bool clearPreviewStatusMessage = false,
@@ -115,6 +122,7 @@ class VisualEditorState {
         : (previewStatusMessage ?? this.previewStatusMessage),
     previewLanguage: previewLanguage ?? this.previewLanguage,
     previewThemeMode: previewThemeMode ?? this.previewThemeMode,
+    previewPageId: previewPageId ?? this.previewPageId,
   );
 
   /// هل هناك تعارض مراجعة معروض للموظف.

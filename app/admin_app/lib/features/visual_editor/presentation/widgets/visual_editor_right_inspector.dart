@@ -115,22 +115,55 @@ class VisualEditorRightInspector extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: const Icon(AppIcons.tune, size: 16, color: Colors.white),
+                child: Icon(
+                  _iconForComponent(component.componentType),
+                  size: 16,
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: AppFontSizes.size12_5,
-                        fontWeight: AppFontWeights.semiBold,
-                        color: textColor,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: AppFontSizes.size12_5,
+                              fontWeight: AppFontWeights.semiBold,
+                              color: textColor,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: VisualEditorTokens.surfaceSecondary(context),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: VisualEditorTokens.border(context),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Text(
+                            component.componentType,
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontFamily: 'monospace',
+                              color: mutedColor,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -314,4 +347,31 @@ class VisualEditorRightInspector extends StatelessWidget {
       ],
     );
   }
+
+  IconData _iconForComponent(String type) => switch (type) {
+    'header' => AppIcons.menu01,
+    'searchBar' => Icons.search,
+    'bannerCarousel' => Icons.view_carousel_outlined,
+    'promoBanner' => Icons.campaign_outlined,
+    'categoryList' => Icons.category_outlined,
+    'productStrip' => Icons.view_week_outlined,
+    'productGrid' => Icons.grid_on_outlined,
+    'bundleList' => Icons.inventory_2_outlined,
+    'heading' => Icons.title,
+    'text' => Icons.text_fields,
+    'image' => Icons.image_outlined,
+    'divider' => Icons.horizontal_rule,
+    'spacer' => Icons.space_bar,
+    'column' => Icons.view_column_outlined,
+    'row' => Icons.table_rows_outlined,
+    'button' => Icons.smart_button_outlined,
+    'nativeLabel' => Icons.label_outline,
+    'splashSettings' => Icons.tv_rounded,
+    'welcomeHero' => Icons.photo_size_select_actual_outlined,
+    'welcomeTitle' => Icons.title,
+    'welcomeBody' => Icons.text_fields,
+    'welcomeSpacing' => Icons.space_bar,
+    'welcomeCta' => Icons.smart_button_outlined,
+    _ => Icons.tune_rounded,
+  };
 }

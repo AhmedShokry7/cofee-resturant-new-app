@@ -97,13 +97,59 @@ export type PushDeps = {
   accessToken: (serviceAccount: ServiceAccount) => Promise<string>;
 };
 
+export type MarketingConsentStatus = "granted" | "revoked" | "missing";
+
+export type MarketingConsentCheck = {
+  status: MarketingConsentStatus;
+};
+
 /// The database side of the handler.
 export type PushStore = {
   readPreferences: (userId: string) => Promise<PushPreferences | null>;
   readTokens: (userId: string) => Promise<DeviceToken[]>;
   recordDelivery: (delivery: DeliveryRecord) => Promise<void>;
   deleteToken: (token: string) => Promise<void>;
+  /// Explicit marketing consent for push. Absent store support means missing.
+  readMarketingConsent?: (
+    userId: string,
+    channel: "push",
+    purpose: "promotions" | "loyalty_marketing",
+  ) => Promise<MarketingConsentCheck>;
+  readMarketingRecipient?: (
+    notificationId: string,
+  ) => Promise<{ channel: string; purpose: string } | null>;
 };
+
+async function marketingChannelSkip(
+  store: PushStore,
+  notificationId: string,
+): Promise<string | null> {
+  if (!store.readMarketingRecipient) return null;
+  const recipient = await store.readMarketingRecipient(notificationId);
+  if (!recipient) return null;
+  return recipient.channel === "push" ? null : "channel_not_targeted";
+}
+
+function marketingPurposeFor(type: string): "promotions" | "loyalty_marketing" | null {
+  if (type === "promo") return "promotions";
+  if (type === "loyalty") return "loyalty_marketing";
+  return null;
+}
+
+async function marketingSkipReason(
+  store: PushStore,
+  userId: string,
+  type: string,
+): Promise<string | null> {
+  const purpose = marketingPurposeFor(type);
+  if (!purpose) return null;
+  if (!store.readMarketingConsent) return "marketing_consent_required";
+  const check = await store.readMarketingConsent(userId, "push", purpose);
+  if (check.status === "granted") return null;
+  return check.status === "revoked"
+    ? "marketing_consent_revoked"
+    : "marketing_consent_required";
+}
 
 export type HandleResult = {
   sent: number;
@@ -231,8 +277,23 @@ export async function deliver(
   notification: PushNotification,
   deps: PushDeps,
 ): Promise<HandleResult> {
+  const channelSkip = await marketingChannelSkip(deps.store, notification.notificationId);
+  const consentSkip = channelSkip ?? await marketingSkipReason(deps.store, notification.userId, notification.type);
   const tokens = await deps.store.readTokens(notification.userId);
   const preferences = await deps.store.readPreferences(notification.userId);
+  if (consentSkip) {
+    for (const device of skipTargets(tokens).slice(0, MAX_TOKENS)) {
+      await deps.store.recordDelivery({
+        notificationId: notification.notificationId,
+        userId: notification.userId,
+        platform: device.platform,
+        status: "skipped",
+        providerMessageId: null,
+        error: consentSkip,
+      });
+    }
+    return { sent: 0, failed: 0, skipped: true, reason: consentSkip };
+  }
   // A customer who never touched the switches has no row at all, and the app
   // registers a device only after the operating system granted notifications,
   // so the token itself is the opt-in. Reading a missing row as "off" is what
@@ -431,6 +492,31 @@ export function createSupabaseStore(
         .delete()
         .eq("token", token);
       if (error) console.error("stale token delete failed:", error.message);
+    },
+
+    async readMarketingRecipient(notificationId) {
+      const { data, error } = await (client as any)
+        .schema("marketing")
+        .from("campaign_recipients")
+        .select("channel, purpose")
+        .eq("notification_id", notificationId)
+        .maybeSingle();
+      if (error || !data) return null;
+      return { channel: data.channel, purpose: data.purpose };
+    },
+
+    async readMarketingConsent(userId, channel, purpose) {
+      const { data, error } = await (client as any)
+        .schema("marketing")
+        .from("consent_states")
+        .select("status")
+        .eq("user_id", userId)
+        .eq("channel", channel)
+        .eq("purpose", purpose)
+        .maybeSingle();
+      if (error) return { status: "missing" as const };
+      if (!data) return { status: "missing" as const };
+      return { status: data.status === "granted" ? "granted" : "revoked" };
     },
   };
 }

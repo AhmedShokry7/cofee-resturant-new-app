@@ -36,6 +36,7 @@ import 'package:admin_app/features/hr/compensation/presentation/hr_compensation_
 import 'package:admin_app/features/hr/settings/hr_settings_page.dart';
 import 'package:admin_app/features/kitchen/presentation/pages/kitchen_page.dart';
 import 'package:admin_app/features/loyalty/presentation/pages/loyalty_page.dart';
+import 'package:admin_app/features/marketing/presentation/pages/marketing_hub_page.dart';
 import 'package:admin_app/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:admin_app/features/email_design/presentation/email_design_page.dart';
 import 'package:admin_app/features/option_groups/presentation/pages/option_group_page.dart';
@@ -446,6 +447,24 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
         );
       case 'emailDesign':
         return const EmailDesignPage();
+      case 'marketing':
+        return MarketingHubPage(
+          canCreate:
+              widget.session.hasPermission('marketing.create') ||
+              widget.session.isOwner,
+          canReview:
+              widget.session.hasPermission('marketing.review') ||
+              widget.session.isOwner,
+          canSchedule:
+              widget.session.hasPermission('marketing.schedule') ||
+              widget.session.isOwner,
+          canSend:
+              widget.session.hasPermission('marketing.send') ||
+              widget.session.isOwner,
+          canReadConsent:
+              widget.session.hasPermission('marketing.consent.read') ||
+              widget.session.isOwner,
+        );
       case 'aiKnowledge':
         return AiKnowledgePage(
           searchController: _searchController,

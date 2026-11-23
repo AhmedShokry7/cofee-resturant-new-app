@@ -83,7 +83,11 @@ const String _forwarderScript = '''
 })();
 ''';
 
-String defaultPreviewUrl() => 'https://ahmedshokry7.github.io/cofee-resturant-new-app/preview/';
+String defaultPreviewUrl() {
+  const configured = String.fromEnvironment('PREVIEW_BASE_URL');
+  return configured.isNotEmpty ? configured : 'http://127.0.0.1:5100/preview/';
+}
+
 void disposePreviewView(String viewType) {
   _handlers.remove(viewType);
   _reporters.remove(viewType);

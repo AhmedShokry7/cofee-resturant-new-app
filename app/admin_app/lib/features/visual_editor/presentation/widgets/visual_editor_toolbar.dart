@@ -6,6 +6,7 @@ import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/visual_editor/domain/preview_protocol.dart';
+import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 import 'package:admin_app/features/visual_editor/data/visual_editor_repository.dart';
 import 'package:admin_app/features/visual_editor/presentation/manager/visual_editor_cubit.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/preview_display_controls.dart';
@@ -312,17 +313,44 @@ class _PublishDetailsDialogState extends State<_PublishDetailsDialog> {
                   },
                 ),
               ),
-          if (_scope == PublishScope.currentPage &&
-              widget.cubit.currentPageHasUnsavedEdits)
+          if (_scope == PublishScope.currentPage) ...[
+            // اسم الصفحة صريح: «الصفحة الحالية» وحدها لا تقول أي صفحة، ومن
+            // بدّل الصفحة بعد التحرير كان ينشر صفحة أخرى بلا أن يدري.
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.sm),
               child: Text(
-                S.visualEditorSaveBeforePublish,
-                style: AppFonts.regular12(
-                  context,
-                ).copyWith(color: AppColor.errorColor),
+                S.visualEditorPublishTarget(
+                  EditorPages.findById(widget.cubit.previewPageId)?.label ??
+                      widget.cubit.previewPageId,
+                ),
+                style: AppFonts.regular12(context),
               ),
             ),
+            if (widget.cubit.currentPageHasUnsavedEdits)
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.sm),
+                child: Text(
+                  S.visualEditorSaveBeforePublish,
+                  style: AppFonts.regular12(context)
+                      .copyWith(color: AppColor.errorColor),
+                ),
+              ),
+            if (widget.cubit.otherPagesWithUnsavedEdits.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.sm),
+                child: Text(
+                  S.visualEditorPublishOtherPagesPending(
+                    widget.cubit.otherPagesWithUnsavedEdits
+                        .map(
+                          (page) => EditorPages.findById(page)?.label ?? page,
+                        )
+                        .join('، '),
+                  ),
+                  style: AppFonts.regular12(context)
+                      .copyWith(color: AppColor.errorColor),
+                ),
+              ),
+          ],
           const SizedBox(height: AppSpacing.md),
           TextField(
             controller: _name,
@@ -367,11 +395,7 @@ class _PublishDetailsDialogState extends State<_PublishDetailsDialog> {
             return;
           }
           Navigator.of(context).pop(
-            _PublishDetails(
-              name: name,
-              note: _note.text.trim(),
-              scope: _scope,
-            ),
+            _PublishDetails(name: name, note: _note.text.trim(), scope: _scope),
           );
         },
         icon: const Icon(Icons.publish_outlined),

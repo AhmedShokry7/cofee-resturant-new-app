@@ -97,6 +97,20 @@ List<AdminDestination> get growthDestinations => <AdminDestination>[
     ],
   ),
   AdminDestination(
+    id: 'marketing',
+    label: 'Marketing Hub',
+    icon: AppIcons.promotion,
+    searchHint: 'Campaigns, audience, consent and delivery',
+    permission: 'marketing.read',
+    section: S.sectionGrowth,
+    tables: <String>[
+      'marketing.campaigns',
+      'marketing.campaign_versions',
+      'marketing.consent_states',
+      'marketing.campaign_recipients',
+    ],
+  ),
+  AdminDestination(
     id: 'emailDesign',
     label: S.emailDesign,
     icon: AppIcons.email,

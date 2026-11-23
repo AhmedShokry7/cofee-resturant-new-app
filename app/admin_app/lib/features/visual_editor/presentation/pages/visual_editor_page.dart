@@ -2,7 +2,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/visual_editor/presentation/manager/visual_editor_cubit.dart';
+import 'package:admin_app/features/visual_editor/presentation/widgets/flutterflow_left_sidebar.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/preview_panel.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/component_tree_panel.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_right_inspector.dart';
@@ -167,27 +169,63 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
                       if (wideWorkspace) {
                         return Padding(
                           padding: const EdgeInsets.all(16),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // اللوحتان متناظرتان في العرض فلا يُقرأ
-                              // المسرح أنه مائل لأحدهما مهما تغيّر الجهاز.
-                              SizedBox(
-                                width: (constraints.maxWidth * .23)
-                                    .clamp(300.0, 380.0)
-                                    .toDouble(),
-                                child: _buildLayersPanel(state),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(child: _buildPreviewStage(state)),
-                              const SizedBox(width: 16),
-                              SizedBox(
-                                width: (constraints.maxWidth * .23)
-                                    .clamp(300.0, 380.0)
-                                    .toDouble(),
-                                child: _buildPropertiesPanel(state),
-                              ),
-                            ],
+                          child: Directionality(
+                            textDirection: TextDirection.ltr,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // الشريط الجانبي الأيسر المتكامل بنمط FlutterFlow
+                                SizedBox(
+                                  width: (constraints.maxWidth * .26)
+                                      .clamp(340.0, 430.0)
+                                      .toDouble(),
+                                  child: Directionality(
+                                    textDirection: TextDirection.rtl,
+                                    child: FlutterFlowLeftSidebar(
+                                      state: state,
+                                      cubit: _cubit,
+                                      pageId: _pageId,
+                                      splashGroup: _splashGroup,
+                                      onSplashGroup: (id, group) {
+                                        _cubit.selectComponent(id);
+                                        _showProperties(group);
+                                      },
+                                      imagePermissions: widget.imagePermissions,
+                                      canPublish: widget.canPublish,
+                                      onShowProperties: _showProperties,
+                                      onPageSelected: (value) {
+                                        setState(() {
+                                          _pageId = value;
+                                          _splashGroup = null;
+                                        });
+                                        _cubit.loadPage(value);
+                                      },
+                                      onAddComponent: (type) => _cubit.addComponent(
+                                        pageId: _pageId,
+                                        componentType: type,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Directionality(
+                                    textDirection: TextDirection.rtl,
+                                    child: _buildPreviewStage(state),
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                SizedBox(
+                                  width: (constraints.maxWidth * .24)
+                                      .clamp(310.0, 390.0)
+                                      .toDouble(),
+                                  child: Directionality(
+                                    textDirection: TextDirection.rtl,
+                                    child: _buildPropertiesPanel(state),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         );
                       }
@@ -197,7 +235,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
                           Positioned.fill(child: _buildPreviewStage(state)),
                           Positioned(
                             top: 14,
-                            right: 14,
+                            left: 14,
                             child: _FloatingPanelButton(
                               tooltip: S.visualEditorLayers,
                               icon: Icons.layers_outlined,
@@ -212,7 +250,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
                           ),
                           Positioned(
                             top: 14,
-                            left: 14,
+                            right: 14,
                             child: _FloatingPanelButton(
                               tooltip: S.visualEditorProperties,
                               icon: Icons.tune_outlined,
@@ -229,7 +267,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
                           Positioned(
                             top: 62,
                             bottom: 14,
-                            right: 14,
+                            left: 14,
                             child: AnimatedSwitcher(
                               duration: const Duration(milliseconds: 200),
                               transitionBuilder: (child, animation) =>
@@ -259,7 +297,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
                           Positioned(
                             top: 62,
                             bottom: 14,
-                            left: 14,
+                            right: 14,
                             child: AnimatedSwitcher(
                               duration: const Duration(milliseconds: 200),
                               transitionBuilder: (child, animation) =>
@@ -341,6 +379,68 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
               outboundPayload: _cubit.pendingMessage?.payload,
               outboundMessageId: _cubit.pendingMessage?.messageId,
               takePreviewMessages: _cubit.takePreviewMessages,
+            ),
+            // شارة معلومات المسرح وأبعاد الجهاز بأسلوب FlutterFlow
+            Positioned(
+              top: 14,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: VisualEditorTokens.surface(context).withValues(alpha: 0.94),
+                    borderRadius: BorderRadius.circular(VisualEditorTokens.radiusPill),
+                    border: Border.all(color: VisualEditorTokens.border(context)),
+                    boxShadow: VisualEditorTokens.panelShadow(context),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _device.icon,
+                        size: 14,
+                        color: VisualEditorTokens.primaryOliveGreen,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${_device.label} • ${_device.width.round()} × ${_device.height.round()} px',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: AppFontWeights.medium,
+                          color: VisualEditorTokens.text(context),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 1,
+                        height: 12,
+                        color: VisualEditorTokens.border(context),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: _interactive
+                              ? VisualEditorTokens.statusSuccess
+                              : VisualEditorTokens.primaryOliveGreen,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        _interactive ? 'تفاعلي' : 'تصميم',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: AppFontWeights.medium,
+                          color: VisualEditorTokens.textMuted(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
         ),
