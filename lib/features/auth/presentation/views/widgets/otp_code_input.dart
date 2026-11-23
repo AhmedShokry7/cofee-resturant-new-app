@@ -133,7 +133,8 @@ class _OtpCodeInputState extends State<OtpCodeInput> {
                 widget.onSubmitted?.call(controller.code);
               }
             },
-            style: AppFonts.semiBold18(context),
+            style: AppFonts.semiBold18(context)
+                .copyWith(color: AppColor.inputTextColor),
             cursorColor: AppColor.primaryColor,
             decoration: InputDecoration(
               contentPadding: EdgeInsets.symmetric(vertical: AppSpacing.md),

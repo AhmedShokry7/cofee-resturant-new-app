@@ -28,7 +28,7 @@ void openPushRoute(RemoteMessage message) {
       const NotificationOpen(route: NotificationsPage.routeName);
   final navigator = rootNavigatorKey.currentState;
   if (navigator != null) {
-    navigator.pushNamed(open.route, arguments: open.entityId);
+    navigator.pushNamed(open.route, arguments: open.arguments);
     return;
   }
   PushService.setPendingRoute(open);

@@ -1,7 +1,7 @@
 // Supabase Edge Function: send-email — handler
 //
 // Sends one in-app notification to the e-mail address of the customer it
-// belongs to, through Resend.
+// belongs to, through Brevo.
 //
 // The caller is the database, not the app: the trigger
 // engagement.dispatch_email_notification() queues the request through pg_net
@@ -18,21 +18,21 @@
 //
 // Secrets (set them with `supabase secrets set`):
 //   EMAIL_WEBHOOK_SECRET - shared with the database trigger (kept in Vault too)
-//   RESEND_API_KEY       - the API key of the Resend project
+//   BREVO_API_KEY        - the restricted transactional-email API key
 //   EMAIL_FROM           - the verified sender, e.g. "New Coffee <mail@domain>"
 //   EMAIL_REPLY_TO       - optional, where a reply goes
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   sendEmail,
-  type ResendEmail,
-  type ResendResult,
-} from "../_shared/resend.ts";
+  type BrevoEmail,
+  type BrevoResult,
+} from "../_shared/brevo.ts";
 import { publicImageUrlOf, storageHostOf } from "../_shared/storage_url.ts";
 import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
 
 type AuthHookPayload = {
-  user?: { email?: string };
+  user?: { email?: string; user_metadata?: Record<string, unknown> };
   email_data?: {
     token?: string;
     token_hash?: string;
@@ -43,23 +43,80 @@ type AuthHookPayload = {
 };
 
 const authEmailTemplates: Record<string, { subject: string; title: string; text: string }> = {
-  signup: { subject: "تأكيد إنشاء حسابك", title: "مرحبًا بك", text: "استخدم الرمز التالي لتأكيد بريدك الإلكتروني وإنشاء حسابك." },
-  recovery: { subject: "إعادة تعيين كلمة المرور", title: "إعادة تعيين كلمة المرور", text: "استخدم الرمز التالي لمتابعة إعادة تعيين كلمة المرور." },
-  magiclink: { subject: "رمز تسجيل الدخول", title: "تسجيل الدخول", text: "استخدم الرمز التالي لتسجيل الدخول إلى حسابك." },
-  email: { subject: "رمز التحقق", title: "تأكيد بريدك الإلكتروني", text: "أدخل الرمز التالي لمتابعة تسجيل الدخول." },
-  invite: { subject: "دعوة للانضمام", title: "لديك دعوة", text: "استخدم الرمز التالي لقبول الدعوة." },
-  email_change: { subject: "تأكيد تغيير البريد", title: "تغيير البريد الإلكتروني", text: "استخدم الرمز التالي لتأكيد تغيير بريدك الإلكتروني." },
-  reauthentication: { subject: "تأكيد هويتك", title: "تأكيد الهوية", text: "أدخل الرمز التالي لتأكيد هويتك." },
+  signup: { subject: "New Coffee | Confirm your email", title: "Confirm your email", text: "Enter the code below in the app to finish creating your account." },
+  recovery: { subject: "New Coffee | Reset your password", title: "Reset your password", text: "Use the link below to choose a new password." },
+  magiclink: { subject: "New Coffee | Sign in", title: "Sign in to New Coffee", text: "Use the one-time code or sign-in link below." },
+  email: { subject: "New Coffee | Confirm your email", title: "Confirm your email", text: "Use the code or confirmation link below to verify this address." },
+  invite: { subject: "New Coffee | You are invited", title: "You are invited", text: "Use the link below to accept your invitation." },
+  email_change: { subject: "New Coffee | Confirm your new email", title: "Confirm your new email", text: "Use the code or link below to confirm this change." },
+  reauthentication: { subject: "New Coffee | Verify your identity", title: "Verify your identity", text: "Use this one-time code to verify your identity." },
 };
 
-function escapeHtml(value: string): string {
+function escapeAuthHtml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   })[char]!);
 }
 
+type EmailDesign = Record<string, string>;
+const defaultEmailDesign: EmailDesign = {
+  appNameAr: 'غيم وسحب', appNameEn: 'Ghem & Sohob', logoUrl: '', logoWidth: '160', cardRadius: '18', layoutStyle: 'centered', showLogo: 'true',
+  primaryColor: '#078A75', buttonColor: '#078A75', otpCodeColor: '#078A75', backgroundColor: '#F3F6F5',
+  surfaceColor: '#FFFFFF', textColor: '#172522', footerAr: '\u{647}\u{630}\u{647}\u{20}\u{631}\u{633}\u{627}\u{644}\u{629}\u{20}\u{622}\u{644}\u{64a}\u{629}\u{20}\u{645}\u{646}\u{20}\u{4e}\u{65}\u{77}\u{20}\u{43}\u{6f}\u{66}\u{66}\u{65}\u{65}\u{2e}',
+  footerEn: 'This is an automated message from New Coffee.',
+  signupSubjectAr: '\u{62a}\u{623}\u{643}\u{64a}\u{62f}\u{20}\u{627}\u{644}\u{628}\u{631}\u{64a}\u{62f}\u{20}\u{627}\u{644}\u{625}\u{644}\u{643}\u{62a}\u{631}\u{648}\u{646}\u{64a}\u{20}\u{7c}\u{20}\u{4e}\u{65}\u{77}\u{20}\u{43}\u{6f}\u{66}\u{66}\u{65}\u{65}',
+  signupTitleAr: '\u{62a}\u{623}\u{643}\u{64a}\u{62f}\u{20}\u{628}\u{631}\u{64a}\u{62f}\u{643}\u{20}\u{627}\u{644}\u{625}\u{644}\u{643}\u{62a}\u{631}\u{648}\u{646}\u{64a}',
+  signupBodyAr: '\u{623}\u{62f}\u{62e}\u{644}\u{20}\u{631}\u{645}\u{632}\u{20}\u{627}\u{644}\u{62a}\u{62d}\u{642}\u{642}\u{20}\u{627}\u{644}\u{62a}\u{627}\u{644}\u{64a}\u{20}\u{641}\u{64a}\u{20}\u{627}\u{644}\u{62a}\u{637}\u{628}\u{64a}\u{642}\u{20}\u{644}\u{625}\u{643}\u{645}\u{627}\u{644}\u{20}\u{625}\u{646}\u{634}\u{627}\u{621}\u{20}\u{62d}\u{633}\u{627}\u{628}\u{643}\u{2e}',
+  signupBodyEn: 'Enter the code below to finish creating your account.',
+};
+
+async function readEmailDesign(env: (name: string) => string | undefined, fetcher: typeof fetch): Promise<EmailDesign> {
+  const url = env('SUPABASE_URL')?.replace(/\/$/, '');
+  const key = env('SUPABASE_SERVICE_ROLE_KEY');
+  if (!url || !key) return defaultEmailDesign;
+  try {
+    const response = await fetcher(`${url}/rest/v1/email_design_settings?id=eq.default&select=config`, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+    if (!response.ok) return defaultEmailDesign;
+    const rows = await response.json();
+    const stored = Array.isArray(rows) && rows[0]?.config && typeof rows[0].config === 'object' ? rows[0].config as Record<string, unknown> : {};
+    const design = Object.fromEntries(Object.entries(defaultEmailDesign).map(([name, fallback]) => [name, typeof stored[name] === 'string' ? (stored[name] as string).slice(0, 2048) : fallback]));
+    const appResponse = await fetcher(`${url}/rest/v1/app_settings?key=eq.app_design_published&select=value&limit=1`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    });
+    if (appResponse.ok) {
+      const appRows = await appResponse.json();
+      const appDesign = Array.isArray(appRows) && appRows[0]?.value && typeof appRows[0].value === 'object'
+        ? appRows[0].value as Record<string, unknown> : {};
+      const theme = appDesign['theme'] && typeof appDesign['theme'] === 'object' ? appDesign['theme'] as Record<string, unknown> : {};
+      const brand = theme['brand'] && typeof theme['brand'] === 'object' ? theme['brand'] as Record<string, unknown> : {};
+      const appLogo = brand['logo_url'];
+      if (!design.logoUrl && typeof appLogo === 'string' && /^https:\/\//i.test(appLogo)) design.logoUrl = appLogo.slice(0, 2048);
+      const appNameAr = brand['name_ar'];
+      const appNameEn = brand['name_en'];
+      if (design.appNameAr === defaultEmailDesign.appNameAr && typeof appNameAr === 'string') design.appNameAr = appNameAr.slice(0, 180);
+      if (design.appNameEn === defaultEmailDesign.appNameEn && typeof appNameEn === 'string') design.appNameEn = appNameEn.slice(0, 180);
+    }
+    return design;
+  } catch { return defaultEmailDesign; }
+}
+
+function emailShellHtml(content: string, design: EmailDesign, direction: 'rtl' | 'ltr'): string {
+  const safeColor = (name: string, fallback: string) => /^#[0-9a-f]{6}$/i.test(design[name] ?? '') ? design[name] : fallback;
+  const logoWidth = Math.max(48, Math.min(320, Number.parseInt(design.logoWidth ?? '160') || 160));
+  const radius = Math.max(0, Math.min(32, Number.parseInt(design.cardRadius ?? '18') || 0));
+  const logo = design.showLogo !== 'false' && /^https:\/\//i.test(design.logoUrl ?? '') ? `<img src="${escapeAuthHtml(design.logoUrl)}" alt="" width="${logoWidth}" style="max-width:100%;max-height:100px;height:auto;margin:0 auto 18px">` : '';
+  const appName = direction === 'rtl' ? design.appNameAr : design.appNameEn;
+  const footer = (direction === 'rtl' ? design.footerAr : design.footerEn).replaceAll('{{app_name}}', appName);
+  const align = design.layoutStyle === 'simple' ? 'left' : 'center';
+  return `<!doctype html><html dir="${direction}"><body style="margin:0;padding:24px;background:${safeColor('backgroundColor', '#F3F6F5')};font-family:Arial,sans-serif;color:${safeColor('textColor', '#172522')}"><div style="max-width:560px;margin:auto;padding:28px;background:${safeColor('surfaceColor', '#FFFFFF')};border-radius:${radius}px;text-align:${align}">${logo}<div style="color:${safeColor('primaryColor', '#078A75')};font-weight:bold">${escapeAuthHtml(appName)}</div>${content}<p style="margin-top:26px;color:#73807d;font-size:12px">${escapeAuthHtml(footer)}</p></div></body></html>`;
+}
+
+function replaceTemplate(value: string, variables: Record<string, string>): string {
+  return value.replace(/\{\{(customer_name|app_name|email|otp)\}\}/g, (_, name: string) => variables[name] ?? '');
+}
+
 /// Supabase Auth Send Email Hook. Its signed request is verified before any
-/// address, token or redirect is used, then the server sends through Resend.
+/// address, token or redirect is used, then the server sends through Brevo.
 export async function handleAuthEmailHook(
   req: Request,
   deps: {
@@ -70,7 +127,7 @@ export async function handleAuthEmailHook(
 ): Promise<Response> {
   if (req.method !== "POST") return fail("method_not_allowed", 405);
   const secret = deps.env("SEND_EMAIL_HOOK_SECRET") ?? "";
-  const apiKey = deps.env("RESEND_API_KEY") ?? "";
+  const apiKey = deps.env("BREVO_API_KEY") ?? "";
   const from = deps.env("EMAIL_FROM") ?? "";
   if (!secret || !apiKey || !from) return fail("email_not_configured", 503);
 
@@ -86,15 +143,29 @@ export async function handleAuthEmailHook(
   }
 
   const action = payload.email_data?.email_action_type ?? "";
-  const template = authEmailTemplates[action];
+  const fetcher = deps.fetch ?? fetch;
+  const design = await readEmailDesign(deps.env, fetcher);
+  const language = String(payload.user?.user_metadata?.['language'] ?? payload.user?.user_metadata?.['locale'] ?? 'ar').toLowerCase();
+  const arabic = language.startsWith('ar');
+  let template = authEmailTemplates[action];
+  if (action === 'signup') template = {
+    subject: arabic ? design.signupSubjectAr : design.signupSubjectEn,
+    title: arabic ? design.signupTitleAr : design.signupTitleEn,
+    text: arabic ? design.signupBodyAr : design.signupBodyEn,
+  };
   const address = payload.user?.email?.trim() ?? "";
   const token = payload.email_data?.token ?? "";
   const tokenHash = payload.email_data?.token_hash ?? "";
   if (!template || !address || !token || !tokenHash) {
     return fail("invalid_auth_email_payload", 400);
   }
+  const customerName = String(payload.user?.user_metadata?.['full_name'] ?? payload.user?.user_metadata?.['name'] ?? '').slice(0, 160);
+  const appName = arabic ? design.appNameAr : design.appNameEn;
+  const variables = { customer_name: customerName, app_name: appName, email: address, otp: token };
+  template = { subject: replaceTemplate(template.subject, variables), title: replaceTemplate(template.title, variables), text: replaceTemplate(template.text, variables) };
+  const otpLabel = arabic ? design.otpLabelAr : design.otpLabelEn;
   const redirect = payload.email_data?.redirect_to || payload.email_data?.site_url || "";
-  const link = redirect
+  const link = action !== "signup" && redirect
     ? `${redirect}${redirect.includes("?") ? "&" : "?"}token_hash=${encodeURIComponent(tokenHash)}&type=${encodeURIComponent(action)}`
     : "";
   const result = await sendEmail(apiKey, {
@@ -102,10 +173,15 @@ export async function handleAuthEmailHook(
     to: address,
     subject: template.subject,
     text: `${template.title}\n\n${template.text}\n\n${token}${link ? `\n\n${link}` : ""}`,
-    html: `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:24px"><h1>${template.title}</h1><p>${template.text}</p><p style="font-size:32px;letter-spacing:8px;font-weight:bold">${escapeHtml(token)}</p>${link ? `<p><a href="${escapeHtml(link)}">متابعة</a></p>` : ""}</div>`,
+    html: emailShellHtml(`<h1>${escapeAuthHtml(template.title)}</h1><p>${escapeAuthHtml(template.text)}</p>${template.text.includes(token) ? '' : `<p style="font-size:14px">${escapeAuthHtml(otpLabel)}</p><p style="font-size:32px;letter-spacing:8px;font-weight:bold;color:${/^#[0-9a-f]{6}$/i.test(design.otpCodeColor ?? '') ? design.otpCodeColor : '#078A75'}">${escapeAuthHtml(token)}</p>`}${link ? `<p><a href="${escapeAuthHtml(link)}">Open link</a></p>` : ''}`, design, arabic ? 'rtl' : 'ltr'),
     replyTo: deps.env("EMAIL_REPLY_TO") ?? null,
-  }, deps.fetch ?? fetch);
-  return result.ok ? new Response(null, { status: 200 }) : fail("email_delivery_failed", 502);
+  }, fetcher);
+  return result.ok
+    ? new Response("{}", {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    })
+    : fail("email_delivery_failed", 502);
 }
 
 /// The notification as the database hands it over.
@@ -138,6 +214,7 @@ export type EmailPreferences = {
 export type EmailCustomer = {
   address: string;
   language: string | null;
+  fullName?: string | null;
 };
 
 /// One delivery attempt, written to engagement.email_deliveries.
@@ -154,7 +231,7 @@ export type EmailDeps = {
   fetch: typeof fetch;
   store: EmailStore;
   /// Hands one message to the provider.
-  send: (apiKey: string, email: ResendEmail) => Promise<ResendResult>;
+  send: (apiKey: string, email: BrevoEmail) => Promise<BrevoResult>;
   /// The HMAC of an unsubscribe link.
   unsubscribeToken: (userId: string, secret: string) => Promise<string>;
 };
@@ -242,10 +319,11 @@ function textOf(
 export function emailContentOf(
   notification: EmailNotification,
   language: string | null,
+  variables: Record<string, string> = {},
 ): { subject: string; body: string } {
   return {
-    subject: textOf(language, notification.titleAr, notification.titleEn),
-    body: textOf(language, notification.bodyAr, notification.bodyEn),
+    subject: replaceTemplate(textOf(language, notification.titleAr, notification.titleEn), variables),
+    body: replaceTemplate(textOf(language, notification.bodyAr, notification.bodyEn), variables),
   };
 }
 
@@ -268,8 +346,12 @@ export function emailHtmlOf(
   notification: EmailNotification,
   language: string | null,
   unsubscribeUrl: string,
+  design: EmailDesign = defaultEmailDesign,
+  customerName = '',
+  address = '',
 ): string {
-  const content = emailContentOf(notification, language);
+  const appName = wantsArabic(language) ? design.appNameAr : design.appNameEn;
+  const content = emailContentOf(notification, language, { customer_name: customerName, app_name: appName, email: address });
   const rtl = wantsArabic(language);
   const image = notification.imageUrl
     ? `<p style="margin:16px 0"><img src="${escapeHtml(notification.imageUrl)}" alt="" width="560" style="max-width:100%;border-radius:12px;display:block"></p>`
@@ -286,9 +368,7 @@ export function emailHtmlOf(
       ? `<a href="${escapeHtml(unsubscribeUrl)}">إيقاف رسائل البريد</a>`
       : `<a href="${escapeHtml(unsubscribeUrl)}">Stop these e-mails</a>`) +
     `</p>`;
-  return `<!doctype html><html dir="${rtl ? "rtl" : "ltr"}"><body style="margin:0;padding:24px;background:#f6f7f5">` +
-    `<div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:16px;padding:24px">` +
-    heading + image + paragraph + footer + `</div></body></html>`;
+  return emailShellHtml(heading + image + paragraph + footer, design, rtl ? 'rtl' : 'ltr');
 }
 
 /// The hex HMAC-SHA256 of a user id.
@@ -378,7 +458,7 @@ export async function deliverEmail(
     return { sent: 0, failed: 0, skipped: true, reason: skipReason };
   }
 
-  const apiKey = deps.env("RESEND_API_KEY") ?? "";
+  const apiKey = deps.env("BREVO_API_KEY") ?? "";
   const from = deps.env("EMAIL_FROM") ?? "";
   if (!apiKey || !from) {
     await store.recordDelivery({
@@ -396,20 +476,23 @@ export async function deliverEmail(
   }
 
   const secret = deps.env("EMAIL_WEBHOOK_SECRET") ?? "";
+  const design = await readEmailDesign(deps.env, deps.fetch);
   const token = await deps.unsubscribeToken(notification.userId, secret);
-  const content = emailContentOf(notification, customer!.language);
+  const appName = wantsArabic(customer!.language) ? design.appNameAr : design.appNameEn;
+  const vars = { customer_name: customer!.fullName ?? '', app_name: appName, email: address };
+  const content = emailContentOf(notification, customer!.language, vars);
   const unsubscribe = unsubscribeUrlOf(
     requestUrl,
     notification.userId,
     token,
   );
 
-  const email: ResendEmail = {
+  const email: BrevoEmail = {
     from,
     to: address,
     subject: content.subject,
     text: `${content.subject}\n\n${content.body}\n\n${unsubscribe}`,
-    html: emailHtmlOf(notification, customer!.language, unsubscribe),
+    html: emailHtmlOf(notification, customer!.language, unsubscribe, design, customer!.fullName ?? '', address),
     replyTo: deps.env("EMAIL_REPLY_TO") ?? null,
     // RFC 8058: a reader that presses "unsubscribe" once is off, without
     // visiting a page and without a session. The link is the same one the
@@ -495,7 +578,7 @@ export function createSupabaseStore(
     async readCustomer(userId: string) {
       const { data, error } = await client
         .from("profiles")
-        .select("email, language")
+        .select("email, language, full_name")
         .eq("id", userId)
         .maybeSingle();
       if (error) throw new Error(`read customer: ${error.message}`);
@@ -503,6 +586,7 @@ export function createSupabaseStore(
       return {
         address: (data.email ?? "").trim(),
         language: (data.language as string | null) ?? null,
+        fullName: (data.full_name as string | null) ?? null,
       };
     },
 

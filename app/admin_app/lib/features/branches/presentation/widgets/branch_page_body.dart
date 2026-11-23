@@ -10,6 +10,7 @@ import 'package:admin_app/features/branches/presentation/widgets/branch_director
 import 'package:admin_app/features/branches/presentation/widgets/branch_metrics_cards.dart';
 import 'package:admin_app/shared/widgets/admin_inline_error.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
+import 'package:admin_app/shared/widgets/admin_directory_page_layout.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
 import 'package:admin_app/shared/widgets/admin_read_only_hint.dart';
 import 'package:admin_app/shared/widgets/custom_btn.dart';
@@ -54,10 +55,10 @@ class BranchPageBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return AdminPageFrame(
       child: LayoutBuilder(
-        builder: (context, constraints) {
+        builder: (context, _) {
           // السكرول على الصفحة كاملة: الترويسة والبطاقات والقائمة تتحرك
           // معًا، والقائمة تأخذ ارتفاعًا متجاوبًا مع مساحة الشاشة.
-          final directoryHeight = (constraints.maxHeight - 360).clamp(480.0, 840.0);
+
           final directory = BranchDirectory(
             branches: branches,
             search: search,
@@ -99,18 +100,7 @@ class BranchPageBody extends StatelessWidget {
             BranchMetricsCards(metrics: metrics),
             const SizedBox(height: AppSizes.px16),
           ];
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ...sections,
-                  SizedBox(
-                    height: directoryHeight,
-                    child: directory,
-                  ),
-                ],
-              ),
-            );
+            return AdminDirectoryPageLayout(sections: sections, directory: directory);
         },
       ),
     );

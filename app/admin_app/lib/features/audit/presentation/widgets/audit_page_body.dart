@@ -9,6 +9,7 @@ import 'package:admin_app/features/audit/presentation/widgets/audit_directory.da
 import 'package:admin_app/features/audit/presentation/widgets/audit_metrics_cards.dart';
 import 'package:admin_app/shared/widgets/admin_inline_error.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
+import 'package:admin_app/shared/widgets/admin_directory_page_layout.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
 import 'package:admin_app/shared/widgets/custom_btn.dart';
 
@@ -32,10 +33,10 @@ class AuditPageBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return AdminPageFrame(
       child: LayoutBuilder(
-        builder: (context, constraints) {
+        builder: (context, _) {
           // السكرول على الصفحة كاملة: الترويسة والبطاقات والقائمة تتحرك
           // معًا، والقائمة تأخذ ارتفاعًا متجاوبًا مع مساحة الشاشة.
-          final directoryHeight = (constraints.maxHeight - 360).clamp(480.0, 840.0);
+
           final sections = <Widget>[
             AdminPageHeader(
               title: S.auditLog,
@@ -61,18 +62,7 @@ class AuditPageBody extends StatelessWidget {
             AuditMetricsCards(metrics: metrics),
             const SizedBox(height: AppSizes.px14),
           ];
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ...sections,
-                  SizedBox(
-                    height: directoryHeight,
-                    child: directory,
-                  ),
-                ],
-              ),
-            );
+            return AdminDirectoryPageLayout(sections: sections, directory: directory);
         },
       ),
     );

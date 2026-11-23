@@ -16,6 +16,18 @@ class AdminPageFrame extends StatelessWidget {
         final width = constraints.maxWidth;
         final narrow = width < AppBreakpoints.pageCanvas;
         final inset = AppDimensions.pageHorizontalInset(width);
+        final topInset = narrow
+            ? AppDimensions.pageFrameInnerTopNarrow
+            : AppDimensions.pageFrameInnerTopWide;
+        final bottomInset = narrow
+            ? AppDimensions.pageFrameInnerBottomNarrow
+            : AppDimensions.pageFrameInnerBottomWide;
+        final minContentHeight = constraints.hasBoundedHeight
+            ? (constraints.maxHeight - topInset - bottomInset).clamp(
+                0.0,
+                double.infinity,
+              ).toDouble()
+            : 0.0;
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: inset),
           child: Align(
@@ -25,15 +37,11 @@ class AdminPageFrame extends StatelessWidget {
                 maxWidth: AppDimensions.pageFrameMaxContentWidth,
               ),
               child: Padding(
-                padding: EdgeInsets.only(
-                  top: narrow
-                      ? AppDimensions.pageFrameInnerTopNarrow
-                      : AppDimensions.pageFrameInnerTopWide,
-                  bottom: narrow
-                      ? AppDimensions.pageFrameInnerBottomNarrow
-                      : AppDimensions.pageFrameInnerBottomWide,
+                padding: EdgeInsets.only(top: topInset, bottom: bottomInset),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: minContentHeight),
+                  child: child,
                 ),
-                child: child,
               ),
             ),
           ),

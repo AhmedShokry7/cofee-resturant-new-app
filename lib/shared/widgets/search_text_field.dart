@@ -23,6 +23,10 @@ class SearchTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Keep the entered text and placeholder on the border color role so the
+    // visual editor controls every input field from the same swatch.
+    final textStyle = AppFonts.regular16(context)
+        .copyWith(color: AppColor.inputTextColor);
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(SearchPill.radius()),
       borderSide: BorderSide.none,
@@ -31,12 +35,12 @@ class SearchTextField extends StatelessWidget {
       controller: controller,
       onChanged: onChanged,
       textInputAction: textInputAction,
-      style: AppFonts.regular16(context),
+      style: textStyle,
       cursorColor: AppColor.primaryColor,
       decoration: InputDecoration(
         hintText: hint ?? S.searchHint,
         hintStyle: AppFonts.regular14(context)
-            .copyWith(color: AppColor.greyColor),
+            .copyWith(color: AppColor.inputTextColor),
         prefixIcon: SearchPill.icon(),
         filled: true,
         fillColor: AppColor.lightGreyColor,

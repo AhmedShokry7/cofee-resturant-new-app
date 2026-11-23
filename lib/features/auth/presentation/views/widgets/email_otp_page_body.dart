@@ -15,9 +15,14 @@ import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 
 class EmailOtpPageBody extends StatefulWidget {
-  const EmailOtpPageBody({super.key, required this.email});
+  const EmailOtpPageBody({
+    super.key,
+    required this.email,
+    this.isSignupConfirmation = false,
+  });
 
   final String email;
+  final bool isSignupConfirmation;
 
   @override
   State<EmailOtpPageBody> createState() => _EmailOtpPageBodyState();
@@ -45,6 +50,7 @@ class _EmailOtpPageBodyState extends State<EmailOtpPageBody> {
     context.read<EmailAuthCubit>().verifyCode(
       email: widget.email,
       code: _code.code,
+      isSignupConfirmation: widget.isSignupConfirmation,
     );
   }
 
@@ -55,7 +61,10 @@ class _EmailOtpPageBodyState extends State<EmailOtpPageBody> {
     _code.clear();
     _code.focusNodes.first.requestFocus();
     setState(() {});
-    context.read<EmailAuthCubit>().sendCode(email: widget.email);
+    context.read<EmailAuthCubit>().sendCode(
+      email: widget.email,
+      isSignupConfirmation: widget.isSignupConfirmation,
+    );
   }
 
   /// The [EmailAuthCubit] already wrote and confirmed the session marker, so

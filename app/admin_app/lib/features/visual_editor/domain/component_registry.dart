@@ -2165,8 +2165,8 @@ class ComponentRegistry {
             label: 'رقم البانر',
             description: 'أي بانر من القائمة المنشورة (1 = الأول)',
             type: PropertyType.integer,
-            defaultValue: 1,
-            validation: {'min': 1, 'max': 10},
+            defaultValue: 0,
+            validation: {'min': 0, 'max': 10},
             group: 'المحتوى',
           ),
           'height': ComponentPropertyDefinition(
@@ -2407,7 +2407,7 @@ class ComponentRegistry {
           'hide',
         ],
         defaultValues: {
-          'bannerIndex': 1,
+          'bannerIndex': 0,
           'backgroundColor': '',
           'borderColor': '',
           'shadowColor': '',

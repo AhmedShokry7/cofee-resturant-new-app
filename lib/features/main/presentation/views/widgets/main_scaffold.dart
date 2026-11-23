@@ -31,7 +31,8 @@ class _MainScaffoldState extends State<MainScaffold> {
       // of the splash, so this is the first moment the screen can be shown.
       final route = PushService.takePendingRoute();
       if (route != null) {
-        Navigator.of(context).pushNamed(route.route, arguments: route.entityId);
+        Navigator.of(context)
+            .pushNamed(route.route, arguments: route.arguments);
       }
     });
   }

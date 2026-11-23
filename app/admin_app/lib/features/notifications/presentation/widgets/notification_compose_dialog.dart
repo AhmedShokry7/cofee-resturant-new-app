@@ -1017,6 +1017,47 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
           ],
           onChanged: _setDestination,
         ),
+        const SizedBox(height: AppSizes.px8),
+        Container(
+          key: const Key('notification-compose-destination-preview'),
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          decoration: BoxDecoration(
+            color: adminTintedSurfaceColor(theme),
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(color: adminRowBorderColor(theme)),
+          ),
+          child: Row(
+            children: [
+              AppIcon(
+                notificationDestinationIcon(_destination),
+                size: 15,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: AppSizes.px8),
+              Text(
+                AppLocale.instance.isArabic
+                    ? '\u0633\u064a\u0641\u062a\u062d \u0639\u0646\u062f \u0627\u0644\u0636\u063a\u0637:'
+                    : 'Opens on tap:',
+                style: TextStyle(
+                  color: adminMutedColor(theme),
+                  fontSize: AppFontSizes.size9_5,
+                ),
+              ),
+              const SizedBox(width: AppSizes.px6),
+              Expanded(
+                child: Text(
+                  notificationDestinationLabel(_destination),
+                  textAlign: TextAlign.end,
+                  style: TextStyle(
+                    color: adminBodyColor(theme),
+                    fontSize: AppFontSizes.size9_5,
+                    fontWeight: AppFontWeights.semiBold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: AppSizes.px4),
         Text(
           S.notificationsComposeDestinationHint,

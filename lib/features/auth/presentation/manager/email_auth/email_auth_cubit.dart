@@ -5,6 +5,7 @@ import 'package:new_coffee/core/locale/app_copy.dart';
 import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/features/auth/data/model/auth_exception.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
+import 'package:new_coffee/features/auth/data/repositories/signup_email_otp_repository.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/manager/email_auth/email_auth_state.dart';
 
@@ -23,11 +24,18 @@ class EmailAuthCubit extends Cubit<EmailAuthState> {
   /// The markers that decide where the next launch starts.
   final SessionRepository session;
 
-  Future<void> sendCode({required String email}) async {
+  Future<void> sendCode({
+    required String email,
+    bool isSignupConfirmation = false,
+  }) async {
     if (state is EmailAuthLoading) return;
     emit(const EmailAuthLoading());
     try {
-      await _repository.sendEmailCode(email: email);
+      if (isSignupConfirmation) {
+        await _repository.resendSignupConfirmationCode(email: email);
+      } else {
+        await _repository.sendEmailCode(email: email);
+      }
       if (isClosed) return;
       emit(const EmailAuthCodeSent());
     } on AuthException catch (error) {
@@ -41,11 +49,17 @@ class EmailAuthCubit extends Cubit<EmailAuthState> {
     }
   }
 
-  Future<void> verifyCode({required String email, required String code}) async {
+  Future<void> verifyCode({
+    required String email,
+    required String code,
+    bool isSignupConfirmation = false,
+  }) async {
     if (state is EmailAuthLoading) return;
     emit(const EmailAuthLoading());
     try {
-      final user = await _repository.verifyEmailCode(email: email, code: code);
+      final user = isSignupConfirmation
+          ? await _repository.verifySignupEmailCode(email: email, code: code)
+          : await _repository.verifyEmailCode(email: email, code: code);
       // Same rule as the phone flow: the marker is written and confirmed here,
       // so the screen only has to decide where in the stack to land. A marker
       // that will not land is reported, not acted on — the customer is verified

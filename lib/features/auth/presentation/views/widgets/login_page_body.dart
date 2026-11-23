@@ -7,7 +7,6 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/data/model/auth_form_rules.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
-import 'package:new_coffee/features/auth/presentation/views/email_auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/forget_password_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/phone_auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/sign_up_page.dart';
@@ -137,6 +136,7 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                         ),
                       SizedBox(height: AuthSpacings.headerGap),
                       CustomTextFormField(
+                        showFocusTint: false,
                         controller: _emailController,
                         hint: S.emailHint,
                         icon: AppIcons.mail,
@@ -145,6 +145,7 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                         validator: AuthFormRules.email,
                       ),
                       CustomTextFormField(
+                        showFocusTint: false,
                         controller: _passwordController,
                         hint: S.passwordHint,
                         icon: AppIcons.password,
@@ -188,12 +189,6 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                       // carries. It opens on its own, so a number that cannot
                       // be reached — or a Google account that is not on the
                       // device — never leaves the app with no way in.
-                      _CodeDoorButton(
-                        icon: AppIcons.mail,
-                        label: S.continueWithEmailCode,
-                        route: EmailAuthPage.routeName,
-                      ),
-                      SizedBox(height: AuthSpacings.sectionGap),
                       if (switchPrompt?.visible ?? true)
                         AuthSwitchPrompt(
                           question: S.dontHaveAccount,

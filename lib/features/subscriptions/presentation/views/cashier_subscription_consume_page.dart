@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
 import 'package:new_coffee/features/subscriptions/data/repositories/subscription_repository.dart';
 import 'package:new_coffee/features/subscriptions/presentation/manager/subscription_consume/subscription_consume_cubit.dart';
@@ -70,15 +72,21 @@ class _ConsumeForm extends StatelessWidget {
           children: [
             TextField(
               controller: tokenController,
+              style: AppFonts.regular14(context)
+                  .copyWith(color: AppColor.inputTextColor),
               decoration: InputDecoration(labelText: S.qrTokenLabel),
             ),
             TextField(
               controller: productController,
+              style: AppFonts.regular14(context)
+                  .copyWith(color: AppColor.inputTextColor),
               decoration: InputDecoration(labelText: S.productIdLabel),
             ),
             TextField(
               controller: quantityController,
               keyboardType: TextInputType.number,
+              style: AppFonts.regular14(context)
+                  .copyWith(color: AppColor.inputTextColor),
               decoration: InputDecoration(labelText: S.quantity),
             ),
             SizedBox(height: AppSpacing.md),

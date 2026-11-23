@@ -111,7 +111,7 @@ Widget? buildHomeDocumentSection(PublishedSection section) {
     ),
     DesignWidgetTypes.promoBanner => HomeSection(
       child: HomeSingleBannerSection(
-        bannerIndex: section.numberProperty('bannerIndex')?.round() ?? 1,
+        bannerIndex: section.numberProperty('bannerIndex')?.round() ?? 0,
         height: section.numberProperty('height'),
         radius: _radius(section.property('radius')),
       ),

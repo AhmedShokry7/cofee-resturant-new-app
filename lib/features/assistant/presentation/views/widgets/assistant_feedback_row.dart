@@ -66,6 +66,8 @@ class AssistantFeedbackRow extends StatelessWidget {
           autofocus: true,
           maxLength: 500,
           maxLines: 3,
+          style: Theme.of(context).textTheme.bodyMedium
+              ?.copyWith(color: AppColor.inputTextColor),
           decoration: InputDecoration(
             hintText: arabic
                 ? 'اكتب التصحيح لو تحب، أو تخطّى'

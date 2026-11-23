@@ -43,9 +43,12 @@ class _AssistantInputBarState extends State<AssistantInputBar> {
           child: TextField(
             controller: _controller,
             onSubmitted: (_) => _send(),
-            style: AppFonts.regular14(context),
+            style: AppFonts.regular14(context)
+                .copyWith(color: AppColor.inputTextColor),
             decoration: InputDecoration(
               hintText: S.askAnything,
+              hintStyle: AppFonts.regular14(context)
+                  .copyWith(color: AppColor.inputTextColor),
               contentPadding: EdgeInsets.symmetric(
                 horizontal: AppSpacing.md,
                 vertical: AppSpacing.sm,

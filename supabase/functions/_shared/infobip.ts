@@ -17,10 +17,9 @@
 // only ever sent to an Infobip host, never to a value someone else typed into
 // the environment.
 //
-// One caveat that decides what a trial account can prove: while an Infobip
-// account is in its free trial it only accepts the phone number the
-// registration was verified with. A refusal for any other destination is that
-// rule, not a bug in this file.
+// Trial accounts only accept verified recipient numbers. A refusal for an
+// unverified destination is that provider restriction, not a formatting bug in
+// this function. A paid account can send to other eligible destinations.
 
 /// The message that is handed to the provider.
 export type SmsMessage = {
@@ -119,10 +118,9 @@ export async function sendSms(
     return { ok: false, error: `infobip ${response.status}: ${describe(text)}` };
   }
 
-  // A 200 from Infobip means the request was well formed, not that the
-  // message reached the network: the per-destination status is inside the
-  // body. An invalid destination therefore has to be read there, or the hook
-  // would tell GoTrue a code was sent to a number that never got one.
+  // A 200 from Infobip is not enough: the per-message status is inside the
+  // response. Read the documented `messages[].status` shape so a rejected
+  // destination is not reported to GoTrue as successfully sent.
   let parsed: any = null;
   try {
     parsed = text ? JSON.parse(text) : null;
@@ -133,7 +131,12 @@ export async function sendSms(
   if (refusal) {
     return { ok: false, error: `infobip refused: ${refusal}`.slice(0, 220) };
   }
-  const messageId = parsed?.messageId ?? parsed?.groupId;
+  const messages = Array.isArray(parsed?.messages) ? parsed.messages : [];
+  const firstMessage = messages[0];
+  if (!firstMessage?.status) {
+    return { ok: false, error: "infobip_response_missing_message_status" };
+  }
+  const messageId = firstMessage.messageId ?? parsed?.messageId;
   return {
     ok: true,
     messageId: messageId === undefined ? undefined : String(messageId),
@@ -142,15 +145,16 @@ export async function sendSms(
 
 /// The reason a 200 answer is really a refusal, or null when it is not.
 function refusalOf(body: any): string | null {
-  const statuses = Array.isArray(body?.messageStatus)
+  const statuses = Array.isArray(body?.messages)
+    ? body.messages.map((message: any) => message?.status).filter(Boolean)
+    : Array.isArray(body?.messageStatus)
     ? body.messageStatus
     : [];
   for (const entry of statuses) {
-    const description = String(
-      entry?.status?.description ?? entry?.status?.name ?? "",
-    );
-    if (/error|reject|invalid|undeliver|unreach|blocked|not\s*allowed/i.test(description)) {
-      return describe(description) || "destination rejected";
+    const statusName = String(entry?.name ?? entry?.groupName ?? "");
+    const description = String(entry?.description ?? statusName);
+    if (/error|reject|invalid|undeliver|unreach|blocked|not\s*allowed/i.test(`${statusName} ${description}`)) {
+      return describe(description) || describe(statusName) || "destination rejected";
     }
   }
   return null;

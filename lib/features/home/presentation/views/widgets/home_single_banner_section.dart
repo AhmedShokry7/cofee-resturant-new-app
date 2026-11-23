@@ -10,13 +10,12 @@ import 'package:new_coffee/core/theme/tokens.dart';
 
 /// A single promo banner below the carousel.
 ///
-/// Before this it rendered getBannersList().first, so it re-displayed the
-/// banner the carousel had already shown. It now uses the second banner, and
-/// hides itself when there is no second one rather than crashing on .first.
+/// This reads only banners assigned to the in-page placement. Its order and
+/// membership are independent of the top carousel.
 class HomeSingleBannerSection extends StatelessWidget {
   const HomeSingleBannerSection({
     super.key,
-    this.bannerIndex = 1,
+    this.bannerIndex = 0,
     this.height,
     this.radius = AppRadius.r8,
   });

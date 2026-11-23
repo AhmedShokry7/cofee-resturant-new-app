@@ -117,14 +117,15 @@ class _LeaveReviewViewState extends State<LeaveReviewView> {
                 controller: _reviewController,
                 minLines: 4,
                 maxLines: 6,
-                style: AppFonts.regular14(context),
+                style: AppFonts.regular14(context)
+                    .copyWith(color: AppColor.inputTextColor),
                 cursorColor: AppColor.primaryColor,
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   isDense: true,
                   hintText: S.reviewHint,
                   hintStyle: AppFonts.regular14(context)
-                      .copyWith(color: AppColor.greyColor),
+                      .copyWith(color: AppColor.inputTextColor),
                 ),
               ),
             ),

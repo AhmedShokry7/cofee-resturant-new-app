@@ -2,10 +2,16 @@ import 'package:flutter/foundation.dart';
 
 import 'package:new_coffee/core/data/db_values.dart';
 import 'package:new_coffee/features/coupon/presentation/views/coupon_page.dart';
+import 'package:new_coffee/features/content/presentation/views/help_page.dart';
+import 'package:new_coffee/features/addresses/presentation/views/addresses_page.dart';
 import 'package:new_coffee/features/loyalty/presentation/views/loyalty_page.dart';
 import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
+import 'package:new_coffee/features/notifications/presentation/views/notification_settings_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/order_details_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/orders_page.dart';
+import 'package:new_coffee/features/main/presentation/views/main_page.dart';
+import 'package:new_coffee/features/profile/presentation/views/edit_profile_page.dart';
+import 'package:new_coffee/features/search/presentation/views/search_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
 
 /// The screen a notification opens, or null when it owns no page.
@@ -31,6 +37,16 @@ String? routeForNotification({
   String? destination,
 }) {
   return switch (destination) {
+    'home' ||
+    'categories' ||
+    'cart' ||
+    'favorites' ||
+    'settings' => MainPage.routeName,
+    'search' => SearchPage.routeName,
+    'help' => HelpPage.routeName,
+    'account' => EditProfilePage.routeName,
+    'addresses' => AddressesPage.routeName,
+    'notification_settings' => NotificationSettingsPage.routeName,
     'offers' => CouponPage.routeName,
     'orders' => OrdersPage.routeName,
     'loyalty' => LoyaltyPage.routeName,
@@ -54,7 +70,7 @@ String? routeForNotification({
 /// Where one tapped notification takes the customer.
 @immutable
 class NotificationOpen {
-  const NotificationOpen({required this.route, this.entityId});
+  const NotificationOpen({required this.route, this.entityId, this.mainTab});
 
   /// The page that owns the message.
   final String route;
@@ -63,6 +79,11 @@ class NotificationOpen {
   /// the row carries it. Null means the section page is as exact as the row
   /// gets, so the caller pushes the route with no argument.
   final String? entityId;
+
+  /// Selected tab when a campaign opens the main app shell.
+  final String? mainTab;
+
+  Object? get arguments => mainTab ?? entityId;
 }
 
 /// The exact destination of a notification, or null when it owns no page.
@@ -82,6 +103,17 @@ NotificationOpen? openForNotification({
   String? destination,
   String? relatedEntityId,
 }) {
+  final mainTab = switch (destination) {
+    'home' => 'home',
+    'categories' => 'categories',
+    'cart' => 'cart',
+    'favorites' => 'favorites',
+    'settings' => 'settings',
+    _ => null,
+  };
+  if (mainTab != null) {
+    return NotificationOpen(route: MainPage.routeName, mainTab: mainTab);
+  }
   final entityId = entityIdOf(relatedEntityId);
   if (destination == null && relatedEntityType == 'order' && entityId != null) {
     return NotificationOpen(

@@ -28,6 +28,20 @@ enum BannerTarget {
   );
 }
 
+/// The home page slot a banner belongs to. This is independent of its target.
+enum BannerPlacement {
+  hero('hero'),
+  inline('inline');
+
+  const BannerPlacement(this.storage);
+  final String storage;
+
+  static BannerPlacement fromStorage(String? value) => values.firstWhere(
+    (placement) => placement.storage == value,
+    orElse: () => BannerPlacement.hero,
+  );
+}
+
 /// A home page banner.
 ///
 /// [target] and [targetId] replace the raw English `targetCategory` string
@@ -48,6 +62,7 @@ class BannerModel {
     this.target = BannerTarget.category,
     this.targetId,
     this.targetUrl,
+    this.placement = BannerPlacement.hero,
     this.sortOrder = 0,
     this.isPublished = false,
     this.startsAt,
@@ -71,6 +86,7 @@ class BannerModel {
   final BannerTarget target;
   final String? targetId;
   final String? targetUrl;
+  final BannerPlacement placement;
 
   final int sortOrder;
   final bool isPublished;
@@ -113,6 +129,7 @@ class BannerModel {
     BannerTarget? target,
     String? targetId,
     String? targetUrl,
+    BannerPlacement? placement,
     int? sortOrder,
     bool? isPublished,
     DateTime? startsAt,
@@ -133,6 +150,7 @@ class BannerModel {
     target: target ?? this.target,
     targetId: targetId ?? this.targetId,
     targetUrl: targetUrl ?? this.targetUrl,
+    placement: placement ?? this.placement,
     sortOrder: sortOrder ?? this.sortOrder,
     isPublished: isPublished ?? this.isPublished,
     startsAt: startsAt ?? this.startsAt,
@@ -155,6 +173,9 @@ class BannerModel {
     target: BannerTarget.fromStorage(Db.text(json['target_type'], 'category')),
     targetId: Db.textOrNull(json['target_id']),
     targetUrl: Db.textOrNull(json['target_url']),
+    placement: BannerPlacement.fromStorage(
+      Db.textOrNull(json['display_location']),
+    ),
     sortOrder: Db.asInt(json['sort_order']),
     isPublished: json['is_published'] != false,
     startsAt: _date(json['starts_at']),
@@ -175,6 +196,7 @@ class BannerModel {
     'target_type': target.storage,
     'target_id': targetId,
     'target_url': targetUrl,
+    'display_location': placement.storage,
     'sort_order': sortOrder,
     'is_published': isPublished,
   };

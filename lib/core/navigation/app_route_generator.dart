@@ -62,6 +62,10 @@ class AppRouteGenerator {
       EmailOtpPage.routeName when arguments is String => EmailOtpPage(
         email: arguments,
       ),
+      EmailOtpPage.routeName when arguments is EmailOtpPageArgs => EmailOtpPage(
+        email: arguments.email,
+        isSignupConfirmation: arguments.isSignupConfirmation,
+      ),
       TrackOrderPage.routeName when arguments is OrderItemModel =>
         TrackOrderPage(order: arguments),
       LeaveReviewPage.routeName when arguments is OrderItemModel =>

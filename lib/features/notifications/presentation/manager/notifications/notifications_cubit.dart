@@ -390,6 +390,11 @@ class NotificationsCubit extends Cubit<NotificationsState> {
       );
     }
     try {
+      // The OS permission can already be granted from the first-launch prompt
+      // or the phone's app settings. Register this device and adopt that grant
+      // before rendering the switch; explicit in-app opt-outs remain respected.
+      await PushService.syncGrantedPermission(_pushRepository);
+      if (isClosed) return;
       final switches = await _pushRepository.preferences();
       if (isClosed) return;
       emit(

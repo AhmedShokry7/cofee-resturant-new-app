@@ -37,11 +37,21 @@ const List<AdminNotificationType> kComposableNotificationTypes =
 /// offers a path, and a code outside this list opens nothing.
 enum AdminNotificationDestination {
   none(null),
+  home('home'),
+  categories('categories'),
+  search('search'),
+  cart('cart'),
+  favorites('favorites'),
+  settings('settings'),
   offers('offers'),
   orders('orders'),
   loyalty('loyalty'),
   subscription('subscription'),
-  notifications('notifications');
+  notifications('notifications'),
+  notificationSettings('notification_settings'),
+  help('help'),
+  account('account'),
+  addresses('addresses');
 
   const AdminNotificationDestination(this.value);
 

@@ -15,6 +15,7 @@ class AdminBanner {
     required this.targetType,
     this.targetId,
     this.targetUrl,
+    this.displayLocation = 'hero',
     this.sortOrder = 0,
     this.startsAt,
     this.endsAt,
@@ -34,6 +35,7 @@ class AdminBanner {
   final String targetType;
   final String? targetId;
   final String? targetUrl;
+  final String displayLocation;
   final int sortOrder;
   final DateTime? startsAt;
   final DateTime? endsAt;
@@ -57,6 +59,7 @@ class AdminBanner {
       targetType: '${json['target_type'] ?? 'none'}',
       targetId: json['target_id'] as String?,
       targetUrl: json['target_url'] as String?,
+      displayLocation: '${json['display_location'] ?? 'hero'}',
       sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
       startsAt: _toDateTime(json['starts_at']),
       endsAt: _toDateTime(json['ends_at']),
@@ -85,6 +88,7 @@ class AdminBanner {
     bool clearTargetId = false,
     String? targetUrl,
     bool clearTargetUrl = false,
+    String? displayLocation,
     int? sortOrder,
     DateTime? startsAt,
     bool clearStartsAt = false,
@@ -110,6 +114,7 @@ class AdminBanner {
       targetType: targetType ?? this.targetType,
       targetId: clearTargetId ? null : (targetId ?? this.targetId),
       targetUrl: clearTargetUrl ? null : (targetUrl ?? this.targetUrl),
+      displayLocation: displayLocation ?? this.displayLocation,
       sortOrder: sortOrder ?? this.sortOrder,
       startsAt: clearStartsAt ? null : (startsAt ?? this.startsAt),
       endsAt: clearEndsAt ? null : (endsAt ?? this.endsAt),
@@ -130,6 +135,7 @@ class AdminBanner {
     'target_type': targetType,
     'target_id': targetId,
     'target_url': targetUrl,
+    'display_location': displayLocation,
     'sort_order': sortOrder,
     'starts_at': startsAt?.toIso8601String(),
     'ends_at': endsAt?.toIso8601String(),

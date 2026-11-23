@@ -99,6 +99,7 @@ class _ForgetPasswordPageBodyState extends State<ForgetPasswordPageBody> {
                     ),
                   SizedBox(height: AuthSpacings.headerGap),
                   CustomTextFormField(
+                        showFocusTint: false,
                     controller: _emailController,
                     hint: S.emailHint,
                     icon: AppIcons.mail,

@@ -101,6 +101,7 @@ class _PhoneAuthPageBodyState extends State<PhoneAuthPageBody> {
                     ),
                   SizedBox(height: AuthSpacings.headerGap),
                   CustomTextFormField(
+                        showFocusTint: false,
                     controller: _phoneController,
                     hint: S.phoneHint,
                     icon: AppIcons.smartphone,

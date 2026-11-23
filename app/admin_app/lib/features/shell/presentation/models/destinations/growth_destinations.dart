@@ -97,6 +97,15 @@ List<AdminDestination> get growthDestinations => <AdminDestination>[
     ],
   ),
   AdminDestination(
+    id: 'emailDesign',
+    label: S.emailDesign,
+    icon: AppIcons.email,
+    searchHint: S.searchEmailDesignHint,
+    permission: 'notifications.manage',
+    section: S.sectionGrowth,
+    tables: <String>['public.email_design_settings', 'core.app_settings'],
+  ),
+  AdminDestination(
     id: 'websites',
     label: S.customerWebsites,
     icon: AppIcons.globe,

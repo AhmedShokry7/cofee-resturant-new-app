@@ -35,7 +35,13 @@ class HomeBannerSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final banners = previewBanners ?? context.watch<HomeCubit>().state.banners;
+    final allBanners =
+        previewBanners ?? context.watch<HomeCubit>().state.banners;
+    final banners = previewBanners == null
+        ? allBanners
+              .where((banner) => banner.placement == BannerPlacement.hero)
+              .toList(growable: false)
+        : allBanners;
     if (banners.isEmpty) return const SizedBox.shrink();
     return BlocProvider(
       create: (context) =>

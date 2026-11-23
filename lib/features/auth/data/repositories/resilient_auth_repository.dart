@@ -2,6 +2,7 @@ import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/auth/data/model/auth_exception.dart';
 import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
+import 'package:new_coffee/features/auth/data/repositories/signup_email_otp_repository.dart';
 import 'package:new_coffee/features/auth/data/repositories/supabase_auth_repository.dart';
 
 /// Authentication that reconnects instead of giving up.
@@ -15,7 +16,8 @@ import 'package:new_coffee/features/auth/data/repositories/supabase_auth_reposit
 /// This implementation asks for a client before each call. When the backend
 /// is reachable the request goes straight through; when it is not, the
 /// connection is retried a few times and only then is the attempt refused.
-class ResilientAuthRepository implements AuthRepository {
+class ResilientAuthRepository
+    implements AuthRepository, SignupEmailOtpRepository {
   ResilientAuthRepository({SupabaseAuthRepository? delegate})
     : _delegate = delegate ?? SupabaseAuthRepository();
 
@@ -99,12 +101,27 @@ class ResilientAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> resendSignupConfirmationCode({required String email}) async {
+    final repository = await _ready();
+    return repository.resendSignupConfirmationCode(email: email);
+  }
+
+  @override
   Future<AuthUser> verifyEmailCode({
     required String email,
     required String code,
   }) async {
     final repository = await _ready();
     return repository.verifyEmailCode(email: email, code: code);
+  }
+
+  @override
+  Future<AuthUser> verifySignupEmailCode({
+    required String email,
+    required String code,
+  }) async {
+    final repository = await _ready();
+    return repository.verifySignupEmailCode(email: email, code: code);
   }
 
   @override

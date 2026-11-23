@@ -37,6 +37,7 @@ import 'package:admin_app/features/hr/settings/hr_settings_page.dart';
 import 'package:admin_app/features/kitchen/presentation/pages/kitchen_page.dart';
 import 'package:admin_app/features/loyalty/presentation/pages/loyalty_page.dart';
 import 'package:admin_app/features/notifications/presentation/pages/notifications_page.dart';
+import 'package:admin_app/features/email_design/presentation/email_design_page.dart';
 import 'package:admin_app/features/option_groups/presentation/pages/option_group_page.dart';
 import 'package:admin_app/features/option_groups/presentation/widgets/product_option_dialog.dart';
 import 'package:admin_app/features/orders/presentation/pages/order_page.dart';
@@ -443,6 +444,8 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
               widget.session.hasPermission('notifications.manage') ||
               widget.session.isOwner,
         );
+      case 'emailDesign':
+        return const EmailDesignPage();
       case 'aiKnowledge':
         return AiKnowledgePage(
           searchController: _searchController,

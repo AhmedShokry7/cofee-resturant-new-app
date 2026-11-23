@@ -123,7 +123,7 @@ class HomeCubit extends Cubit<HomeState> {
     // Banners and categories belong to no branch, so their key stays unscoped.
     final bannersFuture = section(
       'banners',
-      'home_banners',
+      'home_banners_v2',
       _repository.getBanners,
       state.banners,
     );

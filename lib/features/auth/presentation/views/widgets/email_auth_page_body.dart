@@ -100,6 +100,7 @@ class _EmailAuthPageBodyState extends State<EmailAuthPageBody> {
                     ),
                   SizedBox(height: AuthSpacings.headerGap),
                   CustomTextFormField(
+                        showFocusTint: false,
                     controller: _emailController,
                     hint: S.emailHint,
                     icon: AppIcons.mail,

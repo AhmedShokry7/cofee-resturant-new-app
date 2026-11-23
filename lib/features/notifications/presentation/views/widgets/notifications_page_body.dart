@@ -137,7 +137,7 @@ class NotificationsPageBody extends StatelessWidget {
               final open = cubit.openFrom(item);
               if (open == null || !context.mounted) return;
               Navigator.of(context)
-                  .pushNamed(open.route, arguments: open.entityId);
+                  .pushNamed(open.route, arguments: open.arguments);
             },
           ),
         ),

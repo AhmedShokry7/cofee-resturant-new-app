@@ -8,11 +8,16 @@ import 'package:new_coffee/features/auth/presentation/views/widgets/email_otp_pa
 /// The second half of the e-mail code door: the customer types what the mail
 /// carried.
 class EmailOtpPage extends StatelessWidget {
-  const EmailOtpPage({super.key, required this.email});
+  const EmailOtpPage({
+    super.key,
+    required this.email,
+    this.isSignupConfirmation = false,
+  });
 
   static const routeName = "emailOtpRoute";
 
   final String email;
+  final bool isSignupConfirmation;
 
   @override
   Widget build(BuildContext context) {
@@ -20,8 +25,21 @@ class EmailOtpPage extends StatelessWidget {
       appBar: AppBar(),
       body: BlocProvider(
         create: (context) => EmailAuthCubit(context.read<AuthRepository>()),
-        child: EmailOtpPageBody(email: email),
+        child: EmailOtpPageBody(
+          email: email,
+          isSignupConfirmation: isSignupConfirmation,
+        ),
       ),
     );
   }
+}
+
+class EmailOtpPageArgs {
+  const EmailOtpPageArgs({
+    required this.email,
+    this.isSignupConfirmation = false,
+  });
+
+  final String email;
+  final bool isSignupConfirmation;
 }

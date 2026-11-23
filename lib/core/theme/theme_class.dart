@@ -109,10 +109,10 @@ class ThemeClass {
         filled: true,
         fillColor: AppColor.lightGreyColor,
         hintStyle: textTheme.bodyMedium?.copyWith(
-          color: AppColor.textSecondary,
+          color: AppColor.inputTextColor,
         ),
         labelStyle: textTheme.bodyMedium?.copyWith(
-          color: AppColor.textSecondary,
+          color: AppColor.inputTextColor,
         ),
         contentPadding: controlPadding,
         border: OutlineInputBorder(
@@ -340,10 +340,10 @@ class ThemeClass {
         filled: true,
         fillColor: AppColor.darkCard,
         hintStyle: textTheme.bodyMedium?.copyWith(
-          color: AppColor.darkTextSecondary,
+          color: AppColor.inputTextColor,
         ),
         labelStyle: textTheme.bodyMedium?.copyWith(
-          color: AppColor.darkTextSecondary,
+          color: AppColor.inputTextColor,
         ),
         contentPadding: controlPadding,
         border: OutlineInputBorder(

@@ -4507,7 +4507,7 @@ class S {
       : 'A complete management system for cafes and restaurants';
   static String get brandDescription => _ar
       ? 'تابع الطلبات والمخزون والعملاء والموظفين والتقارير من لوحة تحكم واحدة بتصميم احترافي وسريع الاستجابة.'
-      : 'Track orders, inventory, customers, staff and reports from a single professional dashboard that adapts to every screen.';
+      : 'Track orders, inventory, customers and staff from a single professional dashboard that adapts to every screen.';
   static String get add => _ar ? 'إضافة' : 'Add';
   static String get addBanner => _ar ? 'إضافة بانر' : 'Add banner';
   static String get addBranch => _ar ? 'إضافة فرع' : 'Add branch';
@@ -4997,6 +4997,9 @@ class S {
   static String get productLabel => _ar ? 'منتج' : 'Product';
   static String get none => _ar ? 'بدون' : 'None';
   static String get url => _ar ? 'رابط' : 'URL';
+  static String get targetBundle => _ar
+      ? '\u0627\u0644\u0628\u0627\u0646\u062f\u0644 \u0627\u0644\u0645\u0631\u062a\u0628\u0637'
+      : 'Target bundle';
   static String get titleRequired =>
       _ar ? 'العنوان مطلوب.' : 'Title is required.';
   static String get nameRequired => _ar ? 'الاسم مطلوب.' : 'Name is required.';
@@ -5684,6 +5687,9 @@ class S {
   static String get visualEditorThemeColors =>
       _ar ? 'ألوان الأدوار' : 'Role colors';
 
+  static String get visualEditorBorderAndFieldText =>
+      _ar ? 'لون الإطار ونص الحقول' : 'Border & input text';
+
   static String get visualEditorThemeScales => _ar ? 'المقاييس' : 'Scales';
 
   static String get visualEditorBrand => _ar ? 'هوية التطبيق' : 'App brand';
@@ -5783,4 +5789,11 @@ class S {
   // ---------- HR — employee file sections ----------
 
   // ---------- HR — settings surface ----------
+
+  static String get emailDesign => _ar
+      ? '\u{62a}\u{635}\u{645}\u{64a}\u{645} \u{627}\u{644}\u{628}\u{631}\u{64a}\u{62f}'
+      : 'Email design';
+  static String get searchEmailDesignHint => _ar
+      ? '\u{627}\u{628}\u{62d}\u{62b} \u{641}\u{64a} \u{62a}\u{635}\u{645}\u{64a}\u{645} \u{627}\u{644}\u{628}\u{631}\u{64a}\u{62f}...'
+      : 'Search email design...';
 }

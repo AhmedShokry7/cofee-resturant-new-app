@@ -156,6 +156,7 @@ class _BannerCard extends StatelessWidget {
                 Text(
                   '${S.targetType}: ${bannerTargetTypeLabel(banner.targetType)}'
                   '  •  '
+                  '${bannerDisplayLocationLabel(banner.displayLocation)}  •  '
                   '${S.sortOrder}: ${localizeDigits('${banner.sortOrder}')}',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: AppColor.greyColor,

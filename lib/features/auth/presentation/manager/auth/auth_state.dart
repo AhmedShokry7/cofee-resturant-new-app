@@ -21,8 +21,8 @@ final class AuthSuccess extends AuthState {
 
 /// The address the customer just registered still has to confirm its email.
 ///
-/// A separate state, because this is not a signed-in customer: the app keeps
-/// them on the sign-up screen and writes no session marker.
+/// A separate state, because this is not a signed-in customer: the app sends
+/// them to the manual code screen and writes no session marker.
 final class AuthEmailConfirmationRequired extends AuthState {
   const AuthEmailConfirmationRequired();
 }

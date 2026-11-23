@@ -851,30 +851,38 @@ class SupabaseProductRepository
 
   // --- Home page content ---------------------------------------------------
 
-  /// `sort_order` is an ascending display column - the dashboard puts the banner
-  /// the customer should see first at 0 - but the PostgREST builder defaults to
-  /// DESCENDING, so every `sort_order` order in this file says `ascending:
-  /// true` explicitly. Without it the carousel opened on the last banner and
-  /// the promo slot below it repeated the first one.
+  /// Each placement has its own ascending order. Top carousel banners cannot
+  /// change which banner appears in the independent in-page slot.
 
   @override
   Future<List<BannerModel>> getBanners({
     int limit = CatalogLimits.banners,
   }) async {
-    // Only eq/order/limit filters here: complex `or` date expressions are a
-    // PostgREST version-sensitive failure point, and a 400 on this query
-    // would empty the whole banner section. The publish window is enforced
-    // below in Dart instead, with identical semantics.
-    final fetched = await _client
-        .from('banners')
-        .select(
-          'id,title_ar,title_en,subtitle_ar,subtitle_en,description_ar,'
-          'description_en,image_url,cta_label_ar,cta_label_en,target_type,'
-          'target_id,target_url,sort_order,is_published,starts_at,ends_at',
-        )
-        .eq('is_published', true)
-        .order('sort_order', ascending: true)
-        .limit(limit);
+    // Each home slot gets its own limit and ordering. A long carousel can no
+    // longer crowd the independent in-page slot out of the query result.
+    const columns =
+        'id,title_ar,title_en,subtitle_ar,subtitle_en,description_ar,'
+        'description_en,image_url,cta_label_ar,cta_label_en,target_type,'
+        'target_id,target_url,display_location,sort_order,is_published,'
+        'starts_at,ends_at';
+    Future<List<Map<String, dynamic>>> readLocation(String location) async {
+      final response = await _client
+          .from('banners')
+          .select(columns)
+          .eq('is_published', true)
+          .eq('display_location', location)
+          .order('sort_order', ascending: true)
+          .limit(limit);
+      return response
+          .map((row) => Map<String, dynamic>.from(row))
+          .toList(growable: false);
+    }
+
+    final groups = await Future.wait([
+      readLocation('hero'),
+      readLocation('inline'),
+    ]);
+    final fetched = groups.expand((rows) => rows).toList(growable: false);
 
     final now = DateTime.now().toUtc();
     final rows = fetched.where((r) {

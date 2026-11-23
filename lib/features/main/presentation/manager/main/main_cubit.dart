@@ -28,7 +28,13 @@ class MainCubit extends Cubit<MainState> {
   /// التبويب الابتدائي يُعدّ مزورًا في المقابلة من اللحظة الأولى، وإلا رسم
   /// الهيكل خانة فارغة والشريط مُبرزًا التبويب — وهي الشاشة البيضاء التي
   /// ظهرت في محاكي المحرّر لصفحة التصنيفات.
-  MainCubit() : super(MainState(index: initialTab, visited: {0, initialTab}));
+  MainCubit({int? initialTab}) : super(_initialState(initialTab));
+
+  static MainState _initialState(int? requestedTab) {
+    final tab = requestedTab ?? initialTab;
+    final safeTab = tab >= 0 && tab < MainTab.values.length ? tab : 0;
+    return MainState(index: safeTab, visited: {0, safeTab});
+  }
 
   void changeTab(int index) {
     if (index == state.index) return;

@@ -11,6 +11,7 @@ import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_metrics_
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_program_card.dart';
 import 'package:admin_app/shared/widgets/admin_inline_error.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
+import 'package:admin_app/shared/widgets/admin_directory_page_layout.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/custom_btn.dart';
@@ -39,13 +40,13 @@ class LoyaltyPageBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return AdminPageFrame(
       child: LayoutBuilder(
-        builder: (context, constraints) {
+        builder: (context, _) {
           // Phones cannot fit the header, metrics, rule card and a usable
           // directory at once, so the whole page scrolls and the directory
           // keeps a bounded height for its own lists.
           // السكرول على الصفحة كاملة: الترويسة والبطاقات والقائمة تتحرك
           // معًا، والقائمة تأخذ ارتفاعًا متجاوبًا مع مساحة الشاشة.
-          final directoryHeight = (constraints.maxHeight - 360).clamp(480.0, 840.0);
+
           final sections = <Widget>[
             AdminPageHeader(
               title: S.loyalty,
@@ -76,18 +77,7 @@ class LoyaltyPageBody extends StatelessWidget {
             ),
             const SizedBox(height: AppSizes.px16),
           ];
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ...sections,
-                  SizedBox(
-                    height: directoryHeight,
-                    child: directory,
-                  ),
-                ],
-              ),
-            );
+            return AdminDirectoryPageLayout(sections: sections, directory: directory);
         },
       ),
     );

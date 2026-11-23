@@ -4,7 +4,7 @@
 // without sending anything: the store, the provider and the environment are
 // injected.
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { sendEmail, type ResendEmail } from "../_shared/resend.ts";
+import { sendEmail, type BrevoEmail } from "../_shared/brevo.ts";
 import {
   deliverEmail,
   emailContentOf,
@@ -94,16 +94,16 @@ function makeDeps(
   store: FakeStore,
   options: {
     env?: Record<string, string>;
-    send?: (apiKey: string, email: ResendEmail) => Promise<{ ok: boolean; id?: string; error?: string }>;
+    send?: (apiKey: string, email: BrevoEmail) => Promise<{ ok: boolean; id?: string; error?: string }>;
   } = {},
-): EmailDeps & { sent: ResendEmail[]; keys: string[] } {
+): EmailDeps & { sent: BrevoEmail[]; keys: string[] } {
   const envValues: Record<string, string> = {
-    RESEND_API_KEY: "re_secret",
+    BREVO_API_KEY: "brevo_secret",
     EMAIL_FROM: "New Coffee <mail@example.com>",
     EMAIL_WEBHOOK_SECRET: "webhook-secret",
     ...options.env,
   };
-  const sent: ResendEmail[] = [];
+  const sent: BrevoEmail[] = [];
   const keys: string[] = [];
   return {
     sent,
@@ -116,7 +116,7 @@ function makeDeps(
       sent.push(email);
       return options.send
         ? options.send(apiKey, email)
-        : Promise.resolve({ ok: true, id: "resend-id" });
+        : Promise.resolve({ ok: true, id: "brevo-id" });
     },
     unsubscribeToken: unsubscribeTokenFor,
   };
@@ -243,7 +243,7 @@ Deno.test("an unconfigured provider is a recorded failure, not a crash", async (
   const store = makeStore();
   const result = await deliverEmail(
     makeNotification(),
-    makeDeps(store, { env: { RESEND_API_KEY: "", EMAIL_FROM: "" } }),
+    makeDeps(store, { env: { BREVO_API_KEY: "", EMAIL_FROM: "" } }),
     FUNCTION_URL,
   );
   assertEquals(result.reason, "email_not_configured");
@@ -256,13 +256,13 @@ Deno.test("a provider refusal is stored with its reason", async () => {
   const result = await deliverEmail(
     makeNotification(),
     makeDeps(store, {
-      send: () => Promise.resolve({ ok: false, error: "resend 422: invalid sender" }),
+      send: () => Promise.resolve({ ok: false, error: "brevo 422: invalid sender" }),
     }),
     FUNCTION_URL,
   );
   assertEquals(result.failed, 1);
   assertEquals(store.deliveries[0]?.status, "failed");
-  assertEquals(store.deliveries[0]?.error, "resend 422: invalid sender");
+  assertEquals(store.deliveries[0]?.error, "brevo 422: invalid sender");
 });
 
 Deno.test("the request route checks the shared secret", async () => {
@@ -375,10 +375,10 @@ Deno.test("a missing secret refuses every unsubscribe click", async () => {
   assertEquals(store.disabled, []);
 });
 
-Deno.test("the provider call is one JSON POST with the key only in the bearer header", async () => {
+Deno.test("the Brevo provider call sends one transactional email with the key in its API header", async () => {
   const calls: { url: string; init: RequestInit }[] = [];
   const result = await sendEmail(
-    "re_secret",
+    "brevo_secret",
     {
       from: "New Coffee <mail@example.com>",
       to: "customer@example.com",
@@ -389,15 +389,19 @@ Deno.test("the provider call is one JSON POST with the key only in the bearer he
     (input, init) => {
       calls.push({ url: String(input), init: init ?? {} });
       return Promise.resolve(
-        new Response(JSON.stringify({ id: "resend-id" }), { status: 200 }),
+        new Response(JSON.stringify({ messageId: "brevo-id" }), { status: 201 }),
       );
     },
   );
-  assertEquals(result, { ok: true, id: "resend-id" });
-  assertEquals(calls[0].url, "https://api.resend.com/emails");
+  assertEquals(result, { ok: true, id: "brevo-id" });
+  assertEquals(calls[0].url, "https://api.brevo.com/v3/smtp/email");
   const headers = calls[0].init.headers as Record<string, string>;
-  assertEquals(headers.Authorization, "Bearer re_secret");
-  assertEquals(JSON.parse(String(calls[0].init.body)).to, ["customer@example.com"]);
+  assertEquals(headers["api-key"], "brevo_secret");
+  const requestBody = JSON.parse(String(calls[0].init.body));
+  assertEquals(requestBody.sender, { name: "New Coffee", email: "mail@example.com" });
+  assertEquals(requestBody.to, [{ email: "customer@example.com" }]);
+  assertEquals(requestBody.textContent, "ready");
+  assertEquals(requestBody.htmlContent, "<p>ready</p>");
 });
 
 Deno.test("a provider error keeps a short description of its own", async () => {
@@ -407,7 +411,7 @@ Deno.test("a provider error keeps a short description of its own", async () => {
     extra: "x".repeat(500),
   });
   const result = await sendEmail(
-    "re_secret",
+    "brevo_secret",
     {
       from: "a@example.com",
       to: "b@example.com",
@@ -420,16 +424,16 @@ Deno.test("a provider error keeps a short description of its own", async () => {
   assertEquals(result.ok, false);
   assertEquals(
     result.error,
-    "resend 422: validation_error: the sending domain is not verified",
+    "brevo 422: validation_error: the sending domain is not verified",
   );
 });
 
 Deno.test("a body that is not json still gives a bounded reason", async () => {
   const result = await sendEmail(
-    "re_secret",
+    "brevo_secret",
     { from: "a@example.com", to: "b@example.com", subject: "s", text: "t", html: "h" },
     () => Promise.resolve(new Response("<html>502</html>".repeat(30), { status: 502 })),
   );
   assertEquals(result.ok, false);
-  assertEquals(result.error!.length <= "resend 502: ".length + 200, true);
+  assertEquals(result.error!.length <= "brevo 502: ".length + 200, true);
 });

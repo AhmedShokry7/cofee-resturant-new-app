@@ -7,6 +7,7 @@ import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/data/model/auth_form_rules.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
+import 'package:new_coffee/features/auth/presentation/views/email_otp_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_design.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_social_login.dart';
@@ -92,10 +93,12 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                     message: state.message,
                   );
                 } else if (state is AuthEmailConfirmationRequired) {
-                  AuthMessageDialog.show(
-                    context,
-                    type: AuthMessageType.info,
-                    message: S.signUpEmailVerification,
+                  Navigator.of(context).pushReplacementNamed(
+                    EmailOtpPage.routeName,
+                    arguments: EmailOtpPageArgs(
+                      email: _emailController.text.trim(),
+                      isSignupConfirmation: true,
+                    ),
                   );
                 } else if (state is AuthSuccess) {
                   _onAuthenticated();
@@ -141,6 +144,7 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                         ),
                       SizedBox(height: AuthSpacings.headerGap),
                       CustomTextFormField(
+                        showFocusTint: false,
                         controller: _nameController,
                         hint: S.nameHint,
                         icon: AppIcons.user,
@@ -149,6 +153,7 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                         validator: AuthFormRules.name,
                       ),
                       CustomTextFormField(
+                        showFocusTint: false,
                         controller: _emailController,
                         hint: S.emailHint,
                         icon: AppIcons.mail,
@@ -157,6 +162,7 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                         validator: AuthFormRules.email,
                       ),
                       CustomTextFormField(
+                        showFocusTint: false,
                         controller: _passwordController,
                         hint: S.passwordHint,
                         icon: AppIcons.password,
@@ -165,6 +171,7 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                         validator: AuthFormRules.newPassword,
                       ),
                       CustomTextFormField(
+                        showFocusTint: false,
                         controller: _confirmPasswordController,
                         hint: S.confirmPasswordHint,
                         icon: AppIcons.password,

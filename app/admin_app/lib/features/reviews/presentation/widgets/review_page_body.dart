@@ -8,6 +8,7 @@ import 'package:admin_app/features/reviews/presentation/widgets/review_metrics_c
 import 'package:admin_app/features/reviews/presentation/widgets/review_rating_summary.dart';
 import 'package:admin_app/shared/widgets/admin_inline_error.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
+import 'package:admin_app/shared/widgets/admin_directory_page_layout.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
 import 'package:admin_app/shared/widgets/admin_read_only_hint.dart';
 
@@ -35,10 +36,10 @@ class ReviewPageBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return AdminPageFrame(
       child: LayoutBuilder(
-        builder: (context, constraints) {
+        builder: (context, _) {
           // السكرول على الصفحة كاملة: الترويسة والبطاقات والقائمة تتحرك
           // معًا، والقائمة تأخذ ارتفاعًا متجاوبًا مع مساحة الشاشة.
-          final directoryHeight = (constraints.maxHeight - 360).clamp(480.0, 840.0);
+
           final sections = <Widget>[
             AdminPageHeader(
               title: S.reviews,
@@ -59,18 +60,7 @@ class ReviewPageBody extends StatelessWidget {
             ),
             const SizedBox(height: AppSizes.px14),
           ];
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ...sections,
-                  SizedBox(
-                    height: directoryHeight,
-                    child: directory,
-                  ),
-                ],
-              ),
-            );
+            return AdminDirectoryPageLayout(sections: sections, directory: directory);
         },
       ),
     );

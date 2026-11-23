@@ -89,6 +89,7 @@ class _ResetPasswordPageBodyState extends State<ResetPasswordPageBody> {
                     ),
                   SizedBox(height: AuthSpacings.headerGap),
                   CustomTextFormField(
+                        showFocusTint: false,
                     controller: _passwordController,
                     hint: S.newPasswordHint,
                     icon: AppIcons.password,
@@ -97,6 +98,7 @@ class _ResetPasswordPageBodyState extends State<ResetPasswordPageBody> {
                     validator: AuthFormRules.newPassword,
                   ),
                   CustomTextFormField(
+                        showFocusTint: false,
                     controller: _confirmPasswordController,
                     hint: S.confirmPasswordHint,
                     icon: AppIcons.password,

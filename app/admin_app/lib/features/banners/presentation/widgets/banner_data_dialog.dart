@@ -11,6 +11,8 @@ import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/core/catalog/catalog_data.dart';
 import 'package:admin_app/features/banners/domain/entities/admin_banner.dart';
+import 'package:admin_app/features/bundles/data/repositories/admin_bundle_repository.dart';
+import 'package:admin_app/features/bundles/domain/entities/admin_bundle.dart';
 import 'package:admin_app/features/banners/presentation/manager/admin_banner_cubit.dart';
 import 'package:admin_app/features/banners/presentation/widgets/banner_format.dart';
 import 'package:admin_app/core/models/admin_product_image.dart';
@@ -83,6 +85,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
   late final TextEditingController _targetTypeController;
   late final TextEditingController _targetIdController;
   late final TextEditingController _targetUrlController;
+  late final TextEditingController _displayLocationController;
   late final TextEditingController _sortOrderController;
 
   late final AdminBannerCubit _cubit;
@@ -93,6 +96,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
   String? _error;
   List<AdminProduct> _products = const <AdminProduct>[];
   List<AdminCategory> _categories = const <AdminCategory>[];
+  List<AdminBundle> _bundles = const <AdminBundle>[];
   bool _loadingTargets = true;
 
   /// قراءة الكتالوج رُفضت، لا أن صفوفها صفر.
@@ -121,6 +125,9 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
     );
     _targetIdController = TextEditingController(text: b?.targetId ?? '');
     _targetUrlController = TextEditingController(text: b?.targetUrl ?? '');
+    _displayLocationController = TextEditingController(
+      text: b?.displayLocation ?? 'hero',
+    );
     _sortOrderController = TextEditingController(
       text: b?.sortOrder.toString() ?? '0',
     );
@@ -142,6 +149,12 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
         _categories = snapshot.categories;
         _loadingTargets = false;
       });
+      try {
+        final bundles = await AdminBundleRepository().loadBundles();
+        if (mounted) setState(() => _bundles = bundles);
+      } catch (_) {
+        // The rest of the target pickers remain usable if bundles are offline.
+      }
     } catch (_) {
       // رفض القراءة ليس «لا منتجات»: تُقال القراءة الفاشلة ويُترك للأدمن أن
       // يعيدها، وإلا حفظ بانرًا يشير إلى منتج لم يُعرض أصلًا.
@@ -166,6 +179,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
     _targetTypeController.dispose();
     _targetIdController.dispose();
     _targetUrlController.dispose();
+    _displayLocationController.dispose();
     _sortOrderController.dispose();
     super.dispose();
   }
@@ -228,6 +242,31 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
       setState(() => _error = S.imageRequired);
       return;
     }
+    final targetType = _targetTypeController.text.trim();
+    if (const {'product', 'category', 'bundle'}.contains(targetType) &&
+        _targetIdController.text.trim().isEmpty) {
+      setState(() {
+        _error = AppLocale.instance.isArabic
+            ? '\u0627\u062e\u062a\u0631 \u0627\u0644\u0639\u0646\u0635\u0631 \u0627\u0644\u0645\u0631\u062a\u0628\u0637 \u0628\u0627\u0644\u0628\u0627\u0646\u0631.'
+            : 'Choose the item this banner should open.';
+      });
+      return;
+    }
+    if (targetType == 'url') {
+      final uri = Uri.tryParse(_targetUrlController.text.trim());
+      final validUrl =
+          uri != null &&
+          (uri.scheme == 'http' || uri.scheme == 'https') &&
+          uri.host.isNotEmpty;
+      if (!validUrl) {
+        setState(() {
+          _error = AppLocale.instance.isArabic
+              ? '\u0623\u062f\u062e\u0644 \u0631\u0627\u0628\u0637\u064b\u0627 \u0635\u062d\u064a\u062d\u064b\u0627 \u064a\u0628\u062f\u0623 \u0628\u0640 https://.'
+              : 'Enter a valid http:// or https:// URL.';
+        });
+        return;
+      }
+    }
     // الترتيب يُقرأ بأرقام اللغتين، وما ليس رقمًا يُرفض بدل أن يُحفظ صفرًا
     // فيقف البانر أمام كل بانرٍ آخر بلا سبب ظاهر.
     if (sortText.isNotEmpty && sort == null) {
@@ -250,6 +289,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                   targetType: _targetTypeController.text.trim().isEmpty
                       ? 'none'
                       : _targetTypeController.text.trim(),
+                  displayLocation: _displayLocationController.text.trim(),
                 ))
             .copyWith(
               titleAr: titleAr,
@@ -282,6 +322,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
               targetUrl: _targetUrlController.text.trim().isEmpty
                   ? null
                   : _targetUrlController.text.trim(),
+              displayLocation: _displayLocationController.text.trim(),
               sortOrder: sort ?? 0,
               isPublished: _isPublished,
             );
@@ -422,6 +463,29 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
               ),
               const SizedBox(height: AppSpacing.md),
               DropdownButtonFormField<String>(
+                initialValue: bannerDisplayLocationCodes.contains(
+                  _displayLocationController.text,
+                )
+                    ? _displayLocationController.text
+                    : 'hero',
+                decoration: InputDecoration(
+                  labelText: bannerDisplayLocationTitle(),
+                ),
+                items: [
+                  for (final code in bannerDisplayLocationCodes)
+                    DropdownMenuItem(
+                      value: code,
+                      child: Text(bannerDisplayLocationLabel(code)),
+                    ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => _displayLocationController.text = value);
+                  }
+                },
+              ),
+              const SizedBox(height: AppSpacing.md),
+              DropdownButtonFormField<String>(
                 initialValue: _targetTypeController.text.isEmpty
                     ? 'none'
                     : _targetTypeController.text,
@@ -438,6 +502,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                   setState(() {
                     _targetTypeController.text = value;
                     _targetIdController.text = '';
+                    if (value != 'url') _targetUrlController.text = '';
                   });
                 },
               ),
@@ -472,11 +537,31 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                       ),
                   ],
                 ),
-              const SizedBox(height: AppSpacing.md),
-              TextField(
-                controller: _targetUrlController,
-                decoration: InputDecoration(labelText: S.targetUrl),
-              ),
+              if (_targetTypeController.text == 'bundle')
+                _targetPicker(
+                  label: S.targetBundle,
+                  emptyLabel: S.noBundlesFound,
+                  failedLabel: S.noBundlesFound,
+                  items: [
+                    for (final bundle in _bundles.where(
+                      (item) => item.isActive,
+                    ))
+                      DropdownMenuItem(
+                        value: bundle.id,
+                        child: Text(
+                          bundle.nameFor(AppLocale.instance.language),
+                        ),
+                      ),
+                  ],
+                ),
+              if (_targetTypeController.text == 'url') ...[
+                const SizedBox(height: AppSpacing.md),
+                TextField(
+                  controller: _targetUrlController,
+                  decoration: InputDecoration(labelText: S.targetUrl),
+                  keyboardType: TextInputType.url,
+                ),
+              ],
               const SizedBox(height: AppSpacing.md),
               TextField(
                 controller: _sortOrderController,
@@ -551,10 +636,13 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
         ],
       );
     }
+    final selectedId = items.any(
+      (item) => item.value == _targetIdController.text,
+    )
+        ? _targetIdController.text
+        : null;
     return DropdownButtonFormField<String>(
-      initialValue: _targetIdController.text.isEmpty
-          ? null
-          : _targetIdController.text,
+      initialValue: selectedId,
       decoration: InputDecoration(labelText: label),
       items: items,
       onChanged: (value) {

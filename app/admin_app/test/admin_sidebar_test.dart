@@ -170,6 +170,7 @@ void main() {
       ids,
       containsAll(<String>[
         'dashboard',
+        'reports',
         'orders',
         'pos',
         'kitchen',

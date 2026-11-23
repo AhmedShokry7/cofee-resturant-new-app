@@ -127,27 +127,97 @@ String? notificationCustomerInitial(AdminNotification notification) {
   return name.substring(0, 1).toUpperCase();
 }
 
-String notificationDestinationLabel(AdminNotificationDestination destination) =>
-    switch (destination) {
-      AdminNotificationDestination.none => S.notificationsDestinationNone,
-      AdminNotificationDestination.offers => S.notificationsDestinationOffers,
-      AdminNotificationDestination.orders => S.notificationsDestinationOrders,
-      AdminNotificationDestination.loyalty => S.notificationsDestinationLoyalty,
-      AdminNotificationDestination.subscription =>
-        S.notificationsDestinationSubscription,
-      AdminNotificationDestination.notifications =>
-        S.notificationsDestinationNotifications,
-    };
+String notificationDestinationLabel(
+  AdminNotificationDestination destination,
+) => switch (destination) {
+  AdminNotificationDestination.none => _destinationCopy(
+    '\u0627\u0644\u0635\u0641\u062d\u0629 \u0627\u0644\u0627\u0641\u062a\u0631\u0627\u0636\u064a\u0629 \u062d\u0633\u0628 \u0646\u0648\u0639 \u0627\u0644\u0625\u0634\u0639\u0627\u0631',
+    'Use the default for the notification type',
+  ),
+  AdminNotificationDestination.home => _destinationCopy(
+    '\u0627\u0644\u0635\u0641\u062d\u0629 \u0627\u0644\u0631\u0626\u064a\u0633\u064a\u0629',
+    'Home',
+  ),
+  AdminNotificationDestination.categories => _destinationCopy(
+    '\u0627\u0644\u062a\u0635\u0646\u064a\u0641\u0627\u062a',
+    'Categories',
+  ),
+  AdminNotificationDestination.search => _destinationCopy(
+    '\u0627\u0644\u0628\u062d\u062b',
+    'Search',
+  ),
+  AdminNotificationDestination.cart => _destinationCopy(
+    '\u0633\u0644\u0629 \u0627\u0644\u0645\u0634\u062a\u0631\u064a\u0627\u062a',
+    'Cart',
+  ),
+  AdminNotificationDestination.favorites => _destinationCopy(
+    '\u0627\u0644\u0645\u0641\u0636\u0644\u0629',
+    'Favorites',
+  ),
+  AdminNotificationDestination.settings => _destinationCopy(
+    '\u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a',
+    'Settings',
+  ),
+  AdminNotificationDestination.offers => _destinationCopy(
+    '\u0627\u0644\u0639\u0631\u0648\u0636 \u0648\u0627\u0644\u0643\u0648\u0628\u0648\u0646\u0627\u062a',
+    'Offers and coupons',
+  ),
+  AdminNotificationDestination.orders => _destinationCopy(
+    '\u0637\u0644\u0628\u0627\u062a\u064a',
+    'My orders',
+  ),
+  AdminNotificationDestination.loyalty => _destinationCopy(
+    '\u0627\u0644\u0648\u0644\u0627\u0621 \u0648\u0627\u0644\u0646\u0642\u0627\u0637',
+    'Loyalty and points',
+  ),
+  AdminNotificationDestination.subscription => _destinationCopy(
+    '\u0627\u0634\u062a\u0631\u0627\u0643\u064a',
+    'My subscription',
+  ),
+  AdminNotificationDestination.notifications => _destinationCopy(
+    '\u0625\u0634\u0639\u0627\u0631\u0627\u062a\u064a',
+    'My notifications',
+  ),
+  AdminNotificationDestination.notificationSettings => _destinationCopy(
+    '\u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062a',
+    'Notification settings',
+  ),
+  AdminNotificationDestination.help => _destinationCopy(
+    '\u0627\u0644\u0645\u0633\u0627\u0639\u062f\u0629',
+    'Help center',
+  ),
+  AdminNotificationDestination.account => _destinationCopy(
+    '\u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u062d\u0633\u0627\u0628',
+    'Account details',
+  ),
+  AdminNotificationDestination.addresses => _destinationCopy(
+    '\u0639\u0646\u0627\u0648\u064a\u0646\u064a',
+    'My addresses',
+  ),
+};
+
+String _destinationCopy(String arabic, String english) =>
+    AppLocale.instance.isArabic ? arabic : english;
 
 IconData notificationDestinationIcon(
   AdminNotificationDestination destination,
 ) => switch (destination) {
   AdminNotificationDestination.none => AppIcons.cancel01,
+  AdminNotificationDestination.home => AppIcons.home01,
+  AdminNotificationDestination.categories => AppIcons.gridView,
+  AdminNotificationDestination.search => AppIcons.search01,
+  AdminNotificationDestination.cart => AppIcons.shoppingCart01,
+  AdminNotificationDestination.favorites => AppIcons.star,
+  AdminNotificationDestination.settings => AppIcons.settings01,
   AdminNotificationDestination.offers => AppIcons.promotion,
   AdminNotificationDestination.orders => AppIcons.shoppingBag01,
   AdminNotificationDestination.loyalty => AppIcons.gift,
   AdminNotificationDestination.subscription => AppIcons.repeat,
   AdminNotificationDestination.notifications => AppIcons.notification01,
+  AdminNotificationDestination.notificationSettings => AppIcons.settings01,
+  AdminNotificationDestination.help => AppIcons.informationCircle,
+  AdminNotificationDestination.account => AppIcons.user,
+  AdminNotificationDestination.addresses => AppIcons.location01,
 };
 
 String notificationAudienceLabel(AdminNotificationAudience? audience) =>

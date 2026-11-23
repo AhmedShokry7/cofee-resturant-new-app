@@ -51,18 +51,22 @@ class HomeState {
   /// found nothing.
   bool get isFirstLoad => isLoading && hasNoContent;
 
-  /// The banner for the single promo slot below the categories: the second
-  /// published one, so the slot does not repeat the slide the carousel opens on.
+  /// The banner assigned to the independent in-page promotion slot.
   BannerModel? get promoBanner {
-    if (banners.length < 2) return null;
-    return banners[1];
+    for (final banner in banners) {
+      if (banner.placement == BannerPlacement.inline) return banner;
+    }
+    return null;
   }
 
   /// البانر الترويجي عند فهرس من مستند التصميم، أو null لما لا وجود له.
-  /// الفهرس ١ يعني الثاني كما كان فعلًا؛ لا يُخمَّن بانر منتهيًا.
+  /// The index is relative to inline banners only.
   BannerModel? promoBannerAt(int index) {
-    if (index < 0 || index >= banners.length) return null;
-    return banners[index];
+    final inlineBanners = banners
+        .where((banner) => banner.placement == BannerPlacement.inline)
+        .toList(growable: false);
+    if (index < 0 || index >= inlineBanners.length) return null;
+    return inlineBanners[index];
   }
 
   /// Category slugs that suit a hot day, and those that suit a cold one.

@@ -31,10 +31,10 @@ class DesignPageSectionsAbove extends StatelessWidget {
     final sections = context.select(
       (DesignCubit cubit) => cubit.state.pageSections(pageId),
     );
-    // Favorites already renders its own saved-product grid. Old published
-    // editor defaults may still contain a generic grid; rendering both creates
-    // a tall, unbounded column that pushes the actual favorites page offscreen.
-    final pageSections = pageId == 'favourites'
+    // Favorites renders its own saved-product grid, and search must open on its
+    // search field rather than on a generic product shelf. Old published
+    // editor defaults can still contain a generic grid for either page.
+    final pageSections = pageId == 'favourites' || pageId == 'search'
         ? sections
               .where((section) => section.type != DesignWidgetTypes.productGrid)
               .toList(growable: false)
@@ -48,6 +48,31 @@ class DesignPageSectionsAbove extends StatelessWidget {
         ? child
         : body.visible ? DesignSectionChrome(section: body, child: child) : const SizedBox.shrink();
     if (built.isEmpty) return content;
+    // Other published sections may be tall. Keep the search UI usable and let
+    // them scroll within a bounded area.
+    if (pageId == 'search') {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final maxSectionHeight = constraints.maxHeight.isFinite
+              ? constraints.maxHeight * 0.35
+              : 280.0;
+          return Column(
+            children: [
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: maxSectionHeight),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: built,
+                  ),
+                ),
+              ),
+              Expanded(child: content),
+            ],
+          );
+        },
+      );
+    }
     return Column(
       children: [
         ...built,

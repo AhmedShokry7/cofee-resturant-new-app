@@ -61,47 +61,59 @@ class _OrderPageBodyState extends State<OrderPageBody> {
         builder: (context, constraints) {
           // السكرول على الصفحة كاملة: الترويسة والبطاقات والدليل تتحرك
           // معًا، والدليل يأخذ ارتفاعًا متجاوبًا مع مساحة الشاشة.
-          final directoryHeight = (constraints.maxHeight - 360).clamp(480.0, 840.0);
-          return SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const OrderPageHeader(),
-                if (widget.errorMessage != null)
-                  AdminInlineError(
-                    message: widget.errorMessage!,
-                    onRetry: widget.onRefresh,
-                    retryLabel: S.ordersRetry,
-                  ),
-                const SizedBox(height: AppSizes.px8),
-                OrderSummaryCards(
-                  orders: widget.orders,
-                  branchId: _filters.branchId,
-                ),
-                const SizedBox(height: AppSizes.px16),
-                SizedBox(
-                  height: directoryHeight,
-                  child: RefreshIndicator(
-                    onRefresh: widget.onRefresh,
-                    child: OrderDirectory(
-                      orders: widget.orders,
-                      branches: widget.branches,
-                      search: widget.search,
-                      canManage: widget.canManage,
-                      onSearchChanged: widget.onSearchChanged,
-                      filters: _filters,
-                      onFiltersChanged: (value) =>
-                          setState(() => _filters = value),
-                      onChangeStatus: widget.onChangeStatus,
-                      statusRules: widget.statusRules,
-                      onOpen: widget.onOpen,
-                      onExport: widget.onExport,
-                      exporting: widget.exporting,
-                    ),
-                  ),
-                ),
-              ],
+          final header = <Widget>[
+            const OrderPageHeader(),
+            if (widget.errorMessage != null)
+              AdminInlineError(
+                message: widget.errorMessage!,
+                onRetry: widget.onRefresh,
+                retryLabel: S.ordersRetry,
+              ),
+            const SizedBox(height: AppSizes.px8),
+            OrderSummaryCards(
+              orders: widget.orders,
+              branchId: _filters.branchId,
             ),
+            const SizedBox(height: AppSizes.px16),
+          ];
+          final directory = RefreshIndicator(
+            onRefresh: widget.onRefresh,
+            child: OrderDirectory(
+              orders: widget.orders,
+              branches: widget.branches,
+              search: widget.search,
+              canManage: widget.canManage,
+              onSearchChanged: widget.onSearchChanged,
+              filters: _filters,
+              onFiltersChanged: (value) => setState(() => _filters = value),
+              onChangeStatus: widget.onChangeStatus,
+              statusRules: widget.statusRules,
+              onOpen: widget.onOpen,
+              onExport: widget.onExport,
+              exporting: widget.exporting,
+            ),
+          );
+
+          // On shorter screens the header and summary need to scroll with the
+          // directory. On desktop the directory takes every remaining pixel.
+          if (constraints.maxHeight < 720) {
+            final directoryHeight = (constraints.maxHeight - 240)
+                .clamp(420.0, 840.0)
+                .toDouble();
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ...header,
+                  SizedBox(height: directoryHeight, child: directory),
+                ],
+              ),
+            );
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [...header, Expanded(child: directory)],
           );
         },
       ),

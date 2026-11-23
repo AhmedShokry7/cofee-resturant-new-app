@@ -80,11 +80,12 @@ class _PromoCodeFieldState extends State<PromoCodeField> {
                 controller: widget.controller,
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => widget.onApply(),
-                style: AppFonts.regular14(context),
+                style: AppFonts.regular14(context)
+                    .copyWith(color: AppColor.inputTextColor),
                 decoration: InputDecoration(
                   hintText: S.promoCode,
                   hintStyle: AppFonts.regular14(context)
-                      .copyWith(color: AppColor.greyColor),
+                      .copyWith(color: AppColor.inputTextColor),
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: AppSpacing.lg,
                     vertical: AppSpacing.sm,

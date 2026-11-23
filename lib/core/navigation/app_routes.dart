@@ -48,33 +48,58 @@ class AppRoutes {
     ResetPasswordPage.routeName: (context) => const ResetPasswordPage(),
     PhoneAuthPage.routeName: (context) => const PhoneAuthPage(),
     EmailAuthPage.routeName: (context) => const EmailAuthPage(),
-    MainPage.routeName: (context) => const MainPage(),
-    CheckoutPage.routeName: (context) => _designable('checkout', const CheckoutPage()),
-    ShippingAddressesPage.routeName: (context) => _designable('shipping_addresses', const ShippingAddressesPage()),
-    AddAddressPage.routeName: (context) => _designable('add_address', const AddAddressPage()),
-    PaymentMethodPage.routeName: (context) => _designable('payment_method', const PaymentMethodPage()),
-    AddCardPage.routeName: (context) => _designable('add_card', const AddCardPage()),
-    PaymentSuccessPage.routeName: (context) => _designable('payment_success', const PaymentSuccessPage()),
-    EReceiptPage.routeName: (context) => _designable('e_receipt', const EReceiptPage()),
-    CouponPage.routeName: (context) => _designable('coupon', const CouponPage()),
-    LoyaltyPage.routeName: (context) => _designable('loyalty', const LoyaltyPage()),
-    OrdersPage.routeName: (context) => _designable('orders', const OrdersPage()),
-    EditProfilePage.routeName: (context) => _designable('edit_profile', const EditProfilePage()),
-    SavedCardsPage.routeName: (context) => _designable('saved_cards', const SavedCardsPage()),
+    MainPage.routeName: (context) => MainPage(
+      initialTab: MainPage.notificationTabIndex(
+        ModalRoute.of(context)?.settings.arguments,
+      ),
+    ),
+    CheckoutPage.routeName: (context) =>
+        _designable('checkout', const CheckoutPage()),
+    ShippingAddressesPage.routeName: (context) =>
+        _designable('shipping_addresses', const ShippingAddressesPage()),
+    AddAddressPage.routeName: (context) =>
+        _designable('add_address', const AddAddressPage()),
+    PaymentMethodPage.routeName: (context) =>
+        _designable('payment_method', const PaymentMethodPage()),
+    AddCardPage.routeName: (context) =>
+        _designable('add_card', const AddCardPage()),
+    PaymentSuccessPage.routeName: (context) =>
+        _designable('payment_success', const PaymentSuccessPage()),
+    EReceiptPage.routeName: (context) =>
+        _designable('e_receipt', const EReceiptPage()),
+    CouponPage.routeName: (context) =>
+        _designable('coupon', const CouponPage()),
+    LoyaltyPage.routeName: (context) =>
+        _designable('loyalty', const LoyaltyPage()),
+    OrdersPage.routeName: (context) =>
+        _designable('orders', const OrdersPage()),
+    EditProfilePage.routeName: (context) =>
+        _designable('edit_profile', const EditProfilePage()),
+    SavedCardsPage.routeName: (context) =>
+        _designable('saved_cards', const SavedCardsPage()),
     HelpPage.routeName: (context) => _designable('help', const HelpPage()),
-    PrivacyPolicyPage.routeName: (context) => _designable('privacy', const PrivacyPolicyPage()),
-    NotificationsPage.routeName: (context) => _designable('notifications', const NotificationsPage()),
+    PrivacyPolicyPage.routeName: (context) =>
+        _designable('privacy', const PrivacyPolicyPage()),
+    NotificationsPage.routeName: (context) =>
+        _designable('notifications', const NotificationsPage()),
     NotificationSettingsPage.routeName: (context) =>
         _designable('notification_settings', const NotificationSettingsPage()),
-    SearchPage.routeName: (context) => _designable('search', const SearchPage()),
-    AddressesPage.routeName: (context) => _designable('addresses', const AddressesPage()),
-    AddressFormPage.routeName: (context) => _designable('address_form', const AddressFormPage()),
-    AssistantMemoryPage.routeName: (context) => _designable('assistant_memory', const AssistantMemoryPage()),
-    SubscriptionPlansPage.routeName: (context) => _designable('subscription_plans', const SubscriptionPlansPage()),
+    SearchPage.routeName: (context) =>
+        _designable('search', const SearchPage()),
+    AddressesPage.routeName: (context) =>
+        _designable('addresses', const AddressesPage()),
+    AddressFormPage.routeName: (context) =>
+        _designable('address_form', const AddressFormPage()),
+    AssistantMemoryPage.routeName: (context) =>
+        _designable('assistant_memory', const AssistantMemoryPage()),
+    SubscriptionPlansPage.routeName: (context) =>
+        _designable('subscription_plans', const SubscriptionPlansPage()),
     SubscriptionDetailsPage.routeName: (context) =>
         _designable('subscription_details', const SubscriptionDetailsPage()),
-    CashierSubscriptionConsumePage.routeName: (context) =>
-        _designable('cashier_subscription', const CashierSubscriptionConsumePage()),
+    CashierSubscriptionConsumePage.routeName: (context) => _designable(
+      'cashier_subscription',
+      const CashierSubscriptionConsumePage(),
+    ),
   };
 
   static Widget _designable(String pageId, Widget child) =>

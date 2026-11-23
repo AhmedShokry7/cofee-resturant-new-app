@@ -139,12 +139,10 @@ class PushService {
 
       // ignore: deprecated_member_use
       final token = await FirebaseMessaging.instance.getToken();
-      if (token != null && token.isNotEmpty) {
-        _token = token;
-        await _registerToken(token, pushRepository);
-      }
-      await pushRepository.setPushEnabled(true);
-      return true;
+      if (token == null || token.isEmpty) return false;
+      _token = token;
+      if (!await _registerToken(token, pushRepository)) return false;
+      return await pushRepository.setPushEnabled(true);
     } catch (error) {
       if (kDebugMode) {
         debugPrint('[PushService] setEnabled failed: $error');
@@ -210,7 +208,7 @@ class PushService {
       _tokenSubscription = FirebaseMessaging.instance.onTokenRefresh.listen((
         token,
       ) {
-        unawaited(_registerToken(token, pushRepository));
+        unawaited(_registerToken(token, pushRepository).then<void>((_) {}));
       });
 
       // A message that opened the app from a cold start.
@@ -289,16 +287,33 @@ class PushService {
   /// The customer explicitly grants notification permission from the settings
   /// screen; logging in must never unexpectedly open an OS permission dialog.
   static Future<void> _enable(PushRepository repository) async {
+    await syncGrantedPermission(repository);
+  }
+
+  /// Reconciles the in-app switch with a permission the customer has already
+  /// granted in Android or iOS settings. Call before showing the saved switch,
+  /// so an accepted system permission is reflected immediately in the app.
+  /// A previous in-app choice to turn notifications off is always respected.
+  @visibleForTesting
+  static Future<void> syncGrantedPermission(PushRepository repository) async {
+    if (defaultTargetPlatform != TargetPlatform.android &&
+        defaultTargetPlatform != TargetPlatform.iOS) {
+      return;
+    }
     try {
+      final preferences = await repository.preferences();
       final settings = await FirebaseMessaging.instance
           .getNotificationSettings();
       final granted =
           settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional;
       if (!granted) {
-        // Android can revoke POST_NOTIFICATIONS in system settings while the
-        // stored customer preference stays on. Reconcile it at next startup.
-        await repository.setPushEnabled(false);
+        // Reconcile a previously enabled channel if Android/iOS permission was
+        // revoked. Do not create a "chosen" row for a customer who never opted
+        // in, so the app can still offer its in-app permission switch.
+        if (preferences.pushEnabled) {
+          await repository.setPushEnabled(false);
+        }
         return;
       }
 
@@ -306,7 +321,7 @@ class PushService {
       final token = await FirebaseMessaging.instance.getToken();
       if (token == null || token.isEmpty) return;
       _token = token;
-      await _registerToken(token, repository);
+      if (!await _registerToken(token, repository)) return;
       await adoptGrantedPush(repository);
     } catch (error) {
       if (kDebugMode) {
@@ -338,7 +353,7 @@ class PushService {
     }
   }
 
-  static Future<void> _registerToken(
+  static Future<bool> _registerToken(
     String token,
     PushRepository repository,
   ) async {
@@ -349,10 +364,12 @@ class PushService {
         appVersion: AppVersion.current,
         locale: AppLocale.instance.isArabic ? 'ar' : 'en',
       );
+      return true;
     } catch (error) {
       if (kDebugMode) {
         debugPrint('[PushService] register failed: $error');
       }
+      return false;
     }
   }
 }

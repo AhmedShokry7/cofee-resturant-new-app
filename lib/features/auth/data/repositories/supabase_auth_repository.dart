@@ -12,6 +12,7 @@ import 'package:new_coffee/features/auth/data/model/auth_exception.dart';
 import 'package:new_coffee/features/auth/data/model/auth_form_rules.dart';
 import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
+import 'package:new_coffee/features/auth/data/repositories/signup_email_otp_repository.dart';
 import 'package:new_coffee/features/notifications/data/services/push_service.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 // The Supabase SDK ships its own AuthUser and AuthException. This layer deals
@@ -27,7 +28,8 @@ import 'package:supabase_flutter/supabase_flutter.dart'
 ///
 /// Every method verifies the caller's intent against the server. No method
 /// invents a user, and no method accepts an identity the server did not issue.
-class SupabaseAuthRepository implements AuthRepository {
+class SupabaseAuthRepository
+    implements AuthRepository, SignupEmailOtpRepository {
   /// [recoverySessionWait] is how long the reset screen waits for the emailed
   /// link; it is a parameter only so a test can prove the wait runs out
   /// without spending twenty seconds doing it.
@@ -759,6 +761,22 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> resendSignupConfirmationCode({required String email}) async {
+    _guard;
+    final address = email.trim();
+    if (AuthFormRules.email(address) != null) {
+      throw const AuthException('invalid email');
+    }
+    try {
+      await _client.auth.resend(type: OtpType.signup, email: address);
+    } on AuthException {
+      rethrow;
+    } catch (error) {
+      throw AuthException(_mapAuthError(error));
+    }
+  }
+
+  @override
   Future<AuthUser> verifyEmailCode({
     required String email,
     required String code,
@@ -780,6 +798,37 @@ class SupabaseAuthRepository implements AuthRepository {
       }
       // The same refusal the phone and Google paths apply: an address that
       // belongs to staff has no customer row.
+      await _requireCustomerAccount(user.id);
+      final domain = _toDomain(user);
+      await _cacheProfile(domain);
+      return domain;
+    } on AuthException {
+      rethrow;
+    } catch (error) {
+      throw AuthException(_mapAuthError(error));
+    }
+  }
+
+  @override
+  Future<AuthUser> verifySignupEmailCode({
+    required String email,
+    required String code,
+  }) async {
+    _guard;
+    final address = email.trim();
+    if (AuthFormRules.email(address) != null) {
+      throw const AuthException('invalid email');
+    }
+    try {
+      final response = await _client.auth.verifyOTP(
+        email: address,
+        token: code.trim(),
+        type: OtpType.signup,
+      );
+      final user = response.user;
+      if (user == null) {
+        throw const AuthException('No user returned for this code.');
+      }
       await _requireCustomerAccount(user.id);
       final domain = _toDomain(user);
       await _cacheProfile(domain);

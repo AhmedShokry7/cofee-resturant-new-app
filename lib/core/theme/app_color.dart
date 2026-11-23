@@ -63,6 +63,12 @@ class AppColor {
   static Color textPrimary = textPrimaryDefault;
   static Color textSecondary = textSecondaryDefault;
 
+  /// Input text and field icons use one readable shade derived from the
+  /// database-controlled border colour, so the visual editor still controls
+  /// them from the same swatch without leaving them too faint to read.
+  static Color get inputTextColor =>
+      Color.lerp(borderColor, const Color(0xff000000), 0.35)!;
+
   /// الأصل الذي ترجع إليه الأدوار حين يلغيها مستند أو لا مستند: تُكتب مرة واحدة
   /// في هذا الملف، فلا يحفظ قارئ التصميم شاشةً ويسترجعها من ذاكرته.
   static const Color secondryDefault = Color(0xff033A58);

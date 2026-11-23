@@ -395,14 +395,14 @@ class _RoleColorRowState extends State<_RoleColorRow> {
   }
 
   /// اسم الدور بالعربية كما يراه الموظف، والمفتاح الإنجليزي تحته.
-  static const _labels = <DesignColorRole, String>{
+  static final _labels = <DesignColorRole, String>{
     DesignColorRole.primary: 'اللون الأساسي',
     DesignColorRole.secondary: 'اللون الثانوي',
     DesignColorRole.background: 'خلفية الصفحة',
     DesignColorRole.surface: 'سطح البطاقات',
     DesignColorRole.textPrimary: 'النص الرئيسي',
     DesignColorRole.textSecondary: 'النص الثانوي',
-    DesignColorRole.border: 'الحدود',
+    DesignColorRole.border: S.visualEditorBorderAndFieldText,
     DesignColorRole.success: 'النجاح',
     DesignColorRole.error: 'الخطأ',
     DesignColorRole.disabled: 'المعطّل',

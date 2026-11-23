@@ -88,7 +88,7 @@ class ForegroundPushBanners {
                   label: S.open,
                   onPressed: () => rootNavigatorKey.currentState?.pushNamed(
                     open.route,
-                    arguments: open.entityId,
+                    arguments: open.arguments,
                   ),
                 ),
         ),

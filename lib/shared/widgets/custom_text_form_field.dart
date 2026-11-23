@@ -50,6 +50,9 @@ class CustomTextFormField extends StatefulWidget {
   /// tells the customer their change was saved.
   final bool readOnly;
 
+  /// Whether focus adds a tinted fill behind the field contents.
+  final bool showFocusTint;
+
   /// A line under the field that explains a [readOnly] value or an input rule.
   final String? helper;
 
@@ -73,6 +76,7 @@ class CustomTextFormField extends StatefulWidget {
     this.inputFormatters,
     this.bottomPadding = AppSpacing.lg,
     this.readOnly = false,
+    this.showFocusTint = true,
     this.helper,
   });
 
@@ -110,7 +114,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
   Widget build(BuildContext context) {
     final borderColor = _isFocused
         ? AppColor.secondryColor
-        : AppColor.greyColor.withValues(alpha: 0.35);
+        : AppColor.borderColor;
 
     return Padding(
       padding: EdgeInsets.only(bottom: widget.bottomPadding),
@@ -127,7 +131,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
               child: Text(
                 widget.label!,
                 style: AppFonts.semiBold14(context)
-                    .copyWith(color: AppColor.secondryColor),
+                    .copyWith(color: AppColor.inputTextColor),
               ),
             ),
           ],
@@ -135,15 +139,14 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
             duration: MotionTokens.stateChange,
             curve: Curves.easeOut,
             decoration: BoxDecoration(
-              color: _isFocused
-                  ? AppColor.secondryColor.withValues(
-                      alpha: AppShadows.focusTint,
-                    )
-                  : AppColor.cardSurface,
+              color: !widget.showFocusTint
+                  ? AppColor.transparent
+                  : _isFocused
+                      ? AppColor.secondryColor.withValues(
+                          alpha: AppShadows.focusTint,
+                        )
+                      : AppColor.cardSurface,
               borderRadius: BorderRadius.circular(_fieldRadius),
-              boxShadow: _isFocused
-                  ? AppShadows.focused(AppColor.secondryColor)
-                  : const [],
             ),
             child: Focus(
               onFocusChange: (focused) {
@@ -165,16 +168,15 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                 onChanged: widget.onChanged,
                 cursorColor: AppColor.secondryColor,
                 style: AppFonts.semiBold16(context)
-                    .copyWith(color: AppColor.secondryColor),
+                    .copyWith(color: AppColor.inputTextColor),
                 decoration: InputDecoration(
                   hintText: widget.hint,
                   helperText: widget.helper,
                   helperMaxLines: _helperMaxLines,
                   helperStyle: AppFonts.regular12(context)
-                      .copyWith(color: AppColor.greyColor),
-                  hintStyle: AppFonts.semiBold14(
-                    context,
-                  ).copyWith(color: AppColor.greyColor.withValues(alpha: 0.85)),
+                      .copyWith(color: AppColor.inputTextColor),
+                  hintStyle: AppFonts.semiBold14(context)
+                      .copyWith(color: AppColor.inputTextColor),
                   prefixIcon: _buildPrefixIcon(),
                   prefixIconConstraints: const BoxConstraints(
                     minWidth: AppSpacing.xxxl,
@@ -215,7 +217,15 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
   /// One `IconTheme` covers both, so a screen handing in `Icon(AppIcons.mail)`
   /// cannot accidentally set its own size or its own grey.
   Widget? _buildPrefixIcon() {
-    final leading = widget.icon == null ? widget.prefixIcon : Icon(widget.icon);
+    // HugeIcons glyphs can carry their own default colour, so set the input
+    // colour directly as well as providing IconTheme for custom prefix widgets.
+    final leading = widget.icon == null
+        ? widget.prefixIcon
+        : Icon(
+            widget.icon,
+            color: AppColor.inputTextColor,
+            size: AppIconSize.field,
+          );
     if (leading == null) return null;
     return Padding(
       padding: EdgeInsetsDirectional.only(
@@ -224,7 +234,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
       ),
       child: IconTheme(
         data: IconThemeData(
-          color: _isFocused ? AppColor.secondryColor : AppColor.greyColor,
+          color: AppColor.inputTextColor,
           size: AppIconSize.field,
         ),
         child: leading,
@@ -242,7 +252,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
         icon: Icon(
           _isObscure ? AppIcons.viewOff : AppIcons.view,
           size: AppIconSize.field,
-          color: AppColor.greyColor,
+          color: AppColor.inputTextColor,
         ),
       );
     }

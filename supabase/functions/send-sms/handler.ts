@@ -109,7 +109,7 @@ export function parseSmsRequest(payload: unknown): SmsRequest | null {
 /// Arabic is not in the GSM-7 alphabet, so every message leaves as UCS-2 and
 /// anything past 70 characters is billed and delivered as a second part.
 export function smsTextOf(otp: string): string {
-  return `كود التحقق لتسجيل الدخول: ${otp}. لا تشاركه مع أي شخص.`;
+  return String.fromCharCode(1585,1605,1586,32,1575,1604,1578,1581,1602,1602,32,1604,1578,1587,1580,1610,1604,32,1575,1604,1583,1582,1608,1604,58,32) + otp + String.fromCharCode(46,32,1604,1575,32,1578,1588,1575,1585,1603,1607,32,1605,1593,32,1571,1610,32,1571,1581,1583,46);
 }
 
 /// Checks the signature of one hook call and returns its parsed body.
@@ -258,3 +258,4 @@ export async function handleSmsRequest(
     );
   }
 }
+
