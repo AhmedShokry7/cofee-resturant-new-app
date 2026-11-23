@@ -68,7 +68,6 @@ class AppProviders extends StatelessWidget {
   /// session. A mock that accepted any password would let a customer believe
   /// they were signed in while no account exists, so there is no mock.
   AuthRepository _buildAuthRepository() {
-    if (previewMode) return const PreviewAuthRepository();
     return ResilientAuthRepository();
   }
 

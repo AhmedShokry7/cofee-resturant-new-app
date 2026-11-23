@@ -54,7 +54,7 @@ Write-Host '▶ تشغيل لوحة التحكم على 8080…'
 # المعاينة تشير صراحةً إلى خادم العميل المحلي على 5000 — الافتراضي في الكود
 # هو النسخة المنشورة على GitHub Pages، وهذا المسار المحلي يحتاج تجاوزًا صريحًا.
 $admin = Start-Process -FilePath 'flutter' `
-  -ArgumentList 'run','--release','-d','web-server','--web-port','8080','--web-hostname','127.0.0.1','--dart-define=PREVIEW_BASE_URL=http://localhost:5000' `
+  -ArgumentList 'run','--release','-d','web-server','--web-port','8080','--web-hostname','127.0.0.1','--dart-define=PREVIEW_BASE_URL=http://127.0.0.1:5000/' `
   -WorkingDirectory (Join-Path $repoRoot 'app\admin_app') `
   -RedirectStandardOutput (Join-Path $logsDir 'admin.log') `
   -RedirectStandardError (Join-Path $logsDir 'admin.err.log') `

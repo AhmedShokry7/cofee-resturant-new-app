@@ -1,22 +1,26 @@
 // supabase/functions/tap-webhook/index.test.ts
 import { assertEquals, assert } from "jsr:@std/assert";
 import { handleRequest, mapTapStatus, roundAmount } from "./index.ts";
+import { testCustomer, testOrder } from "./fixtures.ts";
+import { hmacSha256Hex, verifyTapWebhookHash } from "../_shared/tap.ts";
+
+const TEST_SECRET = "local-only-webhook-test-secret";
 
 const charge = {
   id: "ch_123",
   amount: 100,
   currency: "SAR",
   status: "CAPTURED",
-  reference: { gateway: "gw_1", payment: "pay_1" },
+  reference: { transaction: testOrder.id, gateway: "gw_1", payment: "pay_1" },
   transaction: { created: "2026-01-01T00:00:00Z" },
   card: { brand: "Visa", last_four: "4242", name: "A Customer" },
 };
 
 const transaction = {
   provider_reference: "ch_123",
-  amount: 100,
-  currency_code: "SAR",
-  order_id: "order-1",
+  amount: testOrder.grand_total,
+  currency_code: testOrder.currency_code,
+  order_id: testOrder.id,
   subscription_id: null,
 };
 
@@ -24,10 +28,9 @@ function createDeps(overrides: {
   txRows?: any[];
   orderRows?: any[];
   subRows?: any[];
-  eventInsertFails?: boolean;
-  hash?: string;
 }) {
   const calls: { path: string; method: string; body: any }[] = [];
+  const eventIds = new Set<string>();
 
   const fetch = async (path: string, init?: any) => {
     calls.push({ path, method: init?.method ?? "GET", body: init?.body });
@@ -37,13 +40,15 @@ function createDeps(overrides: {
       return overrides.txRows ?? [transaction];
     }
     if (path.includes("payment_events")) {
-      if (overrides.eventInsertFails) throw new Error("duplicate key");
+      const eventId = JSON.parse(init?.body ?? "{}").event_id;
+      if (eventIds.has(eventId)) throw new Error("duplicate key value violates unique constraint");
+      eventIds.add(eventId);
       return [];
     }
     if (path.includes("/orders")) {
       if (init?.method === "PATCH") return [];
       return overrides.orderRows ?? [
-        { id: "order-1", grand_total: 100, currency_code: "SAR" },
+        testOrder,
       ];
     }
     if (path.includes("/subscriptions")) {
@@ -53,15 +58,18 @@ function createDeps(overrides: {
     return [];
   };
 
-  const hash = async () => overrides.hash ?? "computed-hash";
-
-  return { fetch, hash, secret: () => "secret", calls };
+  return { fetch, verifyHash: verifyTapWebhookHash, secret: () => TEST_SECRET, calls };
 }
 
-function createRequest(body: any, hash = "computed-hash"): Request {
+async function createRequest(body: any, hash?: string): Promise<Request> {
+  const currency = String(body?.currency ?? "SAR");
+  const decimals = ["BHD", "KWD", "OMR", "JOD"].includes(currency.toUpperCase()) ? 3 : 2;
+  const amount = Number(body?.amount ?? 0).toFixed(decimals);
+  const message = `x_id${body?.id ?? ""}x_amount${amount}x_currency${currency}x_gateway_reference${body?.reference?.gateway ?? ""}x_payment_reference${body?.reference?.payment ?? ""}x_status${body?.status ?? ""}x_created${body?.transaction?.created ?? body?.created ?? ""}`;
+  const signature = hash ?? await hmacSha256Hex(message, TEST_SECRET);
   return new Request("https://example.com/webhook", {
     method: "POST",
-    headers: { "Content-Type": "application/json", hashstring: hash },
+    headers: { "Content-Type": "application/json", hashstring: signature },
     body: JSON.stringify(body),
   });
 }
@@ -84,15 +92,19 @@ Deno.test("2. an invalid body is rejected", async () => {
 
 Deno.test("3. a wrong signature is rejected", async () => {
   const res = await handleRequest(
-    createRequest(charge, "wrong-hash"),
+    await createRequest(charge, "0".repeat(64)),
     createDeps({}) as any,
   );
   assertEquals(res.status, 401);
+  const deps = createDeps({});
+  await handleRequest(await createRequest(charge, "0".repeat(64)), deps as any);
+  assertEquals(deps.calls.length, 0, "invalid signatures must cause no database calls");
 });
 
 Deno.test("4. a captured event marks the order as paid", async () => {
+  assertEquals(testCustomer.email.endsWith(".invalid"), true);
   const deps = createDeps({});
-  const res = await handleRequest(createRequest(charge), deps as any);
+  const res = await handleRequest(await createRequest(charge), deps as any);
   assertEquals(res.status, 200);
   const body = await res.json();
   assertEquals(body.received, true);
@@ -107,7 +119,7 @@ Deno.test("4. a captured event marks the order as paid", async () => {
 
 Deno.test("5. the transaction is marked captured and verified", async () => {
   const deps = createDeps({});
-  await handleRequest(createRequest(charge), deps as any);
+  await handleRequest(await createRequest(charge), deps as any);
   const txPatch = deps.calls.find(
     (call) => call.method === "PATCH" && call.path.includes("payment_transactions"),
   );
@@ -121,7 +133,7 @@ Deno.test("5. the transaction is marked captured and verified", async () => {
 
 Deno.test("6. an event for an unknown charge is ignored", async () => {
   const deps = createDeps({ txRows: [] });
-  const res = await handleRequest(createRequest(charge), deps as any);
+  const res = await handleRequest(await createRequest(charge), deps as any);
   assertEquals(res.status, 200);
   const body = await res.json();
   assertEquals(body.ignored, true);
@@ -135,7 +147,7 @@ Deno.test("7. a transaction whose reference does not match is ignored", async ()
   const deps = createDeps({
     txRows: [{ ...transaction, provider_reference: "ch_other" }],
   });
-  const res = await handleRequest(createRequest(charge), deps as any);
+  const res = await handleRequest(await createRequest(charge), deps as any);
   const body = await res.json();
   assertEquals(body.ignored, true);
   assert(
@@ -146,7 +158,7 @@ Deno.test("7. a transaction whose reference does not match is ignored", async ()
 
 Deno.test("8. an amount that does not match the transaction is rejected", async () => {
   const deps = createDeps({ txRows: [{ ...transaction, amount: 50 }] });
-  const res = await handleRequest(createRequest(charge), deps as any);
+  const res = await handleRequest(await createRequest(charge), deps as any);
   const body = await res.json();
   assertEquals(body.rejected, "amount_or_currency_mismatch");
   assert(
@@ -157,17 +169,26 @@ Deno.test("8. an amount that does not match the transaction is rejected", async 
 
 Deno.test("9. an order total that does not match the charge is rejected", async () => {
   const deps = createDeps({
-    orderRows: [{ id: "order-1", grand_total: 42, currency_code: "SAR" }],
+    orderRows: [{ ...testOrder, grand_total: 42 }],
   });
-  const res = await handleRequest(createRequest(charge), deps as any);
+  const res = await handleRequest(await createRequest(charge), deps as any);
   const body = await res.json();
   assertEquals(body.rejected, "order_amount_or_currency_mismatch");
+  assert(!deps.calls.some((call) => call.method === "PATCH"));
 });
 
-Deno.test("10. a failed charge marks the order as failed", async () => {
+Deno.test("10. a charge reference cannot update a different order", async () => {
+  const deps = createDeps({ txRows: [{ ...transaction, order_id: "tap-test-order-0002" }] });
+  const res = await handleRequest(await createRequest(charge), deps as any);
+  assertEquals(res.status, 200);
+  assertEquals((await res.json()).rejected, "order_reference_mismatch");
+  assert(!deps.calls.some((call) => call.method === "PATCH"));
+});
+
+Deno.test("11. a failed charge marks the order as failed", async () => {
   const deps = createDeps({});
   const res = await handleRequest(
-    createRequest({ ...charge, status: "FAILED" }),
+    await createRequest({ ...charge, status: "FAILED" }),
     deps as any,
   );
   assertEquals(res.status, 200);
@@ -178,17 +199,20 @@ Deno.test("10. a failed charge marks the order as failed", async () => {
   assertEquals(JSON.parse(orderPatch.body).payment_status, "failed");
 });
 
-Deno.test("11. a duplicated event is answered as a duplicate", async () => {
-  const deps = createDeps({ eventInsertFails: true });
-  const res = await handleRequest(createRequest(charge), deps as any);
-  assertEquals(res.status, 200);
-  const body = await res.json();
-  assertEquals(body.duplicate, true);
+Deno.test("12. re-sending the same event is idempotent", async () => {
+  const deps = createDeps({});
+  const req = await createRequest(charge);
+  const first = await handleRequest(req.clone(), deps as any);
+  const second = await handleRequest(req.clone(), deps as any);
+  assertEquals(first.status, 200);
+  assertEquals(second.status, 200);
+  assertEquals((await second.json()).duplicate, true);
+  assertEquals(deps.calls.filter((call) => call.path.includes("payment_events")).length, 2);
 });
 
-Deno.test("12. the event is recorded after the state was applied", async () => {
+Deno.test("13. the event is recorded after the state was applied", async () => {
   const deps = createDeps({});
-  await handleRequest(createRequest(charge), deps as any);
+  await handleRequest(await createRequest(charge), deps as any);
   const orderIndex = deps.calls.findIndex(
     (call) => call.method === "PATCH" && call.path.startsWith("/orders"),
   );
@@ -203,12 +227,12 @@ Deno.test("12. the event is recorded after the state was applied", async () => {
   );
 });
 
-Deno.test("13. a captured subscription payment activates the subscription", async () => {
+Deno.test("14. a captured subscription payment activates the subscription", async () => {
   const deps = createDeps({
     txRows: [{ ...transaction, order_id: null, subscription_id: "sub-1" }],
     subRows: [{ id: "sub-1", plan: { price: 100, currency_code: "SAR" } }],
   });
-  const res = await handleRequest(createRequest(charge), deps as any);
+  const res = await handleRequest(await createRequest(charge), deps as any);
   assertEquals(res.status, 200);
   const activation = deps.calls.find((call) =>
     call.path.includes("activate_subscription")
@@ -220,7 +244,7 @@ Deno.test("13. a captured subscription payment activates the subscription", asyn
   );
 });
 
-Deno.test("14. the status mapping covers the provider states", () => {
+Deno.test("15. the status mapping covers the provider states", () => {
   assertEquals(mapTapStatus("CAPTURED"), "captured");
   assertEquals(mapTapStatus("AUTHORIZED"), "authorized");
   assertEquals(mapTapStatus("DECLINED"), "failed");
@@ -228,7 +252,7 @@ Deno.test("14. the status mapping covers the provider states", () => {
   assertEquals(mapTapStatus("SOMETHING_NEW"), "pending");
 });
 
-Deno.test("15. the amount rounding follows the currency", () => {
+Deno.test("16. the amount rounding follows the currency", () => {
   assertEquals(roundAmount(10, "SAR"), "10.00");
   assertEquals(roundAmount(10.5, "SAR"), "10.50");
   assertEquals(roundAmount(10.5, "KWD"), "10.500");

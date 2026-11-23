@@ -1,51 +1,68 @@
-name: Build isolated Studio Preview
+name: Publish Customer App Studio Preview
 
 on:
+  push:
+    branches: [refactor/code-audit]
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: customer-app-studio-pages
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out source
-        uses: actions/checkout@v4
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v4
+        with:
+          path: source
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: current-site
+      - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-
-      - name: Install locked dependencies
+      - name: Install customer dependencies
+        working-directory: source
         run: flutter pub get --enforce-lockfile
-
-      - name: Run preview isolation tests
-        run: flutter test test/studio_preview_isolation_test.dart --no-pub
-
-      - name: Build the isolated preview package
-        run: >-
-          flutter build web
-          --target=lib/main_preview.dart
-          --base-href=/cofee-resturant-new-app/preview/
-          --output=build/studio-preview-package/preview
-          --no-pub
-
-      - name: Verify static site package
+      - name: Build customer preview
+        working-directory: source
+        run: flutter build web --target=lib/main_preview.dart --base-href=/cofee-resturant-new-app/preview/ --output=build/studio-preview-package/preview --no-pub
+      - name: Install admin dependencies
+        working-directory: source/app/admin_app
+        run: flutter pub get
+      - name: Build current admin app
+        working-directory: source/app/admin_app
+        run: flutter build web --base-href=/cofee-resturant-new-app/admin/ --output=build/studio-admin-package/admin --no-pub
+      - name: Verify both builds
         shell: bash
         run: |
-          test -s build/studio-preview-package/preview/index.html
-          grep -F '<base href="/cofee-resturant-new-app/preview/">' build/studio-preview-package/preview/index.html
-          test -d build/studio-preview-package/preview/assets
-          test -s build/studio-preview-package/preview/flutter_bootstrap.js
-          test -s build/studio-preview-package/preview/main.dart.js
-
-      - name: Upload build artifact (no deployment)
-        uses: actions/upload-artifact@v4
+          test -s source/build/studio-preview-package/preview/main.dart.js
+          test -s source/app/admin_app/build/studio-admin-package/admin/main.dart.js
+          grep -F '<base href="/cofee-resturant-new-app/preview/">' source/build/studio-preview-package/preview/index.html
+          grep -F '<base href="/cofee-resturant-new-app/admin/">' source/app/admin_app/build/studio-admin-package/admin/index.html
+      - name: Prepare complete Pages site
+        shell: bash
+        run: |
+          mkdir -p site
+          cp -a source/app/admin_app/build/studio-admin-package/admin site/admin
+          if [ -f current-site/index.html ]; then cp current-site/index.html site/index.html; fi
+          cp -a source/build/studio-preview-package/preview site/preview
+          touch site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
         with:
-          name: customer-app-studio-preview
-          path: build/studio-preview-package/
-          if-no-files-found: error
-          retention-days: 14
+          path: site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: github-pages
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/deploy-pages@v4

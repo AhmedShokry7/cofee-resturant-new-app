@@ -18,10 +18,9 @@ class SupabaseService {
   static bool get isReady => _client != null;
   static bool get isPreviewMode => _previewMode;
 
-  /// Locks the process into preview identity semantics before the preview
-  /// app is composed: no customer session is restored or created, and every
-  /// write path is swapped for a closed preview layer. The process may still
-  /// connect to Supabase for read-only catalogue data — see [init].
+  /// Locks preview-only preferences and data writes before the app is composed.
+  /// Explicit customer authentication still uses Supabase, so the preview can
+  /// exercise the same login flow as the customer app.
   static void enterPreviewMode() {
     if (_client != null) {
       throw StateError(
@@ -40,8 +39,7 @@ class SupabaseService {
 
   /// Whether the current process has an authenticated customer.
   static bool get isSignedIn =>
-      !_previewMode &&
-      (debugSignedIn || (_client != null && _client!.auth.currentUser != null));
+      debugSignedIn || (_client != null && _client!.auth.currentUser != null);
 
   /// Whether the backend is configured.
   static bool get isConfigured => AppConfig.isSupabaseConfigured;

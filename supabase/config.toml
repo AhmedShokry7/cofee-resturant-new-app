@@ -2,3 +2,8 @@
 # and `supabase migration repair` work without an interactive `supabase link`.
 # No credentials live in this file; the access token comes from the environment.
 project_id = "webzzasosevzymftgszn"
+
+# Tap calls this endpoint directly and authenticates with Tap's `hashstring`.
+# The webhook handler verifies that HMAC before processing the payload.
+[functions.tap-webhook]
+verify_jwt = false

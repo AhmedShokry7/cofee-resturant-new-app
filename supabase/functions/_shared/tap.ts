@@ -87,12 +87,19 @@ export async function serviceFetch(path: string, init: RequestInit = {}): Promis
   return json;
 }
 
-export function verifyTapWebhookHash(body: string, headers: Headers, secretKey: string): boolean {
+export async function verifyTapWebhookHash(
+  signedMessage: string,
+  headers: Headers,
+  secretKey: string,
+): Promise<boolean> {
   const posted = headers.get("hashstring") ?? headers.get("hash");
-  if (!posted) return false;
-  // The exact hashstring input is built by the caller from the parsed charge.
-  // This helper only compares a precomputed value.
-  return false;
+  if (!posted || !/^[0-9a-f]{64}$/i.test(posted)) return false;
+  const expected = await hmacSha256Hex(signedMessage, secretKey);
+  let difference = 0;
+  for (let i = 0; i < expected.length; i++) {
+    difference |= expected.charCodeAt(i) ^ posted.toLowerCase().charCodeAt(i);
+  }
+  return difference === 0;
 }
 
 export function hmacSha256Hex(message: string, secret: string): Promise<string> {

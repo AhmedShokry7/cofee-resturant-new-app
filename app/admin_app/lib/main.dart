@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:admin_app/core/config/app_config.dart';
+import 'package:admin_app/core/startup/preferences_recovery.dart'
+    as preferences_recovery;
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
@@ -18,6 +20,11 @@ import 'package:admin_app/features/auth/presentation/pages/auth_gate.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _installErrorHandlers();
+
+  await _guard(
+    'preferences.recovery',
+    () => preferences_recovery.repairZeroFilledPreferences(),
+  );
 
   await _guard('locale.init', () => AppLocale.instance.initialize());
   await _guard('theme.init', () => AppTheme.instance.initialize());

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:new_coffee/core/services/supabase_service.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -57,15 +58,22 @@ class _LoginPageBodyState extends State<LoginPageBody> {
   /// the *where* is resolved here, because it depends on the route this page
   /// was pushed with, which lives in the widget tree.
   void _onAuthenticated() {
-    // Return to the page that asked for authentication when possible, instead
-    // of always replacing it with the home page.
-    final origin = ModalRoute.of(context)?.settings.arguments;
-    if (Navigator.of(context).canPop()) {
+    // Preview starts on a synthetic splash route. Returning to it would strand
+    // the customer there, so a successful preview login opens the real store.
+    if (SupabaseService.isPreviewMode) {
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        MainPage.routeName,
+        (route) => false,
+      );
+    } else if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
-    } else if (origin is String && origin.isNotEmpty) {
-      Navigator.of(context).pushReplacementNamed(origin);
     } else {
-      _goToStore();
+      final origin = ModalRoute.of(context)?.settings.arguments;
+      if (origin is String && origin.isNotEmpty) {
+        Navigator.of(context).pushReplacementNamed(origin);
+      } else {
+        _goToStore();
+      }
     }
   }
 

@@ -83,7 +83,15 @@ void registerPreviewView({
 
 bool _registered = false;
 final _factories = <String, web.HTMLElement Function()>{};
-String defaultPreviewUrl() => Uri.parse(web.document.baseURI).resolve('../preview/').toString();
+String defaultPreviewUrl() {
+  final base = Uri.parse(web.document.baseURI);
+  // The local admin and customer preview run on separate ports. Production
+  // keeps the preview alongside the admin app under the same Pages site.
+  if (base.host == 'localhost' || base.host == '127.0.0.1') {
+    return 'http://${base.host}:5000/';
+  }
+  return base.resolve('../preview/').toString();
+}
 
 void disposePreviewView(String viewType) {
   final listener = _listeners.remove(viewType);
