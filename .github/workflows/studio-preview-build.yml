@@ -1,16 +1,20 @@
 name: Publish Customer App Studio Preview
 
+
 on:
   push:
     branches: [refactor/code-audit]
   workflow_dispatch:
 
+
 permissions:
   contents: read
+
 
 concurrency:
   group: customer-app-studio-pages
   cancel-in-progress: false
+
 
 jobs:
   build:
@@ -35,7 +39,7 @@ jobs:
         run: flutter build web --target=lib/main_preview.dart --base-href=/cofee-resturant-new-app/preview/ --output=build/studio-preview-package/preview --no-pub
       - name: Install admin dependencies
         working-directory: source/app/admin_app
-        run: flutter pub get --enforce-lockfile
+        run: flutter pub get
       - name: Build current admin app
         working-directory: source/app/admin_app
         run: flutter build web --base-href=/cofee-resturant-new-app/admin/ --output=build/studio-admin-package/admin --no-pub
@@ -66,3 +70,4 @@ jobs:
       id-token: write
     steps:
       - uses: actions/deploy-pages@v4
+
