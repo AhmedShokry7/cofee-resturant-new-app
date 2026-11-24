@@ -393,6 +393,50 @@ const invitationReasons = new Set([
 const invitationTokenPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+async function brevoDeliveryEvent(
+  apiKey: string,
+  messageId: string,
+  fetcher: typeof fetch,
+): Promise<{ event: string; reason: string | null } | null> {
+  const url = new URL("https://api.brevo.com/v3/smtp/statistics/events");
+  url.searchParams.set("messageId", messageId);
+  url.searchParams.set("days", "1");
+  url.searchParams.set("limit", "10");
+  const response = await fetcher(url, { headers: { "api-key": apiKey } });
+  if (!response.ok) return null;
+  const payload = await response.json();
+  if (!Array.isArray(payload?.events)) return null;
+  const matching = payload.events.find(
+    (event: any) => event?.messageId === messageId && typeof event?.event === "string",
+  );
+  if (!matching) return null;
+  const reason = typeof matching.reason === "string"
+    ? matching.reason
+        .split(/\s+/)
+        .map((part) => part.includes("@") ? "[address]" : part)
+        .join(" ")
+        .slice(0, 180)
+    : null;
+  return { event: matching.event, reason };
+}
+
+async function waitForBrevoDeliveryEvent(
+  apiKey: string,
+  messageId: string,
+  fetcher: typeof fetch,
+): Promise<{ event: string; reason: string | null } | null> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const result = await brevoDeliveryEvent(apiKey, messageId, fetcher);
+      if (result) return result;
+    } catch {
+      // The message send has already succeeded; delivery diagnostics are best effort.
+    }
+    if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 1500));
+  }
+  return null;
+}
+
 function invitationPublishableKey(
   env: (name: string) => string | undefined,
 ): string {
@@ -616,6 +660,17 @@ export async function handleInvitationRequest(
           provider,
           messageId: result.id ?? null,
         });
+        if (provider === "brevo" && result.id) {
+          const delivery = await waitForBrevoDeliveryEvent(
+            brevoKey,
+            result.id,
+            fetcher,
+          );
+          console.log("staff invitation delivery event", {
+            event: delivery?.event ?? "not_visible_yet",
+            reason: delivery?.reason ?? null,
+          });
+        }
       } else {
         const errorClass = result.error?.match(/^(resend|brevo)\s+(\d{3})/i);
         console.error("staff invitation email delivery failed", {
