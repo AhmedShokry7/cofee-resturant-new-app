@@ -119,11 +119,15 @@ const defaultEmailDesign: EmailDesign = {
   footerEn: "This is an automated message from New Coffee.",
   signupSubjectAr:
     "\u{62a}\u{623}\u{643}\u{64a}\u{62f}\u{20}\u{627}\u{644}\u{628}\u{631}\u{64a}\u{62f}\u{20}\u{627}\u{644}\u{625}\u{644}\u{643}\u{62a}\u{631}\u{648}\u{646}\u{64a}\u{20}\u{7c}\u{20}\u{4e}\u{65}\u{77}\u{20}\u{43}\u{6f}\u{66}\u{66}\u{65}\u{65}",
+  signupSubjectEn: "New Coffee | Confirm your email",
   signupTitleAr:
     "\u{62a}\u{623}\u{643}\u{64a}\u{62f}\u{20}\u{628}\u{631}\u{64a}\u{62f}\u{643}\u{20}\u{627}\u{644}\u{625}\u{644}\u{643}\u{62a}\u{631}\u{648}\u{646}\u{64a}",
+  signupTitleEn: "Confirm your email",
   signupBodyAr:
     "\u{623}\u{62f}\u{62e}\u{644}\u{20}\u{631}\u{645}\u{632}\u{20}\u{627}\u{644}\u{62a}\u{62d}\u{642}\u{642}\u{20}\u{627}\u{644}\u{62a}\u{627}\u{644}\u{64a}\u{20}\u{641}\u{64a}\u{20}\u{627}\u{644}\u{62a}\u{637}\u{628}\u{64a}\u{642}\u{20}\u{644}\u{625}\u{643}\u{645}\u{627}\u{644}\u{20}\u{625}\u{646}\u{634}\u{627}\u{621}\u{20}\u{62d}\u{633}\u{627}\u{628}\u{643}\u{2e}",
   signupBodyEn: "Enter the code below to finish creating your account.",
+  otpLabelAr: "\u{631}\u{645}\u{632}\u{20}\u{627}\u{644}\u{62a}\u{62d}\u{642}\u{642}",
+  otpLabelEn: "Verification code",
 };
 
 async function readEmailDesign(
@@ -314,7 +318,9 @@ export async function handleAuthEmailHook(
     title: replaceTemplate(template.title, variables),
     text: replaceTemplate(template.text, variables),
   };
-  const otpLabel = arabic ? design.otpLabelAr : design.otpLabelEn;
+  const otpLabel = arabic
+    ? design.otpLabelAr ?? "\u{631}\u{645}\u{632}\u{20}\u{627}\u{644}\u{62a}\u{62d}\u{642}\u{642}"
+    : design.otpLabelEn ?? "Verification code";
   const redirect = payload.email_data?.redirect_to ||
     payload.email_data?.site_url || "";
   const link = action !== "signup" && redirect
@@ -573,12 +579,22 @@ export async function handleInvitationRequest(
           ),
           replyTo: env("EMAIL_REPLY_TO") ?? null,
         };
-      const result = deps.send
+      let result = deps.send
         ? await deps.send(resendKey || brevoKey, email)
         : resendKey
         ? await sendWithResend(resendKey, email, fetcher)
         : await sendEmail(brevoKey, email, fetcher);
+      if (!result.ok && resendKey && brevoKey && !deps.send) {
+        result = await sendEmail(brevoKey, email, fetcher);
+      }
       emailSent = result.ok;
+      if (!emailSent) {
+        const errorClass = result.error?.match(/^(resend|brevo)\s+(\d{3})/i);
+        console.error("staff invitation email delivery failed", {
+          provider: errorClass?.[1]?.toLowerCase() ?? (resendKey ? "resend" : "brevo"),
+          status: errorClass?.[2] ?? "network_or_provider_error",
+        });
+      }
     } catch {
       emailSent = false;
     }
