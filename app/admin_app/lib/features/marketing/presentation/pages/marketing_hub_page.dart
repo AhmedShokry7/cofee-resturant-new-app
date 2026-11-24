@@ -12,6 +12,7 @@ import 'package:admin_app/features/marketing/presentation/widgets/campaign_dialo
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_metric_card.dart';
 import 'package:admin_app/shared/widgets/admin_page_title.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/custom_btn.dart';
@@ -110,8 +111,8 @@ class _HubBodyState extends State<_HubBody> {
                   children: [
                     Expanded(child: AdminPageTitle(S.marketingHub)),
                     if (widget.canCreate)
-                      CustomBtn(
-                        text: S.marketingNewCampaign,
+                      AdminCreateButton(
+                        label: S.marketingNewCampaign,
                         onPressed: () =>
                             showCampaignCreateDialog(context, _cubit),
                       ),
@@ -264,8 +265,8 @@ class _CampaignsTab extends StatelessWidget {
         message: S.marketingNoCampaigns,
         hint: S.marketingHintDraft,
         action: widget.canCreate
-            ? CustomBtn(
-                text: S.marketingNewCampaign,
+            ? AdminCreateButton(
+                label: S.marketingNewCampaign,
                 onPressed: () => showCampaignCreateDialog(context, cubit),
               )
             : null,

@@ -4,6 +4,7 @@ class AdminRole {
     required this.code,
     this.nameAr,
     this.nameEn,
+    this.description,
     this.isSystem = false,
     this.permissions = const <String>[],
   });
@@ -12,6 +13,7 @@ class AdminRole {
   final String code;
   final String? nameAr;
   final String? nameEn;
+  final String? description;
   final bool isSystem;
   final List<String> permissions;
 
@@ -25,6 +27,7 @@ class AdminRole {
       code: '${json['code'] ?? ''}',
       nameAr: json['name_ar'] as String?,
       nameEn: json['name_en'] as String?,
+      description: json['description'] as String?,
       isSystem: json['is_system'] == true,
       permissions: perms?.map((e) => '$e').toList() ?? const <String>[],
     );

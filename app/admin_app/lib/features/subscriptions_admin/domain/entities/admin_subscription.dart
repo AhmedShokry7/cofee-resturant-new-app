@@ -28,6 +28,9 @@ class AdminSubscription {
     this.bonusBalance = 0,
     this.autoRenew = false,
     this.paymentReference,
+    this.paymentMethodCode,
+    this.paymentMethodNameAr,
+    this.paymentMethodNameEn,
     this.createdAt,
     this.usageCount = 0,
     this.lastUsedAt,
@@ -62,6 +65,9 @@ class AdminSubscription {
   final double bonusBalance;
   final bool autoRenew;
   final String? paymentReference;
+  final String? paymentMethodCode;
+  final String? paymentMethodNameAr;
+  final String? paymentMethodNameEn;
   final DateTime? createdAt;
   final int usageCount;
   final DateTime? lastUsedAt;
@@ -136,6 +142,9 @@ class AdminSubscription {
       bonusBalance: (json['bonus_balance'] as num?)?.toDouble() ?? 0,
       autoRenew: json['auto_renew'] == true,
       paymentReference: json['payment_reference'] as String?,
+      paymentMethodCode: json['payment_method_code'] as String?,
+      paymentMethodNameAr: json['payment_method_name_ar'] as String?,
+      paymentMethodNameEn: json['payment_method_name_en'] as String?,
       createdAt: _toDateTime(json['created_at']),
       usageCount: (json['usage_count'] as num?)?.toInt() ?? 0,
       lastUsedAt: _toDateTime(json['last_used_at']),

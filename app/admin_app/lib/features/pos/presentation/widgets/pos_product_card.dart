@@ -12,6 +12,7 @@ import 'package:admin_app/features/pos/presentation/widgets/pos_format.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 class PosProductCard extends StatelessWidget {
   const PosProductCard({
@@ -377,30 +378,10 @@ class _AddButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: adminFlagBackground(
-          theme,
-          AppColor.adminAccent,
-          AppColor.adminAccentSurface,
-        ),
-        shape: const CircleBorder(),
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const CircleBorder(),
-          child: SizedBox(
-            width: AppSizes.px34,
-            height: AppSizes.px34,
-            child: AppIcon(
-              AppIcons.add01,
-              size: 17,
-              color: adminFlagForeground(theme, AppColor.adminAccent),
-            ),
-          ),
-        ),
-      ),
+    return AdminCreateButton(
+      onPressed: onTap,
+      iconOnly: true,
+      tooltip: tooltip,
     );
   }
 }

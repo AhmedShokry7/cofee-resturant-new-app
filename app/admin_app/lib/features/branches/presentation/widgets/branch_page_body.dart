@@ -3,8 +3,6 @@ import 'package:material_ui/material_ui.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/admin_branch.dart';
-import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/branches/domain/entities/admin_branch_metrics.dart';
 import 'package:admin_app/features/branches/presentation/widgets/branch_directory.dart';
 import 'package:admin_app/features/branches/presentation/widgets/branch_metrics_cards.dart';
@@ -13,7 +11,7 @@ import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_directory_page_layout.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
 import 'package:admin_app/shared/widgets/admin_read_only_hint.dart';
-import 'package:admin_app/shared/widgets/custom_btn.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 class BranchPageBody extends StatelessWidget {
   const BranchPageBody({
@@ -79,15 +77,10 @@ class BranchPageBody extends StatelessWidget {
               subtitle: S.branchesDescription,
               actions: [
                 if (canManage)
-                  CustomBtn(
+                  AdminCreateButton(
                     key: const Key('branch-add'),
-                    text: S.addBranch,
+                    label: S.addBranch,
                     onPressed: onAdd,
-                    leadingIcon: const Icon(AppIcons.add01, size: 18),
-                    height: 42,
-                    borderRadius: AppRadius.pill,
-                    backgroundColor: AppColor.primaryColor,
-                    textColor: AppColor.whiteColor,
                   ),
               ],
               footer: canManage
@@ -100,7 +93,10 @@ class BranchPageBody extends StatelessWidget {
             BranchMetricsCards(metrics: metrics),
             const SizedBox(height: AppSizes.px16),
           ];
-            return AdminDirectoryPageLayout(sections: sections, directory: directory);
+          return AdminDirectoryPageLayout(
+            sections: sections,
+            directory: directory,
+          );
         },
       ),
     );

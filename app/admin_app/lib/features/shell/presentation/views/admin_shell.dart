@@ -300,7 +300,10 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
           canManage: widget.session.hasPermission('catalog.product.write'),
         );
       case 'payments':
-        return PaymentPage(searchController: _searchController);
+        return PaymentPage(
+          searchController: _searchController,
+          canConfigureTax: widget.session.hasPermission('settings.write'),
+        );
       case 'pos':
         return PosPage(searchController: _searchController);
       case 'orders':

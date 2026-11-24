@@ -19,6 +19,7 @@ import 'package:admin_app/shared/widgets/admin_directory_panel.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/admin_toolbar.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 /// The floor plan and its booking rail, split on wide screens and switched
 /// between two views on compact ones.
@@ -278,18 +279,7 @@ class _DiningDirectoryState extends State<DiningDirectory> {
         message: S.tablesEmptyTitle,
         hint: S.tablesEmptyHint,
         action: widget.canManage
-            ? TextButton.icon(
-                onPressed: widget.onAddTable,
-                icon: const AppIcon(
-                  AppIcons.add01,
-                  size: 15,
-                  color: AppColor.adminAccent,
-                ),
-                label: Text(
-                  S.addTable,
-                  style: const TextStyle(fontSize: AppFontSizes.size10),
-                ),
-              )
+            ? AdminCreateButton(label: S.addTable, onPressed: widget.onAddTable)
             : null,
       );
     }

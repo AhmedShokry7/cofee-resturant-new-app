@@ -343,6 +343,33 @@ void main() {
     expect(find.text(S.usageByQr), findsOneWidget);
   });
 
+  testWidgets('show QR opens a scannable pass image', (tester) async {
+    _setSurface(tester);
+    SupabaseService.debugSetSignedIn(true);
+    final repository = _FakeRepository(
+      plansToReturn: const [_plan],
+      subscriptionToReturn: _subscription(),
+    );
+
+    await _pumpPage(tester, repository);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(FilledButton, S.showQrCode));
+    await tester.pumpAndSettle();
+
+    expect(repository.qrCalls, 1);
+    expect(find.text(S.qrSingleUseHint), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is CustomPaint && widget.size == const Size.square(240),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.text(S.ok));
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('a pass that could not be made keeps the page on screen', (
     tester,
   ) async {

@@ -6,6 +6,7 @@ enum InvitationAcceptStatus {
   preview,
   refusing,
   submitting,
+  awaitingConfirmation,
   accepted,
   refused,
 }
@@ -20,12 +21,14 @@ class InvitationAcceptState {
     this.preview,
     this.outcome,
     this.errorMessage,
+    this.token,
   });
 
   final InvitationAcceptStatus status;
   final InvitationPreview? preview;
   final InvitationAcceptOutcome? outcome;
   final String? errorMessage;
+  final String? token;
 
   bool get isBusy =>
       status == InvitationAcceptStatus.checking ||
@@ -38,12 +41,16 @@ class InvitationAcceptState {
     String? errorMessage,
     bool clearPreview = false,
     bool clearError = false,
+    bool clearOutcome = false,
+    String? token,
+    bool clearToken = false,
   }) {
     return InvitationAcceptState(
       status: status ?? this.status,
       preview: clearPreview ? null : (preview ?? this.preview),
-      outcome: outcome ?? this.outcome,
+      outcome: clearOutcome ? null : (outcome ?? this.outcome),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      token: clearToken ? null : (token ?? this.token),
     );
   }
 }

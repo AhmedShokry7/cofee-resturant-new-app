@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/features/notifications/data/services/notifications_realtime_feed.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification_bulk_delete.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification_composer.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification_metrics.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_push_health.dart';
@@ -61,6 +62,15 @@ class _FakeNotificationsRepository extends AdminNotificationsRepository {
   bool imageDeleteFails = false;
   final List<String> uploadedImageNames = <String>[];
   final List<String> deletedImageUrls = <String>[];
+  AdminNotificationMatchingIds matching = const AdminNotificationMatchingIds(
+    total: 0,
+    tooMany: false,
+  );
+  bool failMatching = false;
+  int matchingCalls = 0;
+  final List<List<String>> bulkBatches = <List<String>>[];
+  AdminNotificationBulkDeleteBatch Function(List<String> ids)? bulkHandler;
+  bool failBulk = false;
 
   @override
   Future<AdminNotificationPage> loadNotifications({
@@ -156,6 +166,37 @@ class _FakeNotificationsRepository extends AdminNotificationsRepository {
     lastReadId = notificationId;
     lastReadValue = read;
     return mutation;
+  }
+
+  @override
+  Future<AdminNotificationMatchingIds> loadMatchingDeletableIds({
+    String? search,
+    AdminNotificationType? type,
+    bool? isRead,
+    String? pushState,
+    String? source,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+  }) async {
+    matchingCalls++;
+    if (failMatching) throw StateError('matching failed');
+    return matching;
+  }
+
+  @override
+  Future<AdminNotificationBulkDeleteBatch> deleteNotificationsBatch(
+    List<String> notificationIds,
+  ) async {
+    bulkBatches.add(List<String>.from(notificationIds));
+    if (failBulk) throw StateError('bulk failed');
+    final handler = bulkHandler;
+    if (handler != null) return handler(notificationIds);
+    final deleted = notificationIds
+        .where((id) => rows.any((row) => row.id == id))
+        .toList();
+    rows = rows.where((row) => !deleted.contains(row.id)).toList();
+    total = rows.length;
+    return AdminNotificationBulkDeleteBatch(deletedIds: deleted);
   }
 
   @override
@@ -598,6 +639,184 @@ void main() {
         AdminNotificationDestination.fromValue('orders?id=7'),
         AdminNotificationDestination.none,
       );
+    });
+  });
+
+  group('bulk delete selection', () {
+    test('row, page and clear selection, campaign summary excluded', () async {
+      final repository = _FakeNotificationsRepository()
+        ..rows = [
+          _notification('n1'),
+          AdminNotification(
+            id: 'summary',
+            type: AdminNotificationType.promo,
+            customer: AdminNotificationCustomer(id: 'u', fullName: 'C'),
+            push: const AdminNotificationPush(
+              state: AdminNotificationPushState.sent,
+            ),
+            campaign: const AdminNotificationCampaign(
+              id: 'c1',
+              isSummary: true,
+            ),
+          ),
+        ]
+        ..total = 2;
+      final cubit = AdminNotificationsCubit(repository: repository);
+      addTearDown(cubit.close);
+      await cubit.load();
+
+      cubit.toggleRowSelection('summary');
+      expect(cubit.state.selectedIds, isEmpty);
+      cubit.toggleRowSelection('n1');
+      expect(cubit.state.selectedIds, {'n1'});
+      cubit.setPageSelection(false);
+      expect(cubit.state.selectedIds, isEmpty);
+      cubit.setPageSelection(true);
+      expect(cubit.state.selectedIds, {'n1'});
+      cubit.clearSelection();
+      expect(cubit.state.selectedIds, isEmpty);
+    });
+
+    test('changing a filter clears the selection', () async {
+      final repository = _FakeNotificationsRepository()
+        ..rows = [_notification('n1')]
+        ..total = 1;
+      final cubit = AdminNotificationsCubit(repository: repository);
+      addTearDown(cubit.close);
+      await cubit.load();
+      cubit.toggleRowSelection('n1');
+      cubit.setType(NotificationTypeFilter.promo);
+      await _settle();
+      expect(cubit.state.selectedIds, isEmpty);
+      expect(cubit.state.selectedAllMatching, isFalse);
+    });
+
+    test('select all matching covers every page and flags the scope', () async {
+      final repository = _FakeNotificationsRepository()
+        ..rows = [_notification('n1')]
+        ..total = 5
+        ..matching = const AdminNotificationMatchingIds(
+          total: 5,
+          tooMany: false,
+          ids: ['n1', 'n2', 'n3', 'n4', 'n5'],
+        );
+      final cubit = AdminNotificationsCubit(repository: repository);
+      addTearDown(cubit.close);
+      await cubit.load();
+      final outcome = await cubit.selectAllMatching();
+      expect(outcome, NotificationBulkSelectOutcome.selected);
+      expect(cubit.state.selectedIds, {'n1', 'n2', 'n3', 'n4', 'n5'});
+      expect(cubit.state.selectedAllMatching, isTrue);
+      expect(cubit.state.isBulkBusy, isFalse);
+    });
+
+    test('select all matching reports too many, none and failure', () async {
+      final repository = _FakeNotificationsRepository()
+        ..rows = [_notification('n1')]
+        ..total = 1;
+      final cubit = AdminNotificationsCubit(repository: repository);
+      addTearDown(cubit.close);
+      await cubit.load();
+      repository.matching = const AdminNotificationMatchingIds(
+        total: 2000,
+        tooMany: true,
+      );
+      expect(
+        await cubit.selectAllMatching(),
+        NotificationBulkSelectOutcome.tooMany,
+      );
+      expect(cubit.state.selectedIds, isEmpty);
+      repository.matching = const AdminNotificationMatchingIds(
+        total: 0,
+        tooMany: false,
+      );
+      expect(
+        await cubit.selectAllMatching(),
+        NotificationBulkSelectOutcome.none,
+      );
+      repository.failMatching = true;
+      expect(
+        await cubit.selectAllMatching(),
+        NotificationBulkSelectOutcome.failed,
+      );
+      expect(cubit.state.isBulkBusy, isFalse);
+    });
+
+    test(
+      'bulk delete removes rows, updates total and clears selection',
+      () async {
+        final repository = _FakeNotificationsRepository()
+          ..rows = [
+            _notification('n1'),
+            _notification('n2'),
+            _notification('n3'),
+          ]
+          ..total = 3;
+        final cubit = AdminNotificationsCubit(repository: repository);
+        addTearDown(cubit.close);
+        await cubit.load();
+        cubit.setPageSelection(true);
+        final result = await cubit.deleteSelected();
+        expect(result?.deletedCount, 3);
+        expect(repository.bulkBatches, [
+          ['n1', 'n2', 'n3'],
+        ]);
+        expect(cubit.state.selectedIds, isEmpty);
+        expect(cubit.state.isBulkBusy, isFalse);
+        // _fetch reloads from the fake, which now has no rows.
+        expect(cubit.state.notifications, isEmpty);
+        expect(cubit.state.total, 0);
+      },
+    );
+
+    test('partial bulk failure keeps unprocessed ids selected', () async {
+      final repository = _FakeNotificationsRepository()
+        ..rows = [_notification('n1'), _notification('n2')]
+        ..total = 2
+        ..bulkHandler = (ids) =>
+            const AdminNotificationBulkDeleteBatch(deletedIds: ['n1']);
+      final cubit = AdminNotificationsCubit(repository: repository);
+      addTearDown(cubit.close);
+      await cubit.load();
+      cubit.setPageSelection(true);
+      final result = await cubit.deleteSelected();
+      expect(result?.deletedCount, 1);
+      expect(cubit.state.selectedIds, {'n2'});
+    });
+
+    test('a thrown bulk failure keeps the whole selection', () async {
+      final repository = _FakeNotificationsRepository()
+        ..rows = [_notification('n1')]
+        ..total = 1
+        ..failBulk = true;
+      final cubit = AdminNotificationsCubit(repository: repository);
+      addTearDown(cubit.close);
+      await cubit.load();
+      cubit.toggleRowSelection('n1');
+      final result = await cubit.deleteSelected();
+      expect(result?.deletedCount, 0);
+      expect(result?.unprocessedIds, ['n1']);
+      expect(cubit.state.selectedIds, {'n1'});
+    });
+
+    test('busy state blocks repeat bulk actions', () async {
+      final repository = _FakeNotificationsRepository()
+        ..rows = [_notification('n1')]
+        ..total = 1;
+      final cubit = AdminNotificationsCubit(repository: repository);
+      addTearDown(cubit.close);
+      await cubit.load();
+      expect(await cubit.deleteSelected(), isNull);
+      cubit.toggleRowSelection('n1');
+      // Simulate an in-flight bulk operation.
+      cubit.emit(cubit.state.copyWith(isBulkBusy: true));
+      expect(await cubit.deleteSelected(), isNull);
+      expect(
+        await cubit.selectAllMatching(),
+        NotificationBulkSelectOutcome.busy,
+      );
+      cubit.toggleRowSelection('n1');
+      expect(cubit.state.selectedIds, {'n1'});
     });
   });
 }

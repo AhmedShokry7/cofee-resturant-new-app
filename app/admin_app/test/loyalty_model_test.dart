@@ -5,9 +5,11 @@ import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_member.
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_overview.dart';
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward.dart';
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward_type.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_rule.dart';
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_rule_draft.dart';
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_transaction.dart';
 import 'package:admin_app/features/loyalty/presentation/models/loyalty_filters.dart';
+import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_format.dart';
 
 AdminLoyaltyReward _reward({
   required String id,
@@ -75,6 +77,21 @@ AdminLoyaltyTransaction _transaction({
 void main() {
   setUp(() => AppLocale.instance.debugSet(AppLanguage.english));
   tearDown(() => AppLocale.instance.debugSet(AppLanguage.english));
+
+  group('loyalty program formatting', () {
+    test('keeps the full configured rate and point value precision', () {
+      const rule = AdminLoyaltyRule(
+        id: 'rule-1',
+        code: 'EARN',
+        pointsPerCurrencyUnit: 0.125,
+        pointValue: 0.05,
+        isActive: true,
+      );
+
+      expect(loyaltyProgramEarnRate(rule), '0.125 points per 1 SAR');
+      expect(loyaltyProgramPointValue(rule), '0.05 SAR per point');
+    });
+  });
 
   group('loyalty overview', () {
     test('parses the current rule and the dashboard metrics', () {

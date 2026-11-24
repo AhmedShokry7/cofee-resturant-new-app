@@ -13,5 +13,6 @@ class KitchenRealtimeFeed extends PostgresChangesFeed {
           RealtimeTable('kitchen', 'ticket_items'),
         ],
         client: client,
+        debounceDuration: const Duration(milliseconds: 40),
       );
 }

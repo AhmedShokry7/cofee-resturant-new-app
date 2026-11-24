@@ -29,6 +29,15 @@
 
 ### 0.2 ملاحظات اتصال الإنتاج — 2026-11-08
 
+> **تحديث هوية البيئة — 2026-11-24:** سجل هذا القسم ومراجعته بتاريخ 2026-11-08
+> يصفان تصنيف المشروع في ذلك الوقت، ولا يحددان هدف Phase 1.2 الحالي. أكد صاحب
+> المشروع صراحة في هذه الجلسة أن المرجع `webzzasosevzymftgszn` هو مشروع
+> **TEST/DEVELOPMENT** المصرح به لهذه المهمة، وليس بيئة الإنتاج. يجري تنفيذ Phase
+> 1.2 على هذا المرجع فقط. تأكيد المالك الحالي يتقدم على التصنيف التاريخي أدناه؛
+> لا يُغيّر هذا التحديث سجل الفحص السابق أو نتائج ذلك التاريخ.
+> تعليق التهيئة أعلى migration 262 كُتب قبل هذا التأكيد ويصف مرحلة التحضير المحلية؛
+> التطبيق الفعلي على مشروع الاختبار المصرح به تم في 2026-11-24 بعد تأكيد المالك.
+
 - حجم قاعدة البيانات المرصود **32 MB**، إجمالي الفهارس **6.5 MB**، ومعدل إصابة cache بلغ **1.00** عند الفحص. هذا حجم صغير ولا يثبت قدرة مليون مستخدم؛ لا يتوفر اختبار ضغط أو قياس تزامن ممثل.
 - فحص `supabase db lint --linked` انتهى بـ **No schema errors found**. الفحص رصد أيضًا أن RLS مفعّل على كل الجداول العادية في نطاقات التطبيق التي شملها الاستعلام، لكنه لا يغني عن اختبار كل سياسة ملكية وصلاحية.
 - كل إصدارات migrations المحلية لها سجل مقابل بعد تطبيق 218 و228 و235 و236. استُعيدت ملفات SQL السبعة التاريخية أعلاه من سجل الإنتاج إلى `supabase/migrations` بعد التحقق من تطابق الإصدار والاسم وفحصها بحثًا عن أسرار شائعة. لم تُنفَّذ مرة ثانية. خمسة منها تكرر إصدارات AI الرقمية الموجودة محليًا؛ احتُفظ بالنسختين لأنهما مسجلتان في القاعدة الحية، ولإتاحة إعادة بناء التاريخ كما وقع.
@@ -50,6 +59,15 @@
 ---
 
 ## 1. القواعد الملزمة (لا يجوز تجاوزها)
+
+### سجل مراجعة/اعتماد تغيير تصنيفات المواد الخام — 2026-11-25
+- المطلوب: كتالوج تصنيفات مستقل مع إدارة إضافة/إعادة تسمية/حذف، وربط تصنيف كل مادة به.
+- SQL المقترح: `supabase/migrations/266_admin_inventory_category_management.sql`.
+- اختبار العزل المقترح: `supabase/tests/admin_inventory_category_management_test.sql` (rollback كامل، owner يسمح، مدير فرع يرفض، وتأكيد عدم فقد المخزون/الحركات).
+- المخاطر: توحيد التصنيفات النصية القديمة ذات اختلاف حالة الأحرف/المسافات الطرفية (اسم التصنيف فقط؛ لا حذف للمواد أو المخزون أو الحركات)؛ منع إدخال قيمة تصنيف غير مُدارة عبر RPC أو SQL؛ وتغيير الفلاتر لتضمين التصنيفات الفارغة. يجب أخذ نسخة احتياطية من قيم `raw_materials.category` قبل التطبيق، لأن الاستعادة الحرفية لاختلافات التهجئة بعد أي إدارة لاحقة لا تُضمن.
+- الحفاظ/التراجع: لا تُحذف صفوف مواد أو حركات. إعادة التسمية تحدث عمود التصنيف فقط. الحذف يتطلب إعادة تعيين المواد إلى تصنيف آخر أو الفارغ. التراجع الفوري قبل عمليات إدارة جديدة يتطلب SQL عكسيًا معتمدًا يستعيد نسخة القيم الاحتياطية وتعريفات الدوال القديمة 173، يفك trigger التحقق، ثم يزيل جدول التصنيفات؛ لا يُنفذ تلقائيًا. بعد بدء استخدام CRUD، الأفضل إصلاح forward migration بدل التراجع العكسي.
+- الهدف/المرحلة: يشير إعداد `SUPABASE_URL` المحلي إلى Project Ref `ldnjeyytwenxrteggjry` (فُك من اسم المضيف فقط؛ لم يُتحقق من الملكية أو البيئة عبر لوحة Supabase). لا migration مطبقة. لا يتوفر في هذه البيئة مسار اتصال/تنفيذ SQL متاح، ولذلك لم يُثبت نشر القاعدة ولا حالتها.
+
 
 1. نفّذ على **مشروع Supabase الجديد الذي يحدده صاحب المشروع في هذه الجلسة فقط**. لا تستخدم أو تعدّل أي مشروع قديم.
 2. **لا تستنتج هدف الاتصال من ملفات `.env` قديمة.** تحقّق من هوية المشروع واعرض **Project Ref** قبل أي كتابة.
@@ -850,6 +868,20 @@ IX (order_id, created_at)
 
 ### 7.5 `inventory`
 
+#### `inventory.raw_material_categories` — مُضافة في migration 266 (بانتظار الاعتماد والتطبيق)
+```
+category_name text PK          -- الاسم المعياري، فريد دون اعتبار حالة الأحرف والمسافات الطرفية
+created_by    uuid ? FK → auth.users(id) ON DELETE SET NULL
+created_at    timestamptz NOT NULL DEFAULT now()
+updated_at    timestamptz NOT NULL DEFAULT now()
+```
+RLS enabled، ولا وصول مباشر لـanon/authenticated؛ القراءة والكتابة عبر RPC إدارية.
+تتطلب عمليات الإنشاء/إعادة التسمية/الحذف `inventory.adjust` ونطاق كل الفروع. أسماء
+التصنيفات الحالية تُرحّل من `raw_materials.category` وتُوحّد التكرارات باختلاف
+حالة الأحرف أو الفراغ الطرفي. إعادة التسمية تُحدّث المواد المرتبطة مع إبقاء سجل
+المخزون والحركات. حذف تصنيف مستخدم يتطلب اختيار تصنيف بديل أو صراحة «بدون تصنيف»؛
+ولا يُحذف أي صف مادة أو حركة مخزون.
+
 #### `inventory.branch_stock`
 ```
 branch_id          uuid NOT NULL FK → core.branches(id) ON DELETE CASCADE
@@ -935,6 +967,85 @@ created_at          timestamptz NOT NULL DEFAULT now()
 ```
 **لا يوجد عمود PAN ولا CVV. لا يوجد.** `verified_by_server` يبقى `false` في v1.
 `RLS: enabled` — العميل يقرأ معاملاته فقط؛ لا يكتب.
+
+#### Phase 1 finance and invoice extension (migration 262)
+
+**This addendum extends the existing single-brand order/payment model.** The
+local implementation uses the project's existing `numeric(12,2)` money model.
+Historical orders remain without reconstructed tax snapshots; the system must
+not backfill old VAT values from current settings.
+
+`core.brands` gains `tax_registration_status` (`unconfigured`, `unregistered`,
+`registered`), `delivery_fee_taxable`, and `tax_configuration_version`.
+Changes to tax rate, inclusion, registration status, delivery treatment or
+effective date append to `core.tax_configuration_history`. Branch VAT/legal
+identity continues to live in `core.branches` (migration 179).
+
+`orders.orders` gains nullable historical-safe fields `taxable_base`,
+`vat_amount`, `tax_rate_snapshot`, `tax_included_snapshot`,
+`tax_registration_status_snapshot`, `tax_configuration_version_snapshot`,
+`delivery_fee_taxable_snapshot`, and `tax_calculated_at`. New orders receive
+these server-side. `tax_total` retains its existing meaning as the amount
+added to the customer total (zero for VAT-inclusive prices); `vat_amount`
+stores the actual VAT portion in either pricing mode. The fee setting defaults
+to non-taxable so migration does not silently change existing delivery prices;
+the correct treatment must be confirmed for this café before changing it.
+`orders.calculate_vat_amounts` is shared by checkout quoting and order snapshot
+creation; its SQL behavior cases are in `supabase/tests/financial_vat_engine_test.sql`.
+
+`payments.payment_refunds` is an append-oriented provider refund ledger. It
+stores the payment/order references, idempotency key, requested and confirmed
+amounts, currency, reason, status (`pending`, `succeeded`, `failed`, `unknown`),
+requester and timestamps, provider reference and sanitized provider metadata.
+The order's `refund_status` is independent of fulfillment/payment status.
+Pending/unknown amounts reserve refundable capacity; only confirmed amounts
+reduce it.
+
+`orders.invoices` stores one immutable issued invoice snapshot per eligible
+order, with a separate monotonic invoice number, seller/branch/buyer and line
+snapshots, discounts, fees, tax breakdown, currency, source references,
+checksum, issue timestamp and ZATCA submission state. `orders.invoice_adjustments`
+stores append-only credit/debit-note foundations linked to the original
+invoice and, where relevant, a successful refund. It is not an automatic note
+issuer: a staff member must provide an accountant-confirmed VAT adjustment
+amount because the refund request does not identify refunded lines or fees.
+Invoice issuance
+is triggered only after the order payment status is `paid`, is unique per order, and
+does not issue for failed or cancelled unpaid orders.
+
+**RLS / API:** no client write access to tax history, refunds, invoices or
+adjustments. Customer invoice reads require ownership of the source order;
+staff invoice/report access requires existing branch-scoped permissions.
+Server RPCs own issuance, refund reservation/completion and reporting. No
+ZATCA production API submission or credential lifecycle is part of this phase.
+
+#### Secure invoice documents and reconciliation (migration 264)
+
+`orders.invoice_documents` is a one-to-one, service-managed lifecycle row for an
+issued invoice. It records `pending` / `generating` / `ready` / `failed`, the
+deterministic object path, content SHA-256/length, attempt count, generation
+timestamps, and a sanitized error code. It is separate from the immutable
+financial invoice row. The private `invoice-documents` Storage bucket accepts
+PDF objects up to 10 MiB; no customer or staff Storage-object policy is created.
+The `invoice-documents` Edge Function authorizes a customer by source-order
+ownership or staff by `orders.read` plus branch scope, generates from the frozen
+invoice snapshot, uploads with a deterministic path, verifies content integrity,
+and returns only a five-minute signed URL. Flutter never receives a service key
+or submits an object path.
+
+`admin_financial_reconciliation` reports paid orders without invoices, payment
+capture/invoice total differences, VAT by persisted tax treatment, full and
+partial refunds, pending/failed refund ledger rows, remaining refundable
+balances, over-reservation, duplicate invoice detection, document readiness, and
+credit/debit adjustment effects. It reads invoice snapshots and ledger rows,
+not current catalogue prices.
+
+The simplified-invoice PDF includes the Phase 1 five-tag ZATCA TLV QR payload.
+This is not a claim of Phase 2 compliance: XML or PDF/A-3 with embedded XML,
+cryptographic stamping, nine-tag QR data, onboarding, and ZATCA reporting are
+outside migration 264 and remain unimplemented. See the [ZATCA Phase 1
+requirements](https://zatca.gov.sa/en/E-Invoicing/PreparingYourBusiness/Phase1/Pages/How-to-prepare.aspx)
+and [technical QR guidance](https://zatca.gov.sa/en/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing-Detailed-Technical-Guideline.pdf).
 
 ---
 
@@ -1410,6 +1521,8 @@ is_active   boolean NOT NULL DEFAULT true
 | 027 | `triggers_01_order_notifications.sql` | إشعار عند تغيّر حالة الطلب | 025 |
 | 028 | `_grants_audit.sql` | مراجعة نهائية + تقرير | 027 |
 | S1 | `seed_01_reference_data.sql` | الأدوار والصلاحيات الأساسية + طرق الدفع + **بيانات الكتالوج الحالية** (16 منتج، 10 فئات، 5 بنرات، 4 باقات، 4 كوبونات، 12 خيار، ...) | 028 |
+| 262 | `262_financial_vat_invoice_refund_foundation.sql` | tax configuration history, order VAT snapshots, immutable issued invoices and adjustments, refund ledger/RPCs, invoice/tax report RPCs | current local migrations through 261 |
+| 264 | `264_private_invoice_documents.sql` | private invoice document lifecycle, ownership/staff access RPC, invoice status projection, and branch-scoped financial reconciliation | 262 and local migrations through 263 |
 
 **قيود إلزامية على الـmigrations:**
 - كل migration **صغير وواضح**، يُطبَّق ويُسجَّل قبل التالي.

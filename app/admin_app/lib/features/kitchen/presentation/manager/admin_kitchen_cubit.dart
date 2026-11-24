@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:admin_app/core/services/postgres_changes_feed.dart';
 
 import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_filters.dart';
 import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_metrics.dart';
@@ -53,6 +54,8 @@ class AdminKitchenCubit extends Cubit<AdminKitchenState> {
   Timer? _searchTimer;
   int _requestId = 0;
   bool _liveStarted = false;
+  bool _liveRefreshInFlight = false;
+  bool _liveRefreshPending = false;
 
   Future<void> load() async {
     if (state.isLoading) return;
@@ -61,13 +64,29 @@ class AdminKitchenCubit extends Cubit<AdminKitchenState> {
 
   Future<void> refresh() => _fetch(withSummary: true);
 
-  /// A quiet reload used by the live feed and the fallback poll, so the board
-  /// never flashes a spinner while the kitchen is working.
-  Future<void> refreshLive() => _fetch(withSummary: true, silent: true);
+  /// A quiet, coalesced reconciliation after realtime events or reconnects.
+  /// Multiple event bursts during a request produce at most one follow-up read.
+  Future<void> refreshLive() async {
+    if (isClosed) return;
+    if (_liveRefreshInFlight) {
+      _liveRefreshPending = true;
+      return;
+    }
+    _liveRefreshInFlight = true;
+    try {
+      do {
+        _liveRefreshPending = false;
+        await _fetch(withSummary: true, silent: true);
+      } while (_liveRefreshPending && !isClosed);
+    } finally {
+      _liveRefreshInFlight = false;
+    }
+  }
 
   void startLiveUpdates() {
     if (_liveStarted) return;
     _liveStarted = true;
+    _realtimeFeed.onStatusChanged = updateRealtimeStatus;
     _realtimeFeed.start(_onRealtimeChange);
   }
 
@@ -75,6 +94,14 @@ class AdminKitchenCubit extends Cubit<AdminKitchenState> {
     if (isClosed) return;
     refreshLive();
   }
+
+  void updateRealtimeStatus(RealtimeFeedStatus status) {
+    if (isClosed) return;
+    emit(state.copyWith(realtimeStatus: status));
+  }
+
+  /// Reconciles missed changes when the app returns to the foreground.
+  Future<void> reconcileOnResume() => refreshLive();
 
   /// Moves the live elapsed timers forward; the page calls it every 30 s.
   void tick() {

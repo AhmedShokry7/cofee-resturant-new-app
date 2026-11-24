@@ -19,6 +19,7 @@ class FakeStaffRepository implements StaffRepository {
     this.editDelay = Duration.zero,
     this.inviteOutcome = StaffInviteOutcome.failed,
     this.inviteCode,
+    this.inviteEmailSent = true,
     this.cancelOutcome = StaffInviteOutcome.failed,
   });
 
@@ -35,6 +36,7 @@ class FakeStaffRepository implements StaffRepository {
 
   /// الرمز الذي يصل كاتب الدعوة مرة واحدة، أو null حين لا نجاح.
   String? inviteCode;
+  bool inviteEmailSent;
 
   StaffInviteOutcome cancelOutcome;
 
@@ -175,6 +177,8 @@ class FakeStaffRepository implements StaffRepository {
       invitationId: 'inv-${invites.length}',
       code: inviteCode,
       email: email,
+      emailSent: inviteEmailSent,
+      acceptanceUrl: 'https://admin.example.test/?invite=$inviteCode',
     );
   }
 

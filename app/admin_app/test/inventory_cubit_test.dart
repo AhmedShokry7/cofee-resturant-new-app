@@ -9,6 +9,7 @@ import 'package:admin_app/features/inventory/domain/entities/admin_stock_movemen
 import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement_draft.dart';
 import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement_metrics.dart';
 import 'package:admin_app/features/inventory/data/repositories/admin_inventory_repository.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_category_mutation_outcome.dart';
 import 'package:admin_app/features/inventory/domain/entities/inventory_material_save_outcome.dart';
 import 'package:admin_app/features/inventory/domain/entities/inventory_movement_outcome.dart';
 import 'package:admin_app/features/inventory/domain/entities/inventory_mutation_outcome.dart';
@@ -98,6 +99,14 @@ class _FakeInventoryRepository extends AdminInventoryRepository {
   AdminInventoryPage Function(int page)? pageBuilder;
   AdminStockMovementPage Function(int page)? movementPageBuilder;
 
+  InventoryCategoryMutationOutcome categoryOutcome =
+      InventoryCategoryMutationOutcome.success;
+  String? createdCategory;
+  String? renamedCategoryFrom;
+  String? renamedCategoryTo;
+  String? deletedCategory;
+  String? categoryReassignedTo;
+
   InventoryMaterialSaveOutcome saveOutcome = InventoryMaterialSaveOutcome.saved;
   InventoryMutationOutcome deleteOutcome = InventoryMutationOutcome.success;
   InventoryMovementOutcome movementOutcome = InventoryMovementOutcome.success;
@@ -138,6 +147,67 @@ class _FakeInventoryRepository extends AdminInventoryRepository {
     filtersCalls += 1;
     if (failFilters) throw StateError('filters failed');
     return filters;
+  }
+
+  @override
+  Future<InventoryCategoryMutationOutcome> createInventoryCategory(
+    String name,
+  ) async {
+    createdCategory = name;
+    if (categoryOutcome == InventoryCategoryMutationOutcome.success) {
+      filters = AdminInventoryFilters(
+        branches: filters.branches,
+        categories: [
+          ...filters.categories,
+          AdminInventoryCategoryOption(value: name),
+        ],
+      );
+    }
+    return categoryOutcome;
+  }
+
+  @override
+  Future<InventoryCategoryMutationOutcome> renameInventoryCategory({
+    required String currentName,
+    required String newName,
+  }) async {
+    renamedCategoryFrom = currentName;
+    renamedCategoryTo = newName;
+    if (categoryOutcome == InventoryCategoryMutationOutcome.success) {
+      filters = AdminInventoryFilters(
+        branches: filters.branches,
+        categories: [
+          for (final category in filters.categories)
+            if (category.value == currentName)
+              AdminInventoryCategoryOption(
+                value: newName,
+                count: category.count,
+              )
+            else
+              category,
+        ],
+      );
+    }
+    return categoryOutcome;
+  }
+
+  @override
+  Future<InventoryCategoryMutationOutcome> deleteInventoryCategory({
+    required String name,
+    String? reassignTo,
+  }) async {
+    deletedCategory = name;
+    categoryReassignedTo = reassignTo;
+    if (categoryOutcome == InventoryCategoryMutationOutcome.success) {
+      filters = AdminInventoryFilters(
+        branches: filters.branches,
+        categories: [
+          for (final category in filters.categories)
+            if (category.value != name) category,
+        ],
+      );
+    }
+    return categoryOutcome;
   }
 
   @override
@@ -239,6 +309,53 @@ void main() {
       expect(repository.filtersCalls, 1);
       expect(repository.lastPage, 0);
       expect(repository.lastPageSize, 10);
+    });
+
+    test('category mutations refresh the managed filter options', () async {
+      final repository = _FakeInventoryRepository();
+      final cubit = AdminInventoryCubit(repository: repository);
+      addTearDown(cubit.close);
+      await cubit.load();
+      final initialFilterReads = repository.filtersCalls;
+
+      expect(
+        await cubit.createInventoryCategory('Packaging'),
+        InventoryCategoryMutationOutcome.success,
+      );
+      expect(repository.createdCategory, 'Packaging');
+      expect(
+        cubit.state.filters.categories.map((category) => category.value),
+        contains('Packaging'),
+      );
+      expect(repository.filtersCalls, initialFilterReads + 1);
+
+      expect(
+        await cubit.renameInventoryCategory(
+          currentName: 'Packaging',
+          newName: 'Paper goods',
+        ),
+        InventoryCategoryMutationOutcome.success,
+      );
+      expect(repository.renamedCategoryFrom, 'Packaging');
+      expect(repository.renamedCategoryTo, 'Paper goods');
+      expect(
+        cubit.state.filters.categories.map((category) => category.value),
+        contains('Paper goods'),
+      );
+
+      expect(
+        await cubit.deleteInventoryCategory(
+          name: 'Paper goods',
+          reassignTo: 'حبوب البن',
+        ),
+        InventoryCategoryMutationOutcome.success,
+      );
+      expect(repository.deletedCategory, 'Paper goods');
+      expect(repository.categoryReassignedTo, 'حبوب البن');
+      expect(
+        cubit.state.filters.categories.map((category) => category.value),
+        isNot(contains('Paper goods')),
+      );
     });
 
     test('search is debounced and clearing it reloads at once', () async {

@@ -37,8 +37,10 @@ class _PosReceiptDialogState extends State<_PosReceiptDialog> {
 
   /// A simplified tax invoice needs the seller identity, and the QR payload is
   /// rebuilt on every frame if it is read inside `build`.
-  late final bool _taxInvoiceReady =
-      buildPosReceiptQrData(widget.receipt) != null;
+  late final bool _invoiceReady = widget.receipt.result.invoiceIssued;
+  late final bool _canPrintReceipt = widget.receipt.result.orderId
+      .trim()
+      .isNotEmpty;
 
   @override
   void initState() {
@@ -46,7 +48,7 @@ class _PosReceiptDialogState extends State<_PosReceiptDialog> {
     // العميل يغادر ومع فاتورته الضريبية، لذلك تُفتح نافذة الطباعة بمجرد تسجيل
     // العملية. هذه المحاولة خارج ضغط الزر، وقد يرفضها النظام، فلا تُبلَّغ كفشل:
     // بطاقة الفاتورة تحتفظ بزر طباعة يبلّغ كاملًا عند الضغط.
-    if (_taxInvoiceReady) {
+    if (_invoiceReady) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _print(silent: true);
       });
@@ -120,7 +122,7 @@ class _PosReceiptDialogState extends State<_PosReceiptDialog> {
                     const SizedBox(height: AppSizes.px12),
                     _TotalsCard(receipt: receipt),
                     const SizedBox(height: AppSizes.px12),
-                    _TaxInvoiceCard(receipt: receipt, ready: _taxInvoiceReady),
+                    _TaxInvoiceCard(receipt: receipt, ready: _invoiceReady),
                     if (receipt.orderNote.isNotEmpty) ...[
                       const SizedBox(height: AppSizes.px12),
                       _NoteCard(note: receipt.orderNote),
@@ -174,7 +176,7 @@ class _PosReceiptDialogState extends State<_PosReceiptDialog> {
                     child: SizedBox(
                       height: AppSizes.px42,
                       child: FilledButton.icon(
-                        onPressed: _printing || !_taxInvoiceReady
+                        onPressed: _printing || !_canPrintReceipt
                             ? null
                             : _print,
                         style: FilledButton.styleFrom(
@@ -760,6 +762,28 @@ class _TaxInvoiceCard extends StatelessWidget {
 
     final language = AppLocale.instance.language;
     final result = receipt.result;
+    if (!result.isTaxInvoice) {
+      return Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColor.adminAccent.withValues(alpha: .3)),
+          color: adminFlagBackground(
+            theme,
+            AppColor.adminAccent,
+            AppColor.adminAccentSurface,
+          ),
+        ),
+        child: Text(
+          '${S.posReceiptDocumentTitle}: ${result.invoiceNumber}',
+          style: TextStyle(
+            color: adminHeadingColor(theme),
+            fontSize: AppFontSizes.size11_5,
+            fontWeight: AppFontWeights.bold,
+          ),
+        ),
+      );
+    }
     final address = result.sellerAddressFor(language);
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),

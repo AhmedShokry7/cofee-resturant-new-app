@@ -13,6 +13,7 @@ import 'package:admin_app/features/inventory/presentation/widgets/inventory_tool
 import 'package:admin_app/shared/widgets/admin_directory_panel.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_pagination.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 class InventoryDirectory extends StatefulWidget {
   const InventoryDirectory({
@@ -203,11 +204,7 @@ class _InventoryDirectoryState extends State<InventoryDirectory> {
       action: !noData
           ? TextButton(onPressed: _clearAll, child: Text(S.clearFilters))
           : widget.canEdit
-          ? TextButton.icon(
-              onPressed: widget.onAdd,
-              icon: const Icon(AppIcons.add01, size: 16),
-              label: Text(S.addRawMaterial),
-            )
+          ? AdminCreateButton(label: S.addRawMaterial, onPressed: widget.onAdd)
           : null,
     );
   }

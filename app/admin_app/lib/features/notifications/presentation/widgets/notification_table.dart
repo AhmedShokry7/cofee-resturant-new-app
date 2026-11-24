@@ -21,6 +21,12 @@ class NotificationTable extends StatelessWidget {
     required this.canManage,
     required this.onOpen,
     required this.onAction,
+    this.selectedIds = const <String>{},
+    this.onToggleSelection,
+    this.onTogglePageSelection,
+    this.pageSelectedCount = 0,
+    this.pageDeletableCount = 0,
+    this.isBulkBusy = false,
   });
 
   final List<AdminNotification> notifications;
@@ -29,8 +35,15 @@ class NotificationTable extends StatelessWidget {
   final ValueChanged<AdminNotification> onOpen;
   final void Function(AdminNotification notification, NotificationAction action)
   onAction;
+  final Set<String> selectedIds;
+  final ValueChanged<String>? onToggleSelection;
+  final ValueChanged<bool>? onTogglePageSelection;
+  final int pageSelectedCount;
+  final int pageDeletableCount;
+  final bool isBulkBusy;
 
   static const _minWidth = 1180.0;
+  static const _selectionWidth = 40.0;
   static const _customerWidth = 170.0;
   static const _typeWidth = 96.0;
   static const _sourceWidth = 132.0;
@@ -52,7 +65,13 @@ class NotificationTable extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const _Header(),
+              _Header(
+                showSelection: canManage && onTogglePageSelection != null,
+                pageSelectedCount: pageSelectedCount,
+                pageDeletableCount: pageDeletableCount,
+                isBulkBusy: isBulkBusy,
+                onTogglePageSelection: onTogglePageSelection,
+              ),
               for (final notification in notifications)
                 _Row(
                   key: Key('notification-row-${notification.id}'),
@@ -61,6 +80,9 @@ class NotificationTable extends StatelessWidget {
                   canManage: canManage,
                   onOpen: () => onOpen(notification),
                   onAction: (action) => onAction(notification, action),
+                  selected: selectedIds.contains(notification.id),
+                  isBulkBusy: isBulkBusy,
+                  onToggleSelection: onToggleSelection,
                 ),
             ],
           ),
@@ -71,7 +93,19 @@ class NotificationTable extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header();
+  const _Header({
+    this.showSelection = false,
+    this.pageSelectedCount = 0,
+    this.pageDeletableCount = 0,
+    this.isBulkBusy = false,
+    this.onTogglePageSelection,
+  });
+
+  final bool showSelection;
+  final int pageSelectedCount;
+  final int pageDeletableCount;
+  final bool isBulkBusy;
+  final ValueChanged<bool>? onTogglePageSelection;
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +121,27 @@ class _Header extends StatelessWidget {
       ),
       child: Row(
         children: [
+          if (showSelection)
+            SizedBox(
+              width: NotificationTable._selectionWidth,
+              child: Checkbox(
+                key: const Key('notification-select-page-header'),
+                tristate: true,
+                value: pageSelectedCount == 0
+                    ? false
+                    : pageSelectedCount == pageDeletableCount
+                    ? true
+                    : null,
+                onChanged: isBulkBusy || onTogglePageSelection == null
+                    ? null
+                    : (value) => onTogglePageSelection!(
+                          pageSelectedCount > 0 &&
+                                  pageSelectedCount < pageDeletableCount
+                              ? true
+                              : (value ?? false),
+                        ),
+              ),
+            ),
           Expanded(child: _cell(S.notificationsTableNotification, dark)),
           SizedBox(
             width: NotificationTable._customerWidth,
@@ -139,6 +194,9 @@ class _Row extends StatelessWidget {
     required this.canManage,
     required this.onOpen,
     required this.onAction,
+    this.selected = false,
+    this.isBulkBusy = false,
+    this.onToggleSelection,
   });
 
   final AdminNotification notification;
@@ -146,6 +204,9 @@ class _Row extends StatelessWidget {
   final bool canManage;
   final VoidCallback onOpen;
   final ValueChanged<NotificationAction> onAction;
+  final bool selected;
+  final bool isBulkBusy;
+  final ValueChanged<String>? onToggleSelection;
 
   @override
   Widget build(BuildContext context) {
@@ -167,6 +228,21 @@ class _Row extends StatelessWidget {
           ),
           child: Row(
             children: [
+              if (canManage && onToggleSelection != null)
+                SizedBox(
+                  width: NotificationTable._selectionWidth,
+                  child: notification.isCampaignSummary
+                      ? const SizedBox.shrink()
+                      : Checkbox(
+                          key: Key(
+                            'notification-select-${notification.id}',
+                          ),
+                          value: selected,
+                          onChanged: isBulkBusy
+                              ? null
+                              : (_) => onToggleSelection!(notification.id),
+                        ),
+                ),
               Expanded(
                 child: Row(
                   children: [

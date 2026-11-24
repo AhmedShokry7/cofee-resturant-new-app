@@ -6,6 +6,7 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/carts/presentation/manager/admin_cart_cubit.dart';
 import 'package:admin_app/features/carts/presentation/manager/admin_cart_state.dart';
 import 'package:admin_app/features/carts/presentation/widgets/cart_details_dialog.dart';
+import 'package:admin_app/features/carts/presentation/widgets/cart_metrics_cards.dart';
 import 'package:admin_app/features/carts/presentation/widgets/cart_records.dart';
 import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_inline_error.dart';
@@ -86,13 +87,22 @@ class _CartPageState extends State<CartPage> {
                           message: state.errorMessage,
                           onRetry: _cubit.load,
                         )
-                      : CartRecords(
-                          carts: state.carts,
-                          search: _searchQuery,
-                          onOpen: (cart) => showCartDetailsDialog(
-                            context: context,
-                            cart: cart,
-                          ),
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            CartMetricsCards(carts: state.carts),
+                            const SizedBox(height: AppSpacing.md),
+                            Expanded(
+                              child: CartRecords(
+                                carts: state.carts,
+                                search: _searchQuery,
+                                onOpen: (cart) => showCartDetailsDialog(
+                                  context: context,
+                                  cart: cart,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                 ),
               ],

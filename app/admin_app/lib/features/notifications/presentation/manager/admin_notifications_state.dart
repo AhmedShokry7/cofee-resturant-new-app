@@ -24,6 +24,9 @@ class AdminNotificationsState {
     this.pageSize = AdminNotificationsPaging.pageSize,
     this.isRefreshingRows = false,
     this.errorMessage,
+    this.selectedIds = const <String>{},
+    this.selectedAllMatching = false,
+    this.isBulkBusy = false,
   });
 
   final AdminNotificationsPageStatus status;
@@ -44,6 +47,16 @@ class AdminNotificationsState {
   final int pageSize;
   final bool isRefreshingRows;
   final String? errorMessage;
+
+  /// Notification ids selected for bulk delete. Only deletable rows appear here.
+  final Set<String> selectedIds;
+
+  /// True when the selection was made with "select all matching", so it covers
+  /// every page of the current filters rather than only the visible rows.
+  final bool selectedAllMatching;
+
+  /// True while a bulk selection lookup or delete is running. Blocks repeats.
+  final bool isBulkBusy;
 
   bool get isLoading => status == AdminNotificationsPageStatus.loading;
   bool get isFailure => status == AdminNotificationsPageStatus.failure;
@@ -80,6 +93,10 @@ class AdminNotificationsState {
     String? errorMessage,
     bool clearError = false,
     bool clearDateFilter = false,
+    Set<String>? selectedIds,
+    bool? selectedAllMatching,
+    bool? isBulkBusy,
+    bool clearSelection = false,
   }) {
     return AdminNotificationsState(
       status: status ?? this.status,
@@ -98,6 +115,13 @@ class AdminNotificationsState {
       pageSize: pageSize,
       isRefreshingRows: isRefreshingRows ?? this.isRefreshingRows,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      selectedIds: clearSelection
+          ? const <String>{}
+          : (selectedIds ?? this.selectedIds),
+      selectedAllMatching: clearSelection
+          ? false
+          : (selectedAllMatching ?? this.selectedAllMatching),
+      isBulkBusy: isBulkBusy ?? this.isBulkBusy,
     );
   }
 }

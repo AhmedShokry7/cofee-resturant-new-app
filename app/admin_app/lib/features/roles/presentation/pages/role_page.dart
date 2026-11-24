@@ -1,8 +1,10 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/features/roles/data/models/admin_role.dart';
 import 'package:admin_app/features/roles/presentation/manager/admin_role_cubit.dart';
 import 'package:admin_app/features/roles/presentation/manager/admin_role_state.dart';
+import 'package:admin_app/features/roles/presentation/widgets/role_editor_dialog.dart';
 import 'package:admin_app/features/roles/presentation/widgets/role_permissions_dialog.dart';
 import 'package:admin_app/features/roles/presentation/widgets/role_page_body.dart';
 import 'package:admin_app/core/search/admin_search_controller.dart';
@@ -60,6 +62,25 @@ class _RolePageState extends State<RolePage> {
     setState(() => _searchQuery = query.trim());
   }
 
+  Future<void> _manageRole(BuildContext context, AdminRole role) async {
+    // The owner role is implicit and informational, and a read-only admin may
+    // only inspect. Every other role opens the editor that submits the whole
+    // permission set atomically.
+    if (!widget.canManage || role.isOwner) {
+      await showRolePermissionsDialog(
+        context: context,
+        cubit: _cubit,
+        role: role,
+        canManage: false,
+      );
+      return;
+    }
+    await showRoleEditorDialog(context: context, cubit: _cubit, role: role);
+  }
+
+  Future<void> _createRole(BuildContext context) =>
+      showRoleEditorDialog(context: context, cubit: _cubit);
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider<AdminRoleCubit>.value(
@@ -79,12 +100,8 @@ class _RolePageState extends State<RolePage> {
             roles: state.roles,
             search: _searchQuery,
             onSearchChanged: widget.searchController.update,
-            onManage: (role) => showRolePermissionsDialog(
-              context: context,
-              cubit: _cubit,
-              role: role,
-              canManage: widget.canManage,
-            ),
+            onManage: (role) => _manageRole(context, role),
+            onCreate: widget.canManage ? () => _createRole(context) : null,
             canManage: widget.canManage,
             errorMessage: state.status == AdminRoleStatus.failure
                 ? state.errorMessage

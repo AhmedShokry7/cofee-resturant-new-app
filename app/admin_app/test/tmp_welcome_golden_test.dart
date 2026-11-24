@@ -34,10 +34,8 @@ class _Repo extends VisualEditorRepository {
     DesignTheme theme = DesignTheme.none,
     Map<String, int> knownRevisions = const {},
     bool force = false,
-  }) async => PageSaveResult(
-    savedRevisions: const {},
-    savedAt: DateTime(2026, 1, 1),
-  );
+  }) async =>
+      PageSaveResult(savedRevisions: const {}, savedAt: DateTime(2026, 1, 1));
 
   @override
   Future<Map<String, dynamic>?> loadDraftDocument() async => draftDocument;
@@ -101,9 +99,9 @@ void main() {
     ComponentRegistry.all.forEach(DesignDocumentCodec.registerEntry);
     AppLocale.instance.debugSet(AppLanguage.arabic);
 
-    final document = DesignDocumentCodec.document(
-      {'welcome': DesignDocumentCodec.defaultComponentsFor('welcome')},
-    );
+    final document = DesignDocumentCodec.document({
+      'welcome': DesignDocumentCodec.defaultComponentsFor('welcome'),
+    });
 
     final cubit = VisualEditorCubit(repository: _Repo(document));
     await cubit.initialize();
@@ -132,9 +130,7 @@ void main() {
     // بدّل الصفحة عبر استدعاء onPagaged من الشريط نفسه (نفس مسار اختيار
     // الصفحة من القائمة — initState يعيد التهيئة فتعود المعاينة للرئيسية).
     tester
-        .widget<StudioSingleRowToolbar>(
-          find.byType(StudioSingleRowToolbar),
-        )
+        .widget<StudioSingleRowToolbar>(find.byType(StudioSingleRowToolbar))
         .onPageChanged!('welcome');
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));

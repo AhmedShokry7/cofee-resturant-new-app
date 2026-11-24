@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification_bulk_delete.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification_composer.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification_metrics.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_push_health.dart';
@@ -90,4 +91,21 @@ abstract interface class NotificationsRepository {
 
   /// يحذف الإشعار ويعيد نتيجة العملية.
   Future<NotificationMutationOutcome> deleteNotification(String notificationId);
+
+  /// Ids of deletable notifications matching the directory filters across all
+  /// pages. Reports tooMany above the server cap instead of returning ids.
+  Future<AdminNotificationMatchingIds> loadMatchingDeletableIds({
+    String? search,
+    AdminNotificationType? type,
+    bool? isRead,
+    String? pushState,
+    String? source,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+  });
+
+  /// Deletes one server batch of notifications and reports per-id outcomes.
+  Future<AdminNotificationBulkDeleteBatch> deleteNotificationsBatch(
+    List<String> notificationIds,
+  );
 }

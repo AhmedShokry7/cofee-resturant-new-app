@@ -7,6 +7,7 @@ import 'package:admin_app/core/services/admin_avatar_links.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/notifications/data/campaign_push_image.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification_bulk_delete.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification_composer.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification_metrics.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_push_health.dart';
@@ -264,6 +265,70 @@ class AdminNotificationsRepository implements NotificationsRepository {
   static String? _blankToNull(String? value) {
     final text = value?.trim();
     return text == null || text.isEmpty ? null : text;
+  }
+
+  @override
+  Future<AdminNotificationMatchingIds> loadMatchingDeletableIds({
+    String? search,
+    AdminNotificationType? type,
+    bool? isRead,
+    String? pushState,
+    String? source,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+  }) async {
+    final response = await _supabase.rpc(
+      'admin_notification_ids_for_delete',
+      params: {
+        'p_search': _blankToNull(search),
+        'p_type': type?.value,
+        'p_read': isRead,
+        'p_push': pushState,
+        'p_source': source,
+        'p_created_from': dateFrom == null
+            ? null
+            : DateTime(dateFrom.year, dateFrom.month, dateFrom.day)
+                  .toUtc()
+                  .toIso8601String(),
+        'p_created_before': dateTo == null
+            ? null
+            : DateTime(dateTo.year, dateTo.month, dateTo.day + 1)
+                  .toUtc()
+                  .toIso8601String(),
+      },
+    );
+    if (response is! Map) {
+      throw StateError('admin_notification_ids_for_delete returned no result');
+    }
+    final raw = response['ids'];
+    return AdminNotificationMatchingIds(
+      total: (response['total'] as num?)?.toInt() ?? 0,
+      tooMany: response['too_many'] == true,
+      ids: raw is List ? raw.map((id) => '$id').toList() : const <String>[],
+    );
+  }
+
+  @override
+  Future<AdminNotificationBulkDeleteBatch> deleteNotificationsBatch(
+    List<String> notificationIds,
+  ) async {
+    final response = await _supabase.rpc(
+      'admin_delete_notifications',
+      params: {'p_notification_ids': notificationIds},
+    );
+    if (response is! Map) {
+      throw StateError('admin_delete_notifications returned no result');
+    }
+    List<String> idsOf(String key) {
+      final raw = response[key];
+      return raw is List ? raw.map((id) => '$id').toList() : const <String>[];
+    }
+
+    return AdminNotificationBulkDeleteBatch(
+      deletedIds: idsOf('deleted_ids'),
+      notFoundIds: idsOf('not_found_ids'),
+      protectedIds: idsOf('protected_ids'),
+    );
   }
 
   static bool _isOk(Object? response) =>

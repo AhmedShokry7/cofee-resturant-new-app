@@ -45,12 +45,16 @@ class StaffInviteResult {
     this.invitationId,
     this.code,
     this.email,
+    this.emailSent = true,
+    this.acceptanceUrl,
   });
 
   const StaffInviteResult.refused(this.outcome)
     : invitationId = null,
       code = null,
-      email = null;
+      email = null,
+      emailSent = false,
+      acceptanceUrl = null;
 
   final StaffInviteOutcome outcome;
   final String? invitationId;
@@ -60,6 +64,12 @@ class StaffInviteResult {
 
   /// البريد كما خُزّن: أحرف صغيرة، وهو ما يجب أن يتطابق معه حساب المدعو.
   final String? email;
+
+  /// Whether the server-side invitation email was accepted by the provider.
+  final bool emailSent;
+
+  /// Absolute URL built by the server using its configured admin app origin.
+  final String? acceptanceUrl;
 
   bool get isSuccess => outcome == StaffInviteOutcome.success;
 }

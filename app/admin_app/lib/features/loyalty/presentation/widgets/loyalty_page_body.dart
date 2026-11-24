@@ -2,7 +2,6 @@ import 'package:material_ui/material_ui.dart';
 import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_overview.dart';
@@ -14,7 +13,7 @@ import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_directory_page_layout.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
-import 'package:admin_app/shared/widgets/custom_btn.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 class LoyaltyPageBody extends StatelessWidget {
   const LoyaltyPageBody({
@@ -53,14 +52,9 @@ class LoyaltyPageBody extends StatelessWidget {
               subtitle: S.loyaltyDescription,
               actions: [
                 if (canManage)
-                  CustomBtn(
-                    text: S.loyaltyAddReward,
+                  AdminCreateButton(
+                    label: S.loyaltyAddReward,
                     onPressed: onAdd,
-                    leadingIcon: const Icon(AppIcons.add01, size: 18),
-                    height: 42,
-                    borderRadius: AppRadius.pill,
-                    backgroundColor: AppColor.primaryColor,
-                    textColor: AppColor.whiteColor,
                   ),
               ],
               footer: canManage ? null : const _ReadOnlyHint(),
@@ -77,7 +71,11 @@ class LoyaltyPageBody extends StatelessWidget {
             ),
             const SizedBox(height: AppSizes.px16),
           ];
-            return AdminDirectoryPageLayout(sections: sections, directory: directory);
+          return AdminDirectoryPageLayout(
+            sections: sections,
+            directory: directory,
+            scrollOnNarrowWidth: true,
+          );
         },
       ),
     );

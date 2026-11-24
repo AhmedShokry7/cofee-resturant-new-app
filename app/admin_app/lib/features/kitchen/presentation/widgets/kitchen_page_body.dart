@@ -3,6 +3,7 @@ import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/services/postgres_changes_feed.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
@@ -31,6 +32,7 @@ class KitchenPageBody extends StatelessWidget {
     required this.branchId,
     required this.isRefreshing,
     required this.lastUpdatedAt,
+    this.realtimeStatus = RealtimeFeedStatus.connected,
     required this.busyTicketIds,
     required this.busyItemIds,
     required this.hasActiveFilters,
@@ -52,6 +54,7 @@ class KitchenPageBody extends StatelessWidget {
   final String? branchId;
   final bool isRefreshing;
   final DateTime? lastUpdatedAt;
+  final RealtimeFeedStatus realtimeStatus;
   final Set<String> busyTicketIds;
   final Set<String> busyItemIds;
   final bool hasActiveFilters;
@@ -95,6 +98,7 @@ class KitchenPageBody extends StatelessWidget {
                 _LivePill(
                   isRefreshing: isRefreshing,
                   lastUpdatedAt: lastUpdatedAt,
+                  status: realtimeStatus,
                 ),
                 if (metrics.completedToday > 0)
                   _CompletedTodayChip(count: metrics.completedToday),
@@ -171,17 +175,34 @@ class KitchenPageBody extends StatelessWidget {
 }
 
 class _LivePill extends StatelessWidget {
-  const _LivePill({required this.isRefreshing, required this.lastUpdatedAt});
+  const _LivePill({
+    required this.isRefreshing,
+    required this.lastUpdatedAt,
+    required this.status,
+  });
 
   final bool isRefreshing;
   final DateTime? lastUpdatedAt;
+  final RealtimeFeedStatus status;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final color = switch (status) {
+      RealtimeFeedStatus.connected => AppColor.trendPositive,
+      RealtimeFeedStatus.connecting ||
+      RealtimeFeedStatus.reconnecting => const Color(0xFFD97706),
+      RealtimeFeedStatus.unavailable => AppColor.errorColor,
+    };
+    final statusLabel = switch (status) {
+      RealtimeFeedStatus.connected => S.kitchenLive,
+      RealtimeFeedStatus.connecting => S.kitchenConnecting,
+      RealtimeFeedStatus.reconnecting => S.kitchenReconnecting,
+      RealtimeFeedStatus.unavailable => S.kitchenRealtimeUnavailable,
+    };
     final updated = lastUpdatedAt == null
-        ? S.kitchenUpdatedNow
-        : S.kitchenUpdatedAt(localizedTime(lastUpdatedAt!));
+        ? statusLabel
+        : '$statusLabel · ${S.kitchenUpdatedAt(localizedTime(lastUpdatedAt!))}';
     return Tooltip(
       message: updated,
       child: Container(
@@ -192,13 +213,11 @@ class _LivePill extends StatelessWidget {
         decoration: BoxDecoration(
           color: adminFlagBackground(
             theme,
-            AppColor.trendPositive,
-            AppColor.trendPositiveSurface,
+            color,
+            color.withValues(alpha: .10),
           ),
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(
-            color: AppColor.trendPositive.withValues(alpha: .25),
-          ),
+          border: Border.all(color: color.withValues(alpha: .25)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -206,16 +225,13 @@ class _LivePill extends StatelessWidget {
             Container(
               width: 6,
               height: 6,
-              decoration: const BoxDecoration(
-                color: AppColor.trendPositive,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
             const SizedBox(width: AppSizes.px6),
             Text(
-              S.kitchenLive,
+              statusLabel,
               style: TextStyle(
-                color: adminFlagForeground(theme, AppColor.trendPositive),
+                color: adminFlagForeground(theme, color),
                 fontSize: AppFontSizes.size10_5,
                 fontWeight: AppFontWeights.semiBold,
                 height: AppTextHeights.line1_5,
@@ -228,7 +244,7 @@ class _LivePill extends StatelessWidget {
                 height: AppSizes.px12,
                 child: CircularProgressIndicator(
                   strokeWidth: 1.6,
-                  color: adminFlagForeground(theme, AppColor.trendPositive),
+                  color: adminFlagForeground(theme, color),
                 ),
               ),
             ],

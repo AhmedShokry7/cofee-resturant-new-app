@@ -13,4 +13,21 @@ abstract interface class RoleRepository {
 
   /// يمنح صلاحية لوظيفة أو يسحبها بعد فحص القاعدة.
   Future<void> setRolePermission(String roleId, String code, bool granted);
+
+  /// ينشئ دورًا مخصّصًا ويعيد معرّفه. القاعدة تتحقق من الاسم والصلاحيات.
+  Future<String> createRole({
+    required String nameAr,
+    required String nameEn,
+    required String description,
+    required List<String> permissionCodes,
+  });
+
+  /// يحدّث اسم الدور ووصفه وصلاحياته كاملة وبشكل ذرّي.
+  Future<void> updateRole({
+    required String roleId,
+    required String nameAr,
+    required String nameEn,
+    required String description,
+    required List<String> permissionCodes,
+  });
 }

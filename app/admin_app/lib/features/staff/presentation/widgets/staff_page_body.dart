@@ -10,6 +10,7 @@ import 'package:admin_app/features/staff/presentation/widgets/staff_metrics_card
 import 'package:admin_app/shared/widgets/admin_inline_error.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 import 'package:admin_app/shared/widgets/custom_btn.dart';
 
 /// The header, the metrics and the directory of the staff page.
@@ -64,14 +65,10 @@ class StaffPageBody extends StatelessWidget {
                 textColor: AppColor.primaryColor,
               ),
               if (canManagePermissions)
-                CustomBtn(
-                  text: S.inviteStaff,
+                AdminCreateButton(
+                  label: S.inviteStaff,
                   onPressed: onInvite,
-                  leadingIcon: const Icon(AppIcons.userAdd01, size: 18),
-                  height: 42,
-                  borderRadius: AppRadius.pill,
-                  backgroundColor: AppColor.primaryColor,
-                  textColor: AppColor.whiteColor,
+                  icon: AppIcons.userAdd01,
                 ),
             ],
           ),

@@ -1,13 +1,10 @@
 import 'package:material_ui/material_ui.dart';
 
-import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/shared/widgets/admin_excel_button.dart';
 import 'package:admin_app/shared/widgets/admin_import_excel_dialog.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
-import 'package:admin_app/shared/widgets/custom_btn.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 /// The header of a page whose records travel in and out through Excel.
 ///
@@ -82,14 +79,9 @@ class AdminExcelPageHeader extends StatelessWidget {
             onPressed: busy ? null : onExport,
           ),
         if (onAdd != null)
-          CustomBtn(
-            text: addActionLabel,
+          AdminCreateButton(
+            label: addActionLabel,
             onPressed: busy ? null : onAdd,
-            leadingIcon: const Icon(AppIcons.add01, size: 18),
-            height: 42,
-            borderRadius: AppRadius.pill,
-            backgroundColor: AppColor.primaryColor,
-            textColor: AppColor.whiteColor,
           ),
       ],
       footer: footer,

@@ -9,9 +9,9 @@ part 'branch_state.dart';
 
 /// Remembers the customer's selected branch and reloads it on startup.
 ///
-/// Nothing is auto-selected: D1 requires the customer to choose. Prices shown
-/// without a branch are base prices, and branch-specific data stays unloaded
-/// until a choice exists.
+/// A saved choice is restored when it is still active. When exactly one active
+/// branch exists, it is selected and persisted automatically; multiple
+/// branches still require an explicit customer choice.
 class BranchCubit extends Cubit<BranchState> {
   BranchCubit({required this._repository}) : super(const BranchState()) {
     load();
@@ -37,14 +37,23 @@ class BranchCubit extends Cubit<BranchState> {
           if (branch.id == storedId) selected = branch;
         }
       }
+      selected ??= branches.length == 1 ? branches.single : null;
       if (isClosed) return;
       emit(
         state.copyWith(
           branches: branches,
           selected: selected,
+          clearSelected: selected == null,
           isLoading: false,
         ),
       );
+      if (selected != null && selected.id != storedId) {
+        try {
+          await SharedPref.setValue(key: _storageKey, value: selected.id);
+        } catch (_) {
+          // The one-branch choice still applies for this session if storage fails.
+        }
+      }
     } catch (error, stackTrace) {
       if (isClosed) return;
       emit(state.copyWith(isLoading: false, error: error.toString()));

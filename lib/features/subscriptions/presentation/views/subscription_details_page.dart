@@ -16,6 +16,7 @@ import 'package:new_coffee/features/subscriptions/presentation/views/widgets/sub
 import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:qr/qr.dart';
 
 class SubscriptionDetailsPage extends StatelessWidget {
   const SubscriptionDetailsPage({super.key});
@@ -54,7 +55,13 @@ class _SubscriptionDetailsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: DesignText(S.mySubscription, page: 'subscription_details', label: 'mySubscription')),
+      appBar: AppBar(
+        title: DesignText(
+          S.mySubscription,
+          page: 'subscription_details',
+          label: 'mySubscription',
+        ),
+      ),
       body: BlocBuilder<SubscriptionCubit, SubscriptionState>(
         builder: (context, state) {
           final subscription = state.subscription;
@@ -72,7 +79,11 @@ class _SubscriptionDetailsView extends StatelessWidget {
                   SizedBox(height: AppSpacing.md),
                   FilledButton(
                     onPressed: () => context.read<SubscriptionCubit>().load(),
-                    child: DesignText(S.retry, page: 'subscription_details', label: 'retry'),
+                    child: DesignText(
+                      S.retry,
+                      page: 'subscription_details',
+                      label: 'retry',
+                    ),
                   ),
                 ],
               ),
@@ -83,13 +94,21 @@ class _SubscriptionDetailsView extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  DesignText(S.noSubscriptionYet, page: 'subscription_details', label: 'noSubscriptionYet'),
+                  DesignText(
+                    S.noSubscriptionYet,
+                    page: 'subscription_details',
+                    label: 'noSubscriptionYet',
+                  ),
                   SizedBox(height: AppSpacing.md),
                   FilledButton(
                     onPressed: () =>
                         Navigator.of(context)
                             .pushNamed(SubscriptionPlansPage.routeName),
-                    child: DesignText(S.browsePlans, page: 'subscription_details', label: 'browsePlans'),
+                    child: DesignText(
+                      S.browsePlans,
+                      page: 'subscription_details',
+                      label: 'browsePlans',
+                    ),
                   ),
                 ],
               ),
@@ -128,51 +147,26 @@ class _SubscriptionBody extends StatelessWidget {
           _StaleNotice(onRetry: () => cubit.load()),
           SizedBox(height: AppSpacing.md),
         ],
-        Text(subscription.planName, style: AppFonts.semiBold20(context)),
+        _SubscriptionSummary(subscription: subscription),
+        SizedBox(height: AppSpacing.md),
+        _SubscriptionFacts(subscription: subscription),
         SizedBox(height: AppSpacing.sm),
-        SubscriptionDetailRow(
-          label: S.subscriptionStatus,
-          value: subscription.statusLabel,
-        ),
-        if (subscription.startsAt != null)
-          SubscriptionDetailRow(
-            label: S.subscriptionStart,
-            value: Formatters.date(subscription.startsAt!),
+        Card(
+          margin: EdgeInsets.zero,
+          child: SwitchListTile(
+            contentPadding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            title: DesignText(
+              S.autoRenew,
+              page: 'subscription_details',
+              label: 'autoRenew',
+            ),
+            value: subscription.autoRenew,
+            onChanged: subscription.isActive && !busy
+                ? (value) => _setAutoRenew(context, value)
+                : null,
           ),
-        if (subscription.endsAt != null)
-          SubscriptionDetailRow(
-            label: S.subscriptionEnd,
-            value: Formatters.date(subscription.endsAt!),
-          ),
-        SubscriptionDetailRow(
-          label: S.availableCups,
-          value: '${subscription.availableCups}',
         ),
-        SubscriptionDetailRow(
-          label: S.cupsUsed,
-          value: '${subscription.cupsUsed}',
-        ),
-        SubscriptionDetailRow(
-          label: S.cupsCarriedOver,
-          value: '${subscription.cupsCarriedOver}',
-        ),
-        SubscriptionDetailRow(
-          label: S.extraCredit,
-          value: Formatters.amount(subscription.bonusBalance),
-        ),
-        if (subscription.bonusExpiresAt != null)
-          SubscriptionDetailRow(
-            label: S.creditExpires,
-            value: Formatters.date(subscription.bonusExpiresAt!),
-          ),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: DesignText(S.autoRenew, page: 'subscription_details', label: 'autoRenew'),
-          value: subscription.autoRenew,
-          onChanged: subscription.isActive && !busy
-              ? (value) => _setAutoRenew(context, value)
-              : null,
-        ),
+        SizedBox(height: AppSpacing.md),
         Wrap(
           spacing: AppSpacing.sm,
           runSpacing: AppSpacing.sm,
@@ -180,37 +174,53 @@ class _SubscriptionBody extends StatelessWidget {
             if (subscription.isPendingPayment)
               FilledButton(
                 onPressed: busy ? null : () => cubit.load(),
-                child: DesignText(S.checkPaymentStatus, page: 'subscription_details', label: 'checkPaymentStatus'),
+                child: DesignText(
+                  S.checkPaymentStatus,
+                  page: 'subscription_details',
+                  label: 'checkPaymentStatus',
+                ),
               ),
             if (subscription.isActive)
               FilledButton(
                 onPressed: busy ? null : () => _showQr(context),
-                child: DesignText(S.showQrCode, page: 'subscription_details', label: 'showQrCode'),
+                child: DesignText(
+                  S.showQrCode,
+                  page: 'subscription_details',
+                  label: 'showQrCode',
+                ),
               ),
             OutlinedButton(
               onPressed: busy ? null : () => _renew(context),
-              child: DesignText(S.renew, page: 'subscription_details', label: 'renew'),
+              child: DesignText(
+                S.renew,
+                page: 'subscription_details',
+                label: 'renew',
+              ),
             ),
             OutlinedButton(
               onPressed: subscription.isActive && !busy
                   ? () => _cancel(context)
                   : null,
-              child: DesignText(S.cancel, page: 'subscription_details', label: 'cancel'),
+              child: DesignText(
+                S.cancel,
+                page: 'subscription_details',
+                label: 'cancel',
+              ),
             ),
           ],
         ),
-        if (state.qrToken != null) ...[
-          SizedBox(height: AppSpacing.md),
-          Text(S.qrSingleUseHint, style: AppFonts.regular14(context)),
-          SizedBox(height: AppSpacing.xs),
-          SelectableText(state.qrToken!),
-        ],
         SizedBox(height: AppSpacing.lg),
         Text(S.usageHistory, style: AppFonts.semiBold16(context)),
         SizedBox(height: AppSpacing.xs),
-        _UsageHistory(
-          state: state,
-          onRetry: () => cubit.loadUsage(subscription.id),
+        Card(
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.md),
+            child: _UsageHistory(
+              state: state,
+              onRetry: () => cubit.loadUsage(subscription.id),
+            ),
+          ),
         ),
       ],
     );
@@ -219,7 +229,15 @@ class _SubscriptionBody extends StatelessWidget {
   Future<void> _setAutoRenew(BuildContext context, bool value) async {
     final messenger = ScaffoldMessenger.of(context);
     if (await cubit.setAutoRenew(value)) return;
-    messenger.showSnackBar(SnackBar(content: DesignText(S.couldNotSaveAutoRenew, page: 'subscription_details', label: 'couldNotSaveAutoRenew')));
+    messenger.showSnackBar(
+      SnackBar(
+        content: DesignText(
+          S.couldNotSaveAutoRenew,
+          page: 'subscription_details',
+          label: 'couldNotSaveAutoRenew',
+        ),
+      ),
+    );
   }
 
   /// Makes a pass, or says why there is none.
@@ -228,8 +246,60 @@ class _SubscriptionBody extends StatelessWidget {
   /// page only ever shows what the server handed back.
   Future<void> _showQr(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
-    if (await cubit.showQr()) return;
-    messenger.showSnackBar(SnackBar(content: DesignText(S.couldNotShowQr, page: 'subscription_details', label: 'couldNotShowQr')));
+    if (!await cubit.showQr()) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: DesignText(
+            S.couldNotShowQr,
+            page: 'subscription_details',
+            label: 'couldNotShowQr',
+          ),
+        ),
+      );
+      return;
+    }
+    if (!context.mounted || cubit.state.qrToken == null) return;
+    final qrSize = (MediaQuery.sizeOf(context).width - 128)
+        .clamp(128.0, 240.0)
+        .toDouble();
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: DesignText(
+          S.showQrCode,
+          page: 'subscription_details',
+          label: 'showQrCode',
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
+              ),
+              child: CustomPaint(
+                size: Size.square(qrSize),
+                painter: _SubscriptionQrPainter(cubit.state.qrToken!),
+              ),
+            ),
+            SizedBox(height: AppSpacing.md),
+            Text(S.qrSingleUseHint, textAlign: TextAlign.center),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: DesignText(
+              S.ok,
+              page: 'subscription_details',
+              label: 'closeQr',
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Renews and pays for the new cycle.
@@ -243,13 +313,27 @@ class _SubscriptionBody extends StatelessWidget {
     final renewed = await cubit.renew();
     if (renewed == null) {
       messenger.showSnackBar(
-        SnackBar(content: DesignText(S.couldNotRenewSubscription, page: 'subscription_details', label: 'couldNotRenewSubscription')),
+        SnackBar(
+          content: DesignText(
+            S.couldNotRenewSubscription,
+            page: 'subscription_details',
+            label: 'couldNotRenewSubscription',
+          ),
+        ),
       );
       return;
     }
     final plan = cubit.renewalPlan;
     if (plan == null) {
-      messenger.showSnackBar(SnackBar(content: DesignText(S.couldNotPriceRenewal, page: 'subscription_details', label: 'couldNotPriceRenewal')));
+      messenger.showSnackBar(
+        SnackBar(
+          content: DesignText(
+            S.couldNotPriceRenewal,
+            page: 'subscription_details',
+            label: 'couldNotPriceRenewal',
+          ),
+        ),
+      );
       // The new row is real and unpaid, so the page is re-read rather than left
       // showing a subscription the customer cannot act on.
       await cubit.load();
@@ -268,9 +352,142 @@ class _SubscriptionBody extends StatelessWidget {
     final messenger = ScaffoldMessenger.of(context);
     if (await cubit.cancel()) return;
     messenger.showSnackBar(
-      SnackBar(content: DesignText(S.couldNotCancelSubscription, page: 'subscription_details', label: 'couldNotCancelSubscription')),
+      SnackBar(
+        content: DesignText(
+          S.couldNotCancelSubscription,
+          page: 'subscription_details',
+          label: 'couldNotCancelSubscription',
+        ),
+      ),
     );
   }
+}
+
+class _SubscriptionSummary extends StatelessWidget {
+  const _SubscriptionSummary({required this.subscription});
+
+  final CustomerSubscription subscription;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = subscription.cupsEntitled + subscription.cupsCarriedOver;
+    final progress = total == 0
+        ? 0.0
+        : (subscription.availableCups / total).clamp(0.0, 1.0).toDouble();
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(subscription.planName, style: AppFonts.semiBold20(context)),
+            SizedBox(height: AppSpacing.xs),
+            SubscriptionDetailRow(
+              label: S.subscriptionStatus,
+              value: subscription.statusLabel,
+            ),
+            SizedBox(height: AppSpacing.sm),
+            SubscriptionDetailRow(
+              label: S.availableCups,
+              value: '${subscription.availableCups}',
+            ),
+            SizedBox(height: AppSpacing.xs),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 8,
+                backgroundColor: AppColor.borderColor,
+              ),
+            ),
+            SizedBox(height: AppSpacing.xs),
+            SubscriptionDetailRow(
+              label: S.cupsUsed,
+              value: '${subscription.cupsUsed}',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SubscriptionFacts extends StatelessWidget {
+  const _SubscriptionFacts({required this.subscription});
+
+  final CustomerSubscription subscription;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    margin: EdgeInsets.zero,
+    child: Padding(
+      padding: EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (subscription.startsAt != null)
+            SubscriptionDetailRow(
+              label: S.subscriptionStart,
+              value: Formatters.date(subscription.startsAt!),
+            ),
+          if (subscription.endsAt != null)
+            SubscriptionDetailRow(
+              label: S.subscriptionEnd,
+              value: Formatters.date(subscription.endsAt!),
+            ),
+          SubscriptionDetailRow(
+            label: S.cupsCarriedOver,
+            value: '${subscription.cupsCarriedOver}',
+          ),
+          SubscriptionDetailRow(
+            label: S.extraCredit,
+            value: Formatters.amount(subscription.bonusBalance),
+          ),
+          if (subscription.bonusExpiresAt != null)
+            SubscriptionDetailRow(
+              label: S.creditExpires,
+              value: Formatters.date(subscription.bonusExpiresAt!),
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _SubscriptionQrPainter extends CustomPainter {
+  _SubscriptionQrPainter(String token)
+    : _image = QrImage(
+        QrCode.fromData(data: token, errorCorrectLevel: QrErrorCorrectLevel.M),
+      );
+
+  final QrImage _image;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final moduleSize = size.width / (_image.moduleCount + 8);
+    final quietZone = moduleSize * 4;
+    final paint = Paint()..color = Colors.black;
+    for (var row = 0; row < _image.moduleCount; row++) {
+      for (var column = 0; column < _image.moduleCount; column++) {
+        if (_image.isDark(row, column)) {
+          canvas.drawRect(
+            Rect.fromLTWH(
+              quietZone + column * moduleSize,
+              quietZone + row * moduleSize,
+              moduleSize,
+              moduleSize,
+            ),
+            paint,
+          );
+        }
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SubscriptionQrPainter oldDelegate) =>
+      oldDelegate._image != _image;
 }
 
 /// A re-read that failed while the page still holds the answer from before.
@@ -304,7 +521,14 @@ class _StaleNotice extends StatelessWidget {
             label: S.retry,
             child: Material(
               color: AppColor.transparent,
-              child: TextButton(onPressed: onRetry, child: DesignText(S.retry, page: 'subscription_details', label: 'retry')),
+              child: TextButton(
+                onPressed: onRetry,
+                child: DesignText(
+                  S.retry,
+                  page: 'subscription_details',
+                  label: 'retry',
+                ),
+              ),
             ),
           ),
         ],
@@ -330,7 +554,14 @@ class _UsageHistory extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(S.couldNotLoadUsage, style: AppFonts.regular14(context)),
-          TextButton(onPressed: onRetry, child: DesignText(S.retry, page: 'subscription_details', label: 'retry')),
+          TextButton(
+            onPressed: onRetry,
+            child: DesignText(
+              S.retry,
+              page: 'subscription_details',
+              label: 'retry',
+            ),
+          ),
         ],
       );
     }
@@ -341,7 +572,13 @@ class _UsageHistory extends StatelessWidget {
         child: const Center(child: CircularProgressIndicator()),
       );
     }
-    if (usage.isEmpty) return DesignText(S.noUsageYet, page: 'subscription_details', label: 'noUsageYet');
+    if (usage.isEmpty) {
+      return DesignText(
+        S.noUsageYet,
+        page: 'subscription_details',
+        label: 'noUsageYet',
+      );
+    }
     return Column(
       children: [for (final entry in usage) _UsageRow(entry: entry)],
     );

@@ -9,6 +9,7 @@ import 'package:admin_app/features/inventory/domain/entities/admin_inventory_met
 import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement.dart';
 import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement_draft.dart';
 import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement_metrics.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_category_mutation_outcome.dart';
 import 'package:admin_app/features/inventory/domain/entities/inventory_material_save_outcome.dart';
 import 'package:admin_app/features/inventory/domain/entities/inventory_movement_outcome.dart';
 import 'package:admin_app/features/inventory/domain/entities/inventory_mutation_outcome.dart';
@@ -71,6 +72,53 @@ class AdminInventoryRepository implements InventoryRepository {
       );
     }
     return AdminInventoryFilters.empty;
+  }
+
+  @override
+  Future<InventoryCategoryMutationOutcome> createInventoryCategory(
+    String name,
+  ) => _mutateCategory('admin_create_inventory_category', {'p_name': name});
+
+  @override
+  Future<InventoryCategoryMutationOutcome> renameInventoryCategory({
+    required String currentName,
+    required String newName,
+  }) => _mutateCategory('admin_rename_inventory_category', {
+    'p_current_name': currentName,
+    'p_new_name': newName,
+  });
+
+  @override
+  Future<InventoryCategoryMutationOutcome> deleteInventoryCategory({
+    required String name,
+    String? reassignTo,
+  }) => _mutateCategory('admin_delete_inventory_category', {
+    'p_name': name,
+    'p_reassign_to': reassignTo,
+  });
+
+  Future<InventoryCategoryMutationOutcome> _mutateCategory(
+    String function,
+    Map<String, dynamic> params,
+  ) async {
+    try {
+      final response = await _supabase.rpc(function, params: params);
+      if (_isOk(response)) return InventoryCategoryMutationOutcome.success;
+      return switch (_reason(response)) {
+        'invalid_name' => InventoryCategoryMutationOutcome.invalidName,
+        'duplicate_name' => InventoryCategoryMutationOutcome.duplicateName,
+        'not_found' => InventoryCategoryMutationOutcome.notFound,
+        'invalid_target' || 'reassignment_required' =>
+          InventoryCategoryMutationOutcome.invalidTarget,
+        _ => InventoryCategoryMutationOutcome.failed,
+      };
+    } on PostgrestException catch (error) {
+      return error.code == '42501'
+          ? InventoryCategoryMutationOutcome.permissionDenied
+          : InventoryCategoryMutationOutcome.failed;
+    } catch (_) {
+      return InventoryCategoryMutationOutcome.failed;
+    }
   }
 
   @override

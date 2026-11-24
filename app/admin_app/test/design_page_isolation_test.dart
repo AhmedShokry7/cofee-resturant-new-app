@@ -45,7 +45,11 @@ class _ServerDesignStore {
       components: components,
       theme: theme,
     );
-    document = DesignDocumentMeta.withPageRevision(document, pageId, current + 1);
+    document = DesignDocumentMeta.withPageRevision(
+      document,
+      pageId,
+      current + 1,
+    );
     final invalid = DesignDocumentCodec.validate(document);
     if (invalid != null) {
       throw StateError('المستند غير صالح: $invalid');
@@ -75,7 +79,11 @@ class _ServerDesignStore {
       components: const [],
       theme: null,
     );
-    document = DesignDocumentMeta.withPageRevision(document, pageId, current + 1);
+    document = DesignDocumentMeta.withPageRevision(
+      document,
+      pageId,
+      current + 1,
+    );
     draft = document;
     auditLog.add('draft.remove:$pageId:${current + 1}');
     return current + 1;
@@ -95,7 +103,8 @@ class _ServerDesignStore {
     for (final pageId in pageIds) {
       final current = _revisionOf(draft, pageId);
       final expected = expectedRevisions[pageId] ?? 0;
-      if (current == 0 && !(draft!['pages'] as List).any((p) => p['page'] == pageId)) {
+      if (current == 0 &&
+          !(draft!['pages'] as List).any((p) => p['page'] == pageId)) {
         throw StateError('الصفحة $pageId ليست محفوظة في المسودة');
       }
       if (current > expected) {
@@ -220,10 +229,7 @@ class _ServerBackedRepository extends VisualEditorRepository {
       pageIds,
       expectedRevisions: force
           ? const {}
-          : {
-              for (final pageId in pageIds)
-                pageId: knownRevisions[pageId] ?? 0,
-            },
+          : {for (final pageId in pageIds) pageId: knownRevisions[pageId] ?? 0},
       name: name,
       note: note,
     );
@@ -322,8 +328,8 @@ Map<String, dynamic> _seedDocument({
   required String componentId,
   required String propertyKey,
   required String propertyValue,
-}) => DesignDocumentMeta.withPageRevision(DesignDocumentCodec.document(
-  {
+}) => DesignDocumentMeta.withPageRevision(
+  DesignDocumentCodec.document({
     pageId: [
       EditableComponent(
         componentId: componentId,
@@ -338,8 +344,10 @@ Map<String, dynamic> _seedDocument({
         version: 1,
       ),
     ],
-  },
-), pageId, 1);
+  }),
+  pageId,
+  1,
+);
 
 /// بذرة مستند بمراجعات مُعتمدة كما يخرج من حفظ حقيقي.
 Map<String, dynamic> _seedRevisions(
@@ -411,48 +419,50 @@ void main() {
     expect(homePage.length, greaterThanOrEqualTo(3));
   });
 
-  test('تعديل نفس الصفحة من جلستين متزامنتين يرفع تعارضًا ولا يكتب فوق أحدث',
-      () async {
-    final server = _ServerDesignStore()
-      ..draft = _seedDocument(
-        pageId: 'home',
-        componentId: 'home_1',
-        propertyKey: 'text',
-        propertyValue: 'base',
+  test(
+    'تعديل نفس الصفحة من جلستين متزامنتين يرفع تعارضًا ولا يكتب فوق أحدث',
+    () async {
+      final server = _ServerDesignStore()
+        ..draft = _seedDocument(
+          pageId: 'home',
+          componentId: 'home_1',
+          propertyKey: 'text',
+          propertyValue: 'base',
+        );
+      final sessionA = _session(server);
+      final sessionB = _session(server);
+      addTearDown(sessionA.close);
+      addTearDown(sessionB.close);
+      await sessionA.initialize();
+      await sessionB.initialize();
+
+      // الجلستان تحمّلان المراجعة 1 معًا.
+      expect(sessionA.state.isDirty, isFalse);
+      sessionA.addComponent(pageId: 'home', componentType: 'productGrid');
+      final saved = await sessionA.saveDraft();
+      expect(saved, {'home'});
+      // القاعدة الآن مراجعة 2 للرئيسية؛ B ما زالت مرجعها 1.
+
+      sessionB.addComponent(pageId: 'home', componentType: 'bundleList');
+      final savedB = await sessionB.saveDraft();
+      expect(savedB, isEmpty, reason: 'حفظ B يُرفض بالتعارض');
+      expect(
+        sessionB.state.conflict,
+        isNotNull,
+        reason: 'حالة B تحمل تعارضًا لقرار الموظف',
       );
-    final sessionA = _session(server);
-    final sessionB = _session(server);
-    addTearDown(sessionA.close);
-    addTearDown(sessionB.close);
-    await sessionA.initialize();
-    await sessionB.initialize();
+      expect(sessionB.state.conflict!.serverRevision, 2);
+      expect(sessionB.state.conflict!.knownRevision, 1);
+      // تعديل B المحلي محفوظ في الحالة (لا فقد صامت) والمسودة لم تتغير.
+      expect(sessionB.state.isDirty, isTrue);
+      expect(_ServerDesignStore._revisionOf(server.draft, 'home'), 2);
 
-    // الجلستان تحمّلان المراجعة 1 معًا.
-    expect(sessionA.state.isDirty, isFalse);
-    sessionA.addComponent(pageId: 'home', componentType: 'productGrid');
-    final saved = await sessionA.saveDraft();
-    expect(saved, {'home'});
-    // القاعدة الآن مراجعة 2 للرئيسية؛ B ما زالت مرجعها 1.
-
-    sessionB.addComponent(pageId: 'home', componentType: 'bundleList');
-    final savedB = await sessionB.saveDraft();
-    expect(savedB, isEmpty, reason: 'حفظ B يُرفض بالتعارض');
-    expect(
-      sessionB.state.conflict,
-      isNotNull,
-      reason: 'حالة B تحمل تعارضًا لقرار الموظف',
-    );
-    expect(sessionB.state.conflict!.serverRevision, 2);
-    expect(sessionB.state.conflict!.knownRevision, 1);
-    // تعديل B المحلي محفوظ في الحالة (لا فقد صامت) والمسودة لم تتغير.
-    expect(sessionB.state.isDirty, isTrue);
-    expect(_ServerDesignStore._revisionOf(server.draft, 'home'), 2);
-
-    // قرار الموظف: إجبار الحفظ — يكتب نسخته فوق المراجعة الأحدث صراحة.
-    await sessionB.forceSaveConflicted();
-    expect(_ServerDesignStore._revisionOf(server.draft, 'home'), 3);
-    expect(sessionB.state.conflict, isNull);
-  });
+      // قرار الموظف: إجبار الحفظ — يكتب نسخته فوق المراجعة الأحدث صراحة.
+      await sessionB.forceSaveConflicted();
+      expect(_ServerDesignStore._revisionOf(server.draft, 'home'), 3);
+      expect(sessionB.state.conflict, isNull);
+    },
+  );
 
   test('الكتابة القديمة فوق مراجعة أحدث تُرفض والمستند لا يتغير', () async {
     final server = _ServerDesignStore()
@@ -495,24 +505,19 @@ void main() {
     );
   });
 
-  test('نشر Home فقط يعتمد الرئيسية ويحفظ آخر منشور لبقية الصفحات',
-      () async {
+  test('نشر Home فقط يعتمد الرئيسية ويحفظ آخر منشور لبقية الصفحات', () async {
     final server = _ServerDesignStore()
       // منشور سابق: رئيسية قديمة + سلة منشورة قديمة.
-      ..published = DesignDocumentCodec.document(
-        {
-          'home': [_heading('home', 'home_old', 'home-published-v1')],
-          'cart': [_heading('cart', 'cart_pub', 'cart-published-v1')],
-        },
-      )
+      ..published = DesignDocumentCodec.document({
+        'home': [_heading('home', 'home_old', 'home-published-v1')],
+        'cart': [_heading('cart', 'cart_pub', 'cart-published-v1')],
+      })
       // مسودة: رئيسية أحدث (مراجعة 5) + سلة أحدث (مراجعة 3) لم تُعتمد بعد.
       ..draft = _seedRevisions(
-        DesignDocumentCodec.document(
-          {
-            'home': [_heading('home', 'home_new', 'home-draft-v2')],
-            'cart': [_heading('cart', 'cart_draft', 'cart-draft-v2')],
-          },
-        ),
+        DesignDocumentCodec.document({
+          'home': [_heading('home', 'home_new', 'home-draft-v2')],
+          'cart': [_heading('cart', 'cart_draft', 'cart-draft-v2')],
+        }),
         {'home': 5, 'cart': 3},
       );
 
@@ -525,8 +530,7 @@ void main() {
     );
 
     final published = server.published!;
-    final publishedHome =
-        DesignDocumentCodec.parseDocument(published)['home']!;
+    final publishedHome = DesignDocumentCodec.parseDocument(published)['home']!;
     final publishedCart = DesignDocumentCodec.parseDocument(published)['cart']!;
     expect(
       publishedHome.first.properties['text'],
@@ -548,36 +552,31 @@ void main() {
   test('مسودات الصفحات الأخرى تبقى سليمة بعد نشر صفحة واحدة', () async {
     final server = _ServerDesignStore()
       ..draft = _seedRevisions(
-        DesignDocumentCodec.document(
-          {
-            'home': [_heading('home', 'home_1', 'home-draft')],
-            'splash': [
-              EditableComponent(
-                componentId: 'splash_1',
-                pageId: 'splash',
-                componentType: 'splashSettings',
-                index: 0,
-                classification: ComponentClassification.editable,
-                properties: {'text': 'splash-draft'},
-                defaultValues: const {},
-                validationRules: const {},
-                allowedOperations: const ['edit'],
-                version: 1,
-              ),
-            ],
-            'cart': [_heading('cart', 'cart_1', 'cart-draft')],
-          },
-        ),
+        DesignDocumentCodec.document({
+          'home': [_heading('home', 'home_1', 'home-draft')],
+          'splash': [
+            EditableComponent(
+              componentId: 'splash_1',
+              pageId: 'splash',
+              componentType: 'splashSettings',
+              index: 0,
+              classification: ComponentClassification.editable,
+              properties: {'text': 'splash-draft'},
+              defaultValues: const {},
+              validationRules: const {},
+              allowedOperations: const ['edit'],
+              version: 1,
+            ),
+          ],
+          'cart': [_heading('cart', 'cart_1', 'cart-draft')],
+        }),
         {'home': 5, 'splash': 2, 'cart': 1},
       );
     final draftBefore = Map<String, dynamic>.from(server.draft!);
     final repository = _ServerBackedRepository(server);
     final revisions = DesignDocumentMeta.pageRevisions(server.draft!);
 
-    await repository.publishPages(
-      pageIds: {'home'},
-      knownRevisions: revisions,
-    );
+    await repository.publishPages(pageIds: {'home'}, knownRevisions: revisions);
 
     expect(
       server.draft,
@@ -591,11 +590,9 @@ void main() {
 
   test('نسخة جديدة من أحدث Draft ولا نسخة سابقة تُمسّ', () async {
     final server = _ServerDesignStore()
-      ..draft = DesignDocumentCodec.document(
-        {
-          'home': [_heading('home', 'home_1', 'home-v2')],
-        },
-      );
+      ..draft = DesignDocumentCodec.document({
+        'home': [_heading('home', 'home_1', 'home-v2')],
+      });
     final repository = _ServerBackedRepository(server);
     final revisions = DesignDocumentMeta.pageRevisions(server.draft!);
 
@@ -641,11 +638,9 @@ void main() {
 
   test('إجبار النشر بعد تعارض يعتمد أحدث مسودة فعلية من القاعدة', () async {
     final server = _ServerDesignStore()
-      ..draft = DesignDocumentCodec.document(
-        {
-          'home': [_heading('home', 'home_1', 'mine')],
-        },
-      );
+      ..draft = DesignDocumentCodec.document({
+        'home': [_heading('home', 'home_1', 'mine')],
+      });
     final sessionA = _session(server);
     final sessionB = _session(server);
     addTearDown(sessionA.close);
@@ -675,64 +670,57 @@ void main() {
       isTrue,
     );
     expect(
-      publishedHome.any(
-        (component) => component.componentType == 'bundleList',
-      ),
+      publishedHome.any((component) => component.componentType == 'bundleList'),
       isFalse,
     );
   });
 
-  test('إفراغ صفحة من مكوّناتها يزيلها من المسودة دون إعادة الصفحات الأخرى',
-      () async {
-    final server = _ServerDesignStore()
-      ..draft = _seedRevisions(
-        DesignDocumentCodec.document(
-          {
+  test(
+    'إفراغ صفحة من مكوّناتها يزيلها من المسودة دون إعادة الصفحات الأخرى',
+    () async {
+      final server = _ServerDesignStore()
+        ..draft = _seedRevisions(
+          DesignDocumentCodec.document({
             'home': [_heading('home', 'home_1', 'home')],
             'cart': [_heading('cart', 'cart_1', 'cart')],
-          },
-        ),
-        {'cart': 4},
-      );
-    final repository = _ServerBackedRepository(server);
-    final revisions = DesignDocumentMeta.pageRevisions(server.draft!);
+          }),
+          {'cart': 4},
+        );
+      final repository = _ServerBackedRepository(server);
+      final revisions = DesignDocumentMeta.pageRevisions(server.draft!);
 
-    // حذف صريح: إزالة كل عناصر السلة (تسقط من المستند مطابقة لسلوك
-    // document()) — الرئيسية لا تُمسّ.
-    final revision = await repository.saveDraft(
-      {
+      // حذف صريح: إزالة كل عناصر السلة (تسقط من المستند مطابقة لسلوك
+      // document()) — الرئيسية لا تُمسّ.
+      final revision = await repository.saveDraft({
         'cart': const [],
-      },
-      knownRevisions: revisions,
-    );
-    expect(revision.savedRevisions['cart'], revisions['cart']! + 1);
-    final pages = DesignDocumentCodec.parseDocument(server.draft!);
-    expect(pages.containsKey('cart'), isFalse);
-    expect(pages['home']!.first.properties['text'], 'home');
-  });
+      }, knownRevisions: revisions);
+      expect(revision.savedRevisions['cart'], revisions['cart']! + 1);
+      final pages = DesignDocumentCodec.parseDocument(server.draft!);
+      expect(pages.containsKey('cart'), isFalse);
+      expect(pages['home']!.first.properties['text'], 'home');
+    },
+  );
 
   test('تطبيق قالب لا يحذف الصفحات الغائبة عنه', () async {
     final server = _ServerDesignStore()
       ..draft = _seedRevisions(
-        DesignDocumentCodec.document(
-          {
-            'home': [_heading('home', 'home_1', 'home-current')],
-            'splash': [
-              EditableComponent(
-                componentId: 'splash_1',
-                pageId: 'splash',
-                componentType: 'splashSettings',
-                index: 0,
-                classification: ComponentClassification.editable,
-                properties: {'text': 'splash-current'},
-                defaultValues: const {},
-                validationRules: const {},
-                allowedOperations: const ['edit'],
-                version: 1,
-              ),
-            ],
-          },
-        ),
+        DesignDocumentCodec.document({
+          'home': [_heading('home', 'home_1', 'home-current')],
+          'splash': [
+            EditableComponent(
+              componentId: 'splash_1',
+              pageId: 'splash',
+              componentType: 'splashSettings',
+              index: 0,
+              classification: ComponentClassification.editable,
+              properties: {'text': 'splash-current'},
+              defaultValues: const {},
+              validationRules: const {},
+              allowedOperations: const ['edit'],
+              version: 1,
+            ),
+          ],
+        }),
         {'home': 2, 'splash': 1},
       );
     final repository = _ServerBackedRepository(server);
@@ -745,11 +733,9 @@ void main() {
       id: 'tpl-1',
       name: 'قالب رئيسية',
       document: _seedRevisions(
-        DesignDocumentCodec.document(
-          {
-            'home': [_heading('home', 'home_tpl', 'home-from-template')],
-          },
-        ),
+        DesignDocumentCodec.document({
+          'home': [_heading('home', 'home_tpl', 'home-from-template')],
+        }),
         {'home': 9},
       ),
     );
@@ -770,9 +756,9 @@ void main() {
     final draftPages = DesignDocumentCodec.parseDocument(server.draft!);
     expect(draftPages['splash']!.first.properties['text'], 'splash-current');
     expect(
-      draftPages['home']!.firstWhere(
-        (c) => c.componentId == 'home_tpl',
-      ).properties['text'],
+      draftPages['home']!
+          .firstWhere((c) => c.componentId == 'home_tpl')
+          .properties['text'],
       'home-from-template',
     );
   });

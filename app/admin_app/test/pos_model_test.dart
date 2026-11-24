@@ -608,6 +608,10 @@ void main() {
         'vat_total': 9.78,
         'tax_rate': 15,
         'tax_included': true,
+        'invoice_number': 'INV-2026-0000042',
+        'invoice_issued_at': '2026-10-26T09:30:01Z',
+        'invoice_issued': true,
+        'tax_registration_status': 'registered',
         'seller_name_ar': 'مقهى النخبة',
         'seller_name_en': 'Elite Cafe',
         'seller_legal_name': 'مقهى النخبة للتجارة',
@@ -634,6 +638,10 @@ void main() {
       expect(result.sellerPhone, '0112345678');
       expect(result.taxRate, 15);
       expect(result.taxIncluded, isTrue);
+      expect(result.invoiceNumber, 'INV-2026-0000042');
+      expect(result.invoiceIssuedAt, DateTime.utc(2026, 10, 26, 9, 30, 1));
+      expect(result.invoiceIssued, isTrue);
+      expect(result.taxRegistrationStatus, 'registered');
 
       final derived = PosOrderResult.fromJson(const {
         'order_id': 'o8',
@@ -646,6 +654,8 @@ void main() {
       expect(derived.invoiceTaxable, 100);
       expect(derived.hasVat, isTrue);
       expect(derived.hasSellerIdentity, isFalse);
+      expect(derived.invoiceIssued, isFalse);
+      expect(derived.taxRegistrationStatus, 'unconfigured');
 
       final legacy = PosOrderResult.fromJson(const {
         'order_id': 'o9',

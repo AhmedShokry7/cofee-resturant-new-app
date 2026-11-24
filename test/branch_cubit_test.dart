@@ -71,15 +71,30 @@ void main() {
     await cubit.close();
   });
 
-  test('no stored branch selects nothing rather than a default', () async {
-    SharedPreferences.setMockInitialValues({});
+  test(
+    'without a stored choice only the sole branch is auto-selected',
+    () async {
+      SharedPreferences.setMockInitialValues({});
 
-    final cubit = BranchCubit(
-      repository: const _FakeBranchRepository([_main, _jeddah]),
-    );
-    await cubit.stream.firstWhere((state) => !state.isLoading);
-    expect(cubit.state.branches.length, 2);
-    expect(cubit.state.selected, isNull);
-    await cubit.close();
-  });
+      final soleBranchCubit = BranchCubit(
+        repository: const _FakeBranchRepository([_main]),
+      );
+      await soleBranchCubit.stream.firstWhere((state) => !state.isLoading);
+      expect(soleBranchCubit.state.selected?.id, _main.id);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('selected_branch_v1'), _main.id);
+      await soleBranchCubit.close();
+
+      SharedPreferences.setMockInitialValues({});
+      final multipleBranchesCubit = BranchCubit(
+        repository: const _FakeBranchRepository([_main, _jeddah]),
+      );
+      await multipleBranchesCubit.stream.firstWhere(
+        (state) => !state.isLoading,
+      );
+      expect(multipleBranchesCubit.state.branches.length, 2);
+      expect(multipleBranchesCubit.state.selected, isNull);
+      await multipleBranchesCubit.close();
+    },
+  );
 }

@@ -20,9 +20,10 @@ class BranchState {
     bool? isLoading,
     String? error,
     bool clearError = false,
+    bool clearSelected = false,
   }) => BranchState(
     branches: branches ?? this.branches,
-    selected: selected ?? this.selected,
+    selected: clearSelected ? null : (selected ?? this.selected),
     isLoading: isLoading ?? this.isLoading,
     error: clearError ? null : (error ?? this.error),
   );

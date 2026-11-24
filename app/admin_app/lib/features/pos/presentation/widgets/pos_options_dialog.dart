@@ -13,6 +13,7 @@ import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_format.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 class PosOptionSelection {
@@ -703,27 +704,9 @@ class _OptionsFooter extends StatelessWidget {
               ],
             ),
           ),
-          FilledButton.icon(
+          AdminCreateButton(
+            label: S.posAddToCart,
             onPressed: enabled ? onAdd : null,
-            style: FilledButton.styleFrom(
-              minimumSize: const Size(0, 40),
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-            ),
-            icon: const AppIcon(
-              AppIcons.add01,
-              size: 15,
-              color: AppColor.whiteColor,
-            ),
-            label: Text(
-              S.posAddToCart,
-              style: const TextStyle(
-                fontSize: AppFontSizes.size11,
-                fontWeight: AppFontWeights.semiBold,
-              ),
-            ),
           ),
         ],
       ),

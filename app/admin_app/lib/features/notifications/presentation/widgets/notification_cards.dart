@@ -19,6 +19,9 @@ class NotificationCards extends StatelessWidget {
     required this.canManage,
     required this.onOpen,
     required this.onAction,
+    this.selectedIds = const <String>{},
+    this.onToggleSelection,
+    this.isBulkBusy = false,
   });
 
   final List<AdminNotification> notifications;
@@ -27,6 +30,9 @@ class NotificationCards extends StatelessWidget {
   final ValueChanged<AdminNotification> onOpen;
   final void Function(AdminNotification notification, NotificationAction action)
   onAction;
+  final Set<String> selectedIds;
+  final ValueChanged<String>? onToggleSelection;
+  final bool isBulkBusy;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +51,9 @@ class NotificationCards extends StatelessWidget {
           canManage: canManage,
           onOpen: () => onOpen(notification),
           onAction: (action) => onAction(notification, action),
+          selected: selectedIds.contains(notification.id),
+          isBulkBusy: isBulkBusy,
+          onToggleSelection: onToggleSelection,
         );
       },
     );
@@ -59,6 +68,9 @@ class _NotificationCard extends StatelessWidget {
     required this.canManage,
     required this.onOpen,
     required this.onAction,
+    this.selected = false,
+    this.isBulkBusy = false,
+    this.onToggleSelection,
   });
 
   final AdminNotification notification;
@@ -66,6 +78,9 @@ class _NotificationCard extends StatelessWidget {
   final bool canManage;
   final VoidCallback onOpen;
   final ValueChanged<NotificationAction> onAction;
+  final bool selected;
+  final bool isBulkBusy;
+  final ValueChanged<String>? onToggleSelection;
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +106,20 @@ class _NotificationCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (canManage &&
+                      onToggleSelection != null &&
+                      !notification.isCampaignSummary)
+                    SizedBox(
+                      width: 36,
+                      height: 36,
+                      child: Checkbox(
+                        key: Key('notification-select-${notification.id}'),
+                        value: selected,
+                        onChanged: isBulkBusy
+                            ? null
+                            : (_) => onToggleSelection!(notification.id),
+                      ),
+                    ),
                   Container(
                     width: 34,
                     height: 34,

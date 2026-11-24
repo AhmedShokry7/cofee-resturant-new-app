@@ -13,6 +13,7 @@ import 'package:admin_app/features/inventory/presentation/widgets/stock_movement
 import 'package:admin_app/shared/widgets/admin_directory_panel.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_pagination.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 class StockMovementsDirectory extends StatefulWidget {
   const StockMovementsDirectory({
@@ -189,10 +190,9 @@ class _StockMovementsDirectoryState extends State<StockMovementsDirectory> {
       action: !noData
           ? TextButton(onPressed: _clearAll, child: Text(S.clearFilters))
           : widget.canAdjust
-          ? TextButton.icon(
+          ? AdminCreateButton(
+              label: S.stockMovementAction,
               onPressed: widget.onRecordMovement,
-              icon: const Icon(AppIcons.add01, size: 16),
-              label: Text(S.stockMovementAction),
             )
           : null,
     );

@@ -53,6 +53,7 @@ dependencies:
   # (DATABASE_SPEC.md section 1.5). URL and key arrive via --dart-define.
   supabase_flutter: ^2.10.0
   cached_network_image: ^4.0.4
+  qr: ^3.0.2
   flutter_svg: ^2.3.0
   card_flutter: ^1.0.23
   google_sign_in: ^7.2.0

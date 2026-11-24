@@ -96,8 +96,11 @@ class SupabaseAuthRepository implements AuthRepository {
         params: {'p_token': code},
       );
       return _invitationAnswer(response);
-    } on PostgrestException {
-      return const InvitationLookup.refused(InvitationAcceptOutcome.failed);
+    } catch (error) {
+      final outcome = _isNetworkFailure(error)
+          ? InvitationAcceptOutcome.networkFailure
+          : InvitationAcceptOutcome.serviceFailure;
+      return InvitationLookup.refused(outcome);
     }
   }
 
@@ -155,7 +158,47 @@ class SupabaseAuthRepository implements AuthRepository {
         await _signOutQuietly();
       }
       return outcome;
-    } on PostgrestException {
+    } catch (_) {
+      await _signOutQuietly();
+      return InvitationAcceptOutcome.failed;
+    }
+  }
+
+  @override
+  Future<InvitationAcceptOutcome> confirmEmailAndAccept({
+    required String token,
+    required String email,
+    required String password,
+    required String confirmationCode,
+  }) async {
+    final account = email.trim();
+    final code = token.trim();
+    final otp = confirmationCode.trim();
+    if (!_uuidPattern.hasMatch(code) || otp.isEmpty) {
+      return InvitationAcceptOutcome.unknown;
+    }
+    try {
+      await _supabase.auth.verifyOTP(
+        email: account,
+        token: otp,
+        type: OtpType.signup,
+      );
+    } on AuthException {
+      return InvitationAcceptOutcome.emailConfirmationCodeInvalid;
+    } catch (_) {
+      return InvitationAcceptOutcome.failed;
+    }
+    try {
+      final response = await _supabase.rpc(
+        'admin_accept_invitation',
+        params: {'p_token': code},
+      );
+      final outcome = _acceptAnswer(response);
+      if (outcome != InvitationAcceptOutcome.accepted) {
+        await _signOutQuietly();
+      }
+      return outcome;
+    } catch (_) {
       await _signOutQuietly();
       return InvitationAcceptOutcome.failed;
     }
@@ -200,8 +243,17 @@ class SupabaseAuthRepository implements AuthRepository {
     'email_mismatch' => InvitationAcceptOutcome.emailMismatch,
     'already_staff' => InvitationAcceptOutcome.alreadyStaff,
     'customer_history' => InvitationAcceptOutcome.customerHistory,
-    _ => InvitationAcceptOutcome.failed,
+    _ => InvitationAcceptOutcome.serviceFailure,
   };
+
+  static bool _isNetworkFailure(Object error) {
+    final message = error.toString().toLowerCase();
+    return message.contains('socket') ||
+        message.contains('network') ||
+        message.contains('connection') ||
+        message.contains('timeout') ||
+        message.contains('failed host lookup');
+  }
 
   static bool _isExistingAccount(AuthException error) {
     final message = error.message.toLowerCase();

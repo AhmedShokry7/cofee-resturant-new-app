@@ -5,6 +5,7 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/roles/data/models/admin_role.dart';
 import 'package:admin_app/features/roles/presentation/widgets/role_directory.dart';
 import 'package:admin_app/features/roles/presentation/widgets/role_metrics_cards.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 import 'package:admin_app/shared/widgets/admin_inline_error.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
@@ -18,6 +19,7 @@ class RolePageBody extends StatelessWidget {
     required this.onSearchChanged,
     required this.onManage,
     required this.canManage,
+    this.onCreate,
     this.errorMessage,
     this.onRefresh,
   });
@@ -27,6 +29,7 @@ class RolePageBody extends StatelessWidget {
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<AdminRole>? onManage;
   final bool canManage;
+  final VoidCallback? onCreate;
   final String? errorMessage;
   final VoidCallback? onRefresh;
 
@@ -39,6 +42,10 @@ class RolePageBody extends StatelessWidget {
           AdminPageHeader(
             title: S.rolesAndPermissions,
             subtitle: S.rolesDescription,
+            actions: [
+              if (canManage && onCreate != null)
+                AdminCreateButton(label: S.createRole, onPressed: onCreate!),
+            ],
           ),
           if (errorMessage != null)
             AdminInlineError(message: errorMessage!, onRetry: onRefresh),

@@ -11,6 +11,7 @@ import 'package:admin_app/features/payments/data/payment_print_service.dart';
 import 'package:admin_app/features/payments/presentation/manager/admin_payment_cubit.dart';
 import 'package:admin_app/features/payments/presentation/manager/admin_payment_state.dart';
 import 'package:admin_app/features/payments/presentation/widgets/payment_records.dart';
+import 'package:admin_app/features/payments/presentation/widgets/tax_invoice_panel.dart';
 import 'package:admin_app/shared/widgets/admin_excel_button.dart';
 import 'package:admin_app/shared/widgets/admin_inline_error.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
@@ -19,12 +20,18 @@ import 'package:admin_app/shared/widgets/admin_state_view.dart';
 import 'package:admin_app/shared/widgets/admin_toolbar.dart';
 
 class PaymentPage extends StatefulWidget {
-  const PaymentPage({super.key, required this.searchController, this.cubit});
+  const PaymentPage({
+    super.key,
+    required this.searchController,
+    this.cubit,
+    this.canConfigureTax = false,
+  });
 
   static const String routeName = '/payments';
 
   final AdminSearchController searchController;
   final AdminPaymentCubit? cubit;
+  final bool canConfigureTax;
 
   @override
   State<PaymentPage> createState() => _PaymentPageState();
@@ -35,6 +42,7 @@ class _PaymentPageState extends State<PaymentPage> {
   late final bool _ownsCubit;
   String _searchQuery = '';
   bool _exporting = false;
+  bool _financeView = false;
 
   @override
   void initState() {
@@ -114,46 +122,82 @@ class _PaymentPageState extends State<PaymentPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 AdminPageHeader(
-                  title: S.payments,
-                  subtitle: S.paymentsDescription,
+                  title: _financeView ? S.financeInvoices : S.payments,
+                  subtitle: _financeView
+                      ? S.financeTaxSummary
+                      : S.paymentsDescription,
                   actions: [
-                    AdminExcelButton(
-                      action: ExcelAction.export,
-                      label: S.paymentsExport,
-                      busy: _exporting,
-                      onPressed: _exporting || payments.isEmpty
-                          ? null
-                          : () => _exportPayments(payments),
-                    ),
-                    AdminToolbarButton(
-                      label: S.paymentsPrint,
-                      icon: AppIcons.printer,
-                      onPressed: payments.isEmpty
-                          ? null
-                          : () => _printPayments(payments),
-                    ),
+                    if (!_financeView)
+                      AdminExcelButton(
+                        action: ExcelAction.export,
+                        label: S.paymentsExport,
+                        busy: _exporting,
+                        onPressed: _exporting || payments.isEmpty
+                            ? null
+                            : () => _exportPayments(payments),
+                      ),
+                    if (!_financeView)
+                      AdminToolbarButton(
+                        label: S.paymentsPrint,
+                        icon: AppIcons.printer,
+                        onPressed: payments.isEmpty
+                            ? null
+                            : () => _printPayments(payments),
+                      ),
                   ],
                 ),
-                if (failed && !firstLoad)
-                  AdminInlineError(
-                    message: state.errorMessage ?? '',
-                    onRetry: _cubit.load,
-                  ),
-                const SizedBox(height: AppSpacing.lg),
-                Expanded(
-                  child: firstLoad && state.isLoading
-                      ? const AdminLoadingView()
-                      : firstLoad && failed
-                      ? AdminFailureView(
-                          message: state.errorMessage,
-                          onRetry: _cubit.load,
-                        )
-                      : PaymentRecords(
-                          payments: payments,
-                          searching: searching,
-                          onPrint: _printPayment,
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Wrap(
+                      spacing: 8,
+                      children: [
+                        ChoiceChip(
+                          label: Text(S.payments),
+                          selected: !_financeView,
+                          onSelected: (_) =>
+                              setState(() => _financeView = false),
                         ),
+                        ChoiceChip(
+                          label: Text(S.financeInvoices),
+                          selected: _financeView,
+                          onSelected: (_) =>
+                              setState(() => _financeView = true),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
+                if (_financeView) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  Expanded(
+                    child: TaxInvoicePanel(
+                      canConfigureTax: widget.canConfigureTax,
+                    ),
+                  ),
+                ] else ...[
+                  if (failed && !firstLoad)
+                    AdminInlineError(
+                      message: state.errorMessage ?? '',
+                      onRetry: _cubit.load,
+                    ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Expanded(
+                    child: firstLoad && state.isLoading
+                        ? const AdminLoadingView()
+                        : firstLoad && failed
+                        ? AdminFailureView(
+                            message: state.errorMessage,
+                            onRetry: _cubit.load,
+                          )
+                        : PaymentRecords(
+                            payments: payments,
+                            searching: searching,
+                            onPrint: _printPayment,
+                          ),
+                  ),
+                ],
               ],
             ),
           );

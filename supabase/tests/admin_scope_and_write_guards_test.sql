@@ -103,6 +103,36 @@ values
   ('71100000-0000-4000-8000-000000000001', '5f100000-0000-4000-8000-000000000001', '5d100000-0000-4000-8000-000000000001', 'active'),
   ('71100000-0000-4000-8000-000000000002', '5f100000-0000-4000-8000-000000000002', '5d200000-0000-4000-8000-000000000002', 'abandoned');
 
+-- 268 excludes carts without a valid positive line. These carts exist to test
+-- branch scope, so give each one a paid line; otherwise the list is empty and
+-- the scope assertion would pass for the wrong reason.
+insert into catalog.categories (id, slug, name_ar, name_en)
+values ('71300000-0000-4000-8000-000000000001', 'sg-cart-category', 'فئة سلال', 'SG Cart Category');
+
+insert into catalog.products (id, category_id, sku, slug, name_ar, name_en, base_price)
+values ('71400000-0000-4000-8000-000000000001', '71300000-0000-4000-8000-000000000001',
+        'SG-CART-P1', 'sg-cart-product', 'منتج سلال', 'SG Cart Product', 10.00);
+
+insert into orders.cart_items (id, cart_id, product_id, quantity, unit_price, line_total)
+values
+  ('71500000-0000-4000-8000-000000000001', '71100000-0000-4000-8000-000000000001',
+   '71400000-0000-4000-8000-000000000001', 1, 10.00, 10.00),
+  ('71500000-0000-4000-8000-000000000002', '71100000-0000-4000-8000-000000000002',
+   '71400000-0000-4000-8000-000000000001', 2, 10.00, 20.00);
+
+-- 268 must hide these two branch-1 carts: one is empty, the other has a
+-- zero-priced line, so its canonical total is zero.
+insert into orders.carts (id, user_id, branch_id, status)
+values
+  ('71100000-0000-4000-8000-000000000003', '5f100000-0000-4000-8000-000000000001',
+   '5d100000-0000-4000-8000-000000000001', 'abandoned'),
+  ('71100000-0000-4000-8000-000000000004', '5f100000-0000-4000-8000-000000000001',
+   '5d100000-0000-4000-8000-000000000001', 'abandoned');
+
+insert into orders.cart_items (id, cart_id, product_id, quantity, unit_price, line_total)
+values ('71500000-0000-4000-8000-000000000003', '71100000-0000-4000-8000-000000000004',
+        '71400000-0000-4000-8000-000000000001', 1, 0.00, 0.00);
+
 -- created_by يشير إلى auth.users لا إلى identity.staff_members.
 insert into orders.pos_customers (id, full_name, created_by)
 values ('72200000-0000-4000-8000-000000000001', 'SG Walk In', '5e100000-0000-4000-8000-000000000004');
@@ -242,6 +272,23 @@ begin
                         '71100000-0000-4000-8000-000000000002');
   if c <> 2 then
     raise exception 'FAIL 3a: global staff sees % of the two fixture carts', c;
+  end if;
+
+  -- The empty and zero-total fixtures must never reach the list, and every
+  -- returned cart must satisfy the same rule (total > 0, at least one line).
+  if exists (
+    select 1 from jsonb_array_elements(v) e
+     where e ->> 'id' in ('71100000-0000-4000-8000-000000000003',
+                          '71100000-0000-4000-8000-000000000004')
+  ) then
+    raise exception 'FAIL 3b: an empty or zero-total cart survived the eligibility filter';
+  end if;
+  if exists (
+    select 1 from jsonb_array_elements(v) e
+     where (e ->> 'total')::numeric <= 0
+        or jsonb_array_length(e -> 'items') = 0
+  ) then
+    raise exception 'FAIL 3c: an ineligible cart reached the list (%)', v::text;
   end if;
 end $$;
 

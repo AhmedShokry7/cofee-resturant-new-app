@@ -5,6 +5,7 @@ import 'package:admin_app/core/locale/app_strings.dart';
 
 import 'package:admin_app/features/catalog/presentation/widgets/product_card_fields.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 /// The title row: the product mark and the name of the product.
 class ProductCardNameRow extends StatelessWidget {
@@ -136,12 +137,7 @@ class ProductCardCategoryRow extends StatelessWidget {
             muted: muted,
           ),
         ),
-        RecordActionLabelBox(
-          icon: AppIcons.add01,
-          label: S.addCategoryShort,
-          onTap: onAddCategory,
-          radiusEnd: true,
-        ),
+        AdminCreateButton(label: S.addCategoryShort, onPressed: onAddCategory),
       ],
     );
   }

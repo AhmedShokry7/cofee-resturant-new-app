@@ -2,8 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/core/theme/app_icons.dart';
+
 import 'package:admin_app/features/coupons/domain/entities/admin_coupon_metrics.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_directory.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_metrics_cards.dart';
@@ -12,7 +11,7 @@ import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_directory_page_layout.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
 import 'package:admin_app/shared/widgets/admin_read_only_hint.dart';
-import 'package:admin_app/shared/widgets/custom_btn.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 class CouponPageBody extends StatelessWidget {
   const CouponPageBody({
@@ -48,15 +47,7 @@ class CouponPageBody extends StatelessWidget {
               subtitle: S.couponsDescription,
               actions: [
                 if (canManage)
-                  CustomBtn(
-                    text: S.couponsNew,
-                    onPressed: onAdd,
-                    leadingIcon: const Icon(AppIcons.add01, size: 18),
-                    height: 42,
-                    borderRadius: AppRadius.pill,
-                    backgroundColor: AppColor.primaryColor,
-                    textColor: AppColor.whiteColor,
-                  ),
+                  AdminCreateButton(label: S.couponsNew, onPressed: onAdd),
               ],
               footer: canManage
                   ? null
@@ -68,7 +59,10 @@ class CouponPageBody extends StatelessWidget {
             CouponMetricsCards(metrics: metrics),
             const SizedBox(height: AppSizes.px16),
           ];
-            return AdminDirectoryPageLayout(sections: sections, directory: directory);
+          return AdminDirectoryPageLayout(
+            sections: sections,
+            directory: directory,
+          );
         },
       ),
     );

@@ -6,6 +6,7 @@ import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_sub
 import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription_metrics.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/manager/admin_subscription_cubit.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/manager/admin_subscription_state.dart';
+import 'package:admin_app/features/subscriptions_admin/presentation/widgets/create_subscription_dialog.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subscription_details_dialog.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subscription_page_body.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
@@ -60,6 +61,9 @@ class _SubscriptionAdminPageState extends State<SubscriptionAdminPage> {
     setState(() => _searchQuery = query.trim());
   }
 
+  Future<void> _createSubscription() =>
+      showCreateSubscriptionDialog(context: context, cubit: _cubit);
+
   void _openSubscription(AdminSubscription subscription) {
     showSubscriptionDetailsDialog(
       context: context,
@@ -90,6 +94,7 @@ class _SubscriptionAdminPageState extends State<SubscriptionAdminPage> {
             search: _searchQuery,
             onSearchChanged: widget.searchController.update,
             onOpen: _openSubscription,
+            onCreate: _createSubscription,
             errorMessage: state.status == AdminSubscriptionStatus.failure
                 ? state.errorMessage
                 : null,

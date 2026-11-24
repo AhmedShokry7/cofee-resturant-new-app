@@ -8,6 +8,7 @@ import 'package:admin_app/core/services/app_pdf_layout.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_receipt.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_order_result.dart';
 import 'package:admin_app/features/pos/data/pos_invoice_qr.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_format.dart';
 
@@ -15,20 +16,31 @@ import 'package:admin_app/features/pos/presentation/widgets/pos_format.dart';
 /// وتُسلَّم إلى نافذة طباعة النظام (أو إلى معاينة الطباعة على الهاتف).
 Future<bool> printPosReceipt(PosReceipt receipt) async => AppPdf.print(
   await buildPosReceiptDocument(receipt),
-  name: '${S.posTaxInvoiceTitle} ${receipt.result.orderNumber}',
+  name: '${_documentTitle(receipt.result)} ${_invoiceNumber(receipt.result)}',
 );
+
+String _documentTitle(PosOrderResult result) =>
+    result.isTaxInvoice ? S.posTaxInvoiceTitle : S.posReceiptDocumentTitle;
+
+String _invoiceNumber(PosOrderResult result) =>
+    result.invoiceNumber.trim().isNotEmpty
+    ? result.invoiceNumber
+    : result.orderNumber;
 
 /// The ZATCA QR payload of [receipt], or null when the seller identity needed
 /// by a simplified tax invoice is not configured.
 String? buildPosReceiptQrData(PosReceipt receipt) {
   final result = receipt.result;
+  if (!result.isTaxInvoice) return null;
   final sellerName = result.sellerLegalNameFor(AppLanguage.arabic).trim();
   final vatNumber = result.sellerVatNumber.trim();
   if (sellerName.isEmpty || vatNumber.isEmpty) return null;
   return buildPosInvoiceQrData(
     sellerName: sellerName,
     vatNumber: vatNumber,
-    timestamp: posInvoiceTimestamp(result.placedAt ?? DateTime.now()),
+    timestamp: posInvoiceTimestamp(
+      result.invoiceIssuedAt ?? result.placedAt ?? DateTime.now(),
+    ),
     total: result.grandTotal.toStringAsFixed(2),
     vatAmount: result.invoiceVat.toStringAsFixed(2),
   );
@@ -51,7 +63,7 @@ List<String> posReceiptSellerLines(PosReceipt receipt) {
   return <String>[
     result.sellerLegalNameFor(language),
     result.sellerAddressFor(language),
-    if (result.sellerVatNumber.trim().isNotEmpty)
+    if (result.isTaxInvoice && result.sellerVatNumber.trim().isNotEmpty)
       '${S.posSellerVatNumber}: ${localizeDigits(result.sellerVatNumber.trim())}',
     result.sellerPhone,
   ].map((line) => line.trim()).where((line) => line.isNotEmpty).toList();
@@ -66,8 +78,14 @@ List<(String, String)> posReceiptDetails(PosReceipt receipt) {
   final customer = result.customerDisplayName;
   final customerPhone = result.customerPhone?.trim() ?? '';
   return <(String, String)>[
-    (S.posInvoiceNumber, result.orderNumber),
-    (S.posInvoiceDateTime, posDateTime(result.placedAt ?? DateTime.now())),
+    (
+      result.isTaxInvoice ? S.posInvoiceNumber : S.posReceiptNumber,
+      _invoiceNumber(result),
+    ),
+    (
+      S.posInvoiceDateTime,
+      posDateTime(result.invoiceIssuedAt ?? result.placedAt ?? DateTime.now()),
+    ),
     (S.posTable, table.isEmpty ? '-' : table),
     if (customer.isNotEmpty) (S.posCustomer, customer),
     if (customerPhone.isNotEmpty) (S.posCustomerPhone, customerPhone),
@@ -111,9 +129,11 @@ List<(String, String, bool)> posReceiptTotals(PosReceipt receipt) {
       (S.posAfterDiscount, _money(result.subtotal, money), false),
     ] else
       (S.posSubtotal, _money(result.subtotal, money), false),
-    (S.posTaxableAmount, _money(result.invoiceTaxable, money), false),
-    if (result.taxRate > 0) (S.posVatRate, posPercent(result.taxRate), false),
-    (S.posVatAmount, _money(result.invoiceVat, money), false),
+    if (result.isTaxInvoice) ...[
+      (S.posTaxableAmount, _money(result.invoiceTaxable, money), false),
+      if (result.taxRate > 0) (S.posVatRate, posPercent(result.taxRate), false),
+      (S.posVatAmount, _money(result.invoiceVat, money), false),
+    ],
     (S.posTotal, _money(result.grandTotal, money), true),
   ];
 }
@@ -144,7 +164,7 @@ Future<pw.Document> buildPosReceiptDocument(PosReceipt receipt) async {
   final sellerLines = posReceiptSellerLines(receipt);
   final document = pw.Document(
     theme: await AppPdf.theme(),
-    title: '${S.posTaxInvoiceTitle} ${result.orderNumber}',
+    title: '${_documentTitle(result)} ${_invoiceNumber(result)}',
   );
 
   document.addPage(
@@ -157,18 +177,19 @@ Future<pw.Document> buildPosReceiptDocument(PosReceipt receipt) async {
           crossAxisAlignment: pw.CrossAxisAlignment.stretch,
           children: [
             pw.Text(
-              S.posTaxInvoiceTitle,
+              _documentTitle(result),
               textAlign: pw.TextAlign.center,
               style: const pw.TextStyle(
                 fontSize: 17,
                 fontWeight: pw.FontWeight.bold,
               ),
             ),
-            pw.Text(
-              S.posTaxInvoiceTitleAlt,
-              textAlign: pw.TextAlign.center,
-              style: AppPdfLayout.labelStyle(),
-            ),
+            if (result.isTaxInvoice)
+              pw.Text(
+                S.posTaxInvoiceTitleAlt,
+                textAlign: pw.TextAlign.center,
+                style: AppPdfLayout.labelStyle(),
+              ),
             pw.SizedBox(height: 12),
             if (sellerLines.isNotEmpty) ...[
               AppPdfLayout.panel([

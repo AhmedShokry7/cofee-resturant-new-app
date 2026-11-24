@@ -7,15 +7,18 @@ import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/features/notifications/data/services/notifications_realtime_feed.dart';
 import 'package:admin_app/features/notifications/di/notifications_dependencies.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification_bulk_delete.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification_composer.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification_metrics.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_push_health.dart';
 import 'package:admin_app/features/notifications/domain/repositories/notifications_repository.dart';
+import 'package:admin_app/features/notifications/domain/usecases/bulk_delete_notifications.dart';
 import 'package:admin_app/features/notifications/domain/usecases/campaign_image.dart';
 import 'package:admin_app/features/notifications/domain/usecases/delete_notification.dart';
 import 'package:admin_app/features/notifications/domain/usecases/load_audience.dart';
 import 'package:admin_app/features/notifications/domain/usecases/load_customers.dart';
 import 'package:admin_app/features/notifications/domain/usecases/load_metrics.dart';
+import 'package:admin_app/features/notifications/domain/usecases/load_matching_deletable_ids.dart';
 import 'package:admin_app/features/notifications/domain/usecases/load_notifications.dart';
 import 'package:admin_app/features/notifications/domain/usecases/load_push_health.dart';
 import 'package:admin_app/features/notifications/domain/usecases/resend_notification.dart';
@@ -23,6 +26,9 @@ import 'package:admin_app/features/notifications/domain/usecases/send_notificati
 import 'package:admin_app/features/notifications/domain/usecases/set_read.dart';
 import 'package:admin_app/features/notifications/presentation/manager/admin_notifications_state.dart';
 import 'package:admin_app/features/notifications/presentation/models/notification_filters.dart';
+
+/// Result of "select all matching". [tooMany] leaves the selection unchanged.
+enum NotificationBulkSelectOutcome { selected, none, tooMany, failed, busy }
 
 class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
   AdminNotificationsCubit({
@@ -45,6 +51,8 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
       _resendNotification = ResendNotificationUseCase(repository),
       _setRead = SetReadUseCase(repository),
       _deleteNotification = DeleteNotificationUseCase(repository),
+      _loadMatchingDeletableIds = LoadMatchingDeletableIdsUseCase(repository),
+      _bulkDeleteNotifications = BulkDeleteNotificationsUseCase(repository),
       _uploadCampaignImage = UploadCampaignImageUseCase(repository),
       _discardCampaignImage = DiscardCampaignImageUseCase(repository),
       _realtimeFeed = realtimeFeed ?? NotificationsRealtimeFeed(),
@@ -59,6 +67,8 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
   final ResendNotificationUseCase _resendNotification;
   final SetReadUseCase _setRead;
   final DeleteNotificationUseCase _deleteNotification;
+  final LoadMatchingDeletableIdsUseCase _loadMatchingDeletableIds;
+  final BulkDeleteNotificationsUseCase _bulkDeleteNotifications;
   final UploadCampaignImageUseCase _uploadCampaignImage;
   final DiscardCampaignImageUseCase _discardCampaignImage;
   final NotificationsRealtimeFeed _realtimeFeed;
@@ -90,7 +100,7 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
   void updateSearch(String value) {
     final normalized = value.trim();
     if (normalized == state.search) return;
-    emit(state.copyWith(search: normalized, page: 0));
+    emit(state.copyWith(search: normalized, page: 0, clearSelection: true));
     _searchTimer?.cancel();
     if (normalized.isEmpty) {
       _fetch(withSummary: false);
@@ -104,25 +114,25 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
 
   void setType(NotificationTypeFilter type) {
     if (type == state.type) return;
-    emit(state.copyWith(type: type, page: 0));
+    emit(state.copyWith(type: type, page: 0, clearSelection: true));
     _fetch(withSummary: false);
   }
 
   void setReadFilter(NotificationReadFilter filter) {
     if (filter == state.readFilter) return;
-    emit(state.copyWith(readFilter: filter, page: 0));
+    emit(state.copyWith(readFilter: filter, page: 0, clearSelection: true));
     _fetch(withSummary: false);
   }
 
   void setPushFilter(NotificationPushFilter filter) {
     if (filter == state.pushFilter) return;
-    emit(state.copyWith(pushFilter: filter, page: 0));
+    emit(state.copyWith(pushFilter: filter, page: 0, clearSelection: true));
     _fetch(withSummary: false);
   }
 
   void setCampaignFilter(NotificationCampaignFilter filter) {
     if (filter == state.campaignFilter) return;
-    emit(state.copyWith(campaignFilter: filter, page: 0));
+    emit(state.copyWith(campaignFilter: filter, page: 0, clearSelection: true));
     _fetch(withSummary: false);
   }
 
@@ -134,6 +144,7 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
         dateTo: to,
         clearDateFilter: from == null && to == null,
         page: 0,
+        clearSelection: true,
       ),
     );
     _fetch(withSummary: false);
@@ -164,6 +175,7 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
         campaignFilter: NotificationCampaignFilter.all,
         clearDateFilter: true,
         page: 0,
+        clearSelection: true,
       ),
     );
     _fetch(withSummary: false);
@@ -244,6 +256,117 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
     }
     return outcome;
   }
+
+  /// Toggles one deletable row. Campaign summaries never enter the selection.
+  void toggleRowSelection(String notificationId) {
+    if (state.isBulkBusy || !_isDeletableOnPage(notificationId)) return;
+    final next = {...state.selectedIds};
+    if (!next.remove(notificationId)) next.add(notificationId);
+    emit(state.copyWith(selectedIds: next, selectedAllMatching: false));
+  }
+
+  /// Selects or clears the deletable rows on the visible page only.
+  void setPageSelection(bool selected) {
+    if (state.isBulkBusy) return;
+    final pageIds = state.notifications
+        .where((n) => !n.isCampaignSummary)
+        .map((n) => n.id);
+    final next = {...state.selectedIds};
+    if (selected) {
+      next.addAll(pageIds);
+    } else {
+      next.removeAll(pageIds);
+    }
+    emit(
+      state.copyWith(
+        selectedIds: next,
+        selectedAllMatching: selected && state.selectedAllMatching,
+      ),
+    );
+  }
+
+  void clearSelection() {
+    if (state.isBulkBusy || state.selectedIds.isEmpty) return;
+    emit(state.copyWith(clearSelection: true));
+  }
+
+  /// Selects every deletable row that matches the current filters across all
+  /// pages. The server refuses sets above its cap, leaving the selection as is.
+  Future<NotificationBulkSelectOutcome> selectAllMatching() async {
+    if (state.isBulkBusy) return NotificationBulkSelectOutcome.busy;
+    emit(state.copyWith(isBulkBusy: true));
+    try {
+      final matches = await _loadMatchingDeletableIds(
+        search: state.search,
+        type: state.type.value,
+        isRead: state.readFilter.value,
+        pushState: state.pushFilter.value,
+        source: state.campaignFilter.value,
+        dateFrom: state.dateFrom,
+        dateTo: state.dateTo,
+      );
+      if (isClosed) return NotificationBulkSelectOutcome.failed;
+      if (matches.tooMany) return NotificationBulkSelectOutcome.tooMany;
+      if (matches.ids.isEmpty) return NotificationBulkSelectOutcome.none;
+      emit(
+        state.copyWith(
+          selectedIds: matches.ids.toSet(),
+          selectedAllMatching: true,
+        ),
+      );
+      return NotificationBulkSelectOutcome.selected;
+    } catch (_) {
+      return NotificationBulkSelectOutcome.failed;
+    } finally {
+      if (!isClosed) emit(state.copyWith(isBulkBusy: false));
+    }
+  }
+
+  /// Deletes the selected rows. Successful ids leave the list and selection;
+  /// ids the server did not confirm stay selected so the admin can retry.
+  /// Returns null when there is nothing to delete or a bulk action is running.
+  Future<AdminNotificationBulkDeleteResult?> deleteSelected() async {
+    if (state.isBulkBusy || state.selectedIds.isEmpty) return null;
+    emit(state.copyWith(isBulkBusy: true));
+    try {
+      final result = await _bulkDeleteNotifications(state.selectedIds.toList());
+      if (isClosed) return result;
+      final settled = {
+        ...result.deletedIds,
+        ...result.notFoundIds,
+        ...result.protectedIds,
+      };
+      final remaining = {...state.selectedIds}..removeAll(settled);
+      final deleted = result.deletedIds.toSet();
+      final newTotal = state.total - deleted.length < 0
+          ? 0
+          : state.total - deleted.length;
+      final newPages = newTotal == 0
+          ? 0
+          : (newTotal + state.pageSize - 1) ~/ state.pageSize;
+      final maxPage = newPages == 0 ? 0 : newPages - 1;
+      final targetPage = state.page > maxPage ? maxPage : state.page;
+      emit(
+        state.copyWith(
+          notifications: state.notifications
+              .where((n) => !deleted.contains(n.id))
+              .toList(growable: false),
+          total: newTotal,
+          page: targetPage,
+          selectedIds: remaining,
+          selectedAllMatching: deleted.isEmpty && state.selectedAllMatching,
+        ),
+      );
+      await _fetch(withSummary: true);
+      return result;
+    } finally {
+      if (!isClosed) emit(state.copyWith(isBulkBusy: false));
+    }
+  }
+
+  bool _isDeletableOnPage(String notificationId) => state.notifications.any(
+    (n) => n.id == notificationId && !n.isCampaignSummary,
+  );
 
   Future<void> _fetch({required bool withSummary, bool first = false}) async {
     final request = ++_requestId;

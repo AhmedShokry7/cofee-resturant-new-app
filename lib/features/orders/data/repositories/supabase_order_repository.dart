@@ -2,6 +2,7 @@ import 'package:new_coffee/core/data/db_values.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/services/supabase_read_service.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
+import 'package:new_coffee/core/config/app_config.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
 import 'package:new_coffee/features/orders/data/model/order_tracking.dart';
@@ -19,6 +20,7 @@ class SupabaseOrdersRepository
     implements
         OrdersRepository,
         OrderLinesRepository,
+        OrderInvoiceRepository,
         CheckoutQuoteRepository,
         ReviewRepository {
   SupabaseOrdersRepository({
@@ -149,6 +151,73 @@ class SupabaseOrdersRepository
       for (final item in itemRows)
         OrderItemModel.fromDatabase(order: order, item: Db.asMap(item)),
     ];
+  }
+
+  @override
+  Future<OrderInvoice?> invoiceForOrder(String orderId) async {
+    _requireUserId();
+    final id = Db.uuidOrNull(orderId);
+    if (id == null) return null;
+
+    final response = await _rpc('my_order_invoice', <String, dynamic>{
+      'p_order_id': id,
+    });
+    if (response == null) return null;
+    Map<String, dynamic>? invoiceJson;
+    if (response is List) {
+      if (response.isEmpty || response.first is! Map) return null;
+      invoiceJson = Map<String, dynamic>.from(response.first as Map);
+    } else if (response is Map) {
+      invoiceJson = Map<String, dynamic>.from(response);
+    }
+    if (invoiceJson == null) return null;
+    // Do not cache or persist signed URLs. The Edge Function re-checks
+    // ownership and issues a fresh five-minute URL for each invoice view.
+    final invoiceId = invoiceJson['invoice_id']?.toString() ?? '';
+    if (invoiceId.isNotEmpty &&
+        invoiceJson['status'] == 'issued' &&
+        _rpcOverride == null) {
+      try {
+        final document = await _client.functions.invoke(
+          'invoice-documents',
+          body: {'invoice_id': invoiceId},
+        );
+        if (document.data is Map && document.data['status'] == 'ready') {
+          final signed = Uri.tryParse(
+            document.data['signed_url']?.toString() ?? '',
+          );
+          final project = Uri.tryParse(AppConfig.supabaseUrl);
+          if (signed != null &&
+              project != null &&
+              signed.scheme == 'https' &&
+              signed.host == project.host) {
+            invoiceJson['document_url'] = signed.toString();
+          }
+        }
+        if (document.data is Map) {
+          invoiceJson['document_status'] = document.data['status'];
+        }
+      } catch (_) {
+        // An unavailable PDF must not hide the issued invoice or receipt.
+        try {
+          final latest = await _rpc('my_order_invoice', <String, dynamic>{
+            'p_order_id': id,
+          });
+          final latestJson = latest is Map
+              ? Map<String, dynamic>.from(latest)
+              : latest is List && latest.isNotEmpty && latest.first is Map
+              ? Map<String, dynamic>.from(latest.first as Map)
+              : null;
+          if (latestJson != null) {
+            invoiceJson['document_status'] =
+                latestJson['document_status'] ?? invoiceJson['document_status'];
+          }
+        } catch (_) {
+          // Keep the last known document state if the status read also fails.
+        }
+      }
+    }
+    return OrderInvoice.fromJson(invoiceJson);
   }
 
   @override

@@ -7,6 +7,7 @@ import 'package:admin_app/core/theme/typography.dart';
 class CustomTextFormField extends StatefulWidget {
   final String hint;
   final String? label;
+  final Widget? labelTrailing;
   final TextEditingController? controller;
 
   /// Supplied when something outside the field has to react to focus, e.g. to
@@ -33,6 +34,7 @@ class CustomTextFormField extends StatefulWidget {
     super.key,
     required this.hint,
     this.label,
+    this.labelTrailing,
     this.controller,
     this.focusNode,
     this.validator,
@@ -86,9 +88,17 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                 left: AppDimensions.fieldLabelGap,
                 right: AppDimensions.fieldLabelGap,
               ),
-              child: Text(
-                widget.label!,
-                style: AppFonts.semiBold14(context).copyWith(color: onSurface),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.label!,
+                      style: AppFonts.semiBold14(context)
+                          .copyWith(color: onSurface),
+                    ),
+                  ),
+                  if (widget.labelTrailing != null) widget.labelTrailing!,
+                ],
               ),
             ),
           ],

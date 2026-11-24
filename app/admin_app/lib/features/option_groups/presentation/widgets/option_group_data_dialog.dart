@@ -18,6 +18,7 @@ import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/shared/widgets/admin_pickable_list.dart';
 import 'package:admin_app/shared/widgets/admin_segmented_control.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 /// يفتح حوار إنشاء مجموعة أحجام أو إضافات جديدة.
@@ -606,11 +607,10 @@ class _OptionGroupDataDialogState extends State<OptionGroupDataDialog> {
                         const SizedBox(height: AppSizes.px8),
                         Row(
                           children: [
-                            TextButton.icon(
+                            AdminCreateButton(
                               key: const Key('option-group-add-value'),
+                              label: S.addOptionValue,
                               onPressed: _addDraft,
-                              icon: const Icon(AppIcons.add01, size: 16),
-                              label: Text(S.addOptionValue),
                             ),
                             const Spacer(),
                             Text(

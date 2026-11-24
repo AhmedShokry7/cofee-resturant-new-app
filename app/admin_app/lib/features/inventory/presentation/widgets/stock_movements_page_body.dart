@@ -2,8 +2,6 @@ import 'package:material_ui/material_ui.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/inventory/domain/entities/admin_inventory_filters.dart';
 import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement_metrics.dart';
 import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement.dart';
@@ -15,7 +13,7 @@ import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_directory_page_layout.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
 import 'package:admin_app/shared/widgets/admin_read_only_hint.dart';
-import 'package:admin_app/shared/widgets/custom_btn.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 class StockMovementsPageBody extends StatelessWidget {
   const StockMovementsPageBody({
@@ -105,15 +103,10 @@ class StockMovementsPageBody extends StatelessWidget {
               subtitle: S.stockMovementsSubtitle,
               actions: [
                 if (canAdjust)
-                  CustomBtn(
+                  AdminCreateButton(
                     key: const Key('stock-movements-record-movement'),
-                    text: S.stockMovementAction,
+                    label: S.stockMovementAction,
                     onPressed: onRecordMovement,
-                    leadingIcon: const Icon(AppIcons.add01, size: 18),
-                    height: 42,
-                    borderRadius: AppRadius.pill,
-                    backgroundColor: AppColor.primaryColor,
-                    textColor: AppColor.whiteColor,
                   ),
               ],
               footer: canAdjust
@@ -126,7 +119,10 @@ class StockMovementsPageBody extends StatelessWidget {
             StockMovementsMetricsCards(metrics: metrics),
             const SizedBox(height: AppSizes.px16),
           ];
-            return AdminDirectoryPageLayout(sections: sections, directory: directory);
+          return AdminDirectoryPageLayout(
+            sections: sections,
+            directory: directory,
+          );
         },
       ),
     );

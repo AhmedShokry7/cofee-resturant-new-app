@@ -51,10 +51,11 @@ class _StaffInviteDialogState extends State<StaffInviteDialog> {
   String? _error;
   bool _sending = false;
 
-  /// ما خرج من `admin_invite_staff` عند النجاح: لا يُقرأ من جديد من قائمة
-  /// الدعوات، لأن الرمز يصل مرة واحدة إلى كاتب الدعوة.
+  /// ما عاد من إنشاء الدعوة عبر RPC المحمي؛ الرمز لا يعاد قراءته من القائمة.
   String? _issuedCode;
   String? _issuedEmail;
+  String? _acceptanceUrl;
+  bool _emailSent = false;
 
   @override
   void initState() {
@@ -228,7 +229,18 @@ class _StaffInviteDialogState extends State<StaffInviteDialog> {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            StaffCodeBlock(code: _issuedCode!),
+            Text(
+              _emailSent
+                  ? S.staffInviteEmailSent
+                  : S.staffInviteEmailDeliveryFailed,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: _emailSent
+                    ? adminMutedColor(theme)
+                    : Theme.of(context).colorScheme.error,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            StaffCodeBlock(code: _issuedCode!, acceptanceUrl: _acceptanceUrl),
           ],
         ),
       ),
@@ -275,6 +287,8 @@ class _StaffInviteDialogState extends State<StaffInviteDialog> {
       setState(() {
         _issuedCode = result.code;
         _issuedEmail = result.email;
+        _emailSent = result.emailSent;
+        _acceptanceUrl = result.acceptanceUrl;
       });
       return;
     }

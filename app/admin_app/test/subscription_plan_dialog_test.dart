@@ -128,6 +128,22 @@ void main() {
   setUp(() => AppLocale.instance.debugSet(AppLanguage.english));
   tearDown(() => AppLocale.instance.debugSet(AppLanguage.english));
 
+  testWidgets('field help opens in the narrow plan editor', (tester) async {
+    _setViewport(tester, 390, 800);
+    final cubit = _FakePlanCubit();
+    await _openDialog(tester, cubit);
+
+    final helpButton = find.byKey(
+      ValueKey('admin-help-${S.subscriptionPlanPriceLabel}'),
+    );
+    await tester.ensureVisible(helpButton);
+    await tester.tap(helpButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text(S.subscriptionPlanPriceHelp), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('saving an empty form shows the required errors', (tester) async {
     _setViewport(tester);
     final cubit = _FakePlanCubit();

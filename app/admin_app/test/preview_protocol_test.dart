@@ -124,7 +124,8 @@ void main() {
   });
 
   group('decodePreviewPayload — فكّ الحمولة الواردة', () {
-    const body = '{"protocolVersion":"1.0","sessionId":"ve_1","type":"APPLY_DESIGN_CONFIG","payload":{"x":1}}';
+    const body =
+        '{"protocolVersion":"1.0","sessionId":"ve_1","type":"APPLY_DESIGN_CONFIG","payload":{"x":1}}';
 
     test('نص JSON صالح يُفكّ إلى خريطة', () {
       final decoded = decodePreviewPayload(body);

@@ -35,6 +35,11 @@ PosReceipt _receipt() {
     result: PosOrderResult(
       orderId: 'o1',
       orderNumber: 'POS-2026-000042',
+      invoiceNumber: 'INV-2026-0000042',
+      invoiceIssuedAt: DateTime.utc(2026, 10, 26, 10, 15, 1),
+      invoiceIssued: true,
+      invoiceType: 'simplified',
+      taxRegistrationStatus: 'registered',
       subtotal: 65,
       taxTotal: 9.75,
       grandTotal: 74.75,
@@ -135,7 +140,7 @@ void main() {
     test('the fields name the sale without leaking internal labels', () {
       final details = _asMap(posReceiptDetails(_receipt()));
 
-      expect(details[S.posInvoiceNumber], 'POS-2026-000042');
+      expect(details[S.posInvoiceNumber], 'INV-2026-0000042');
       expect(details[S.posTable], '7');
       expect(details[S.posCustomer], 'أحمد محمد');
       expect(details[S.posCustomerPhone], '01000000000');
@@ -181,6 +186,31 @@ void main() {
     test('the QR is present whenever the tax identity is complete', () {
       expect(buildPosReceiptQrData(_receipt()), isNotNull);
     });
+
+    test('a receipt or unissued sale never gets a tax invoice QR', () {
+      final unregistered = PosReceipt(
+        result: PosOrderResult(
+          orderId: 'o10',
+          orderNumber: 'POS-2026-000050',
+          invoiceNumber: 'INV-2026-0000050',
+          invoiceIssued: true,
+          invoiceType: 'receipt',
+          taxRegistrationStatus: 'unregistered',
+          sellerLegalName: 'Cafe',
+          sellerVatNumber: '310123456789003',
+        ),
+      );
+      expect(buildPosReceiptQrData(unregistered), isNull);
+      final unissued = PosReceipt(
+        result: PosOrderResult(
+          orderId: 'o11',
+          orderNumber: 'POS-2026-000051',
+          sellerLegalName: 'Cafe',
+          sellerVatNumber: '310123456789003',
+        ),
+      );
+      expect(buildPosReceiptQrData(unissued), isNull);
+    });
   });
 
   group('english invoice', () {
@@ -190,7 +220,7 @@ void main() {
       final details = _asMap(posReceiptDetails(_receipt()));
       final lines = posReceiptPrintLines(_receipt());
 
-      expect(details[S.posInvoiceNumber], 'POS-2026-000042');
+      expect(details[S.posInvoiceNumber], 'INV-2026-0000042');
       expect(details[S.posCustomer], 'أحمد محمد');
       expect(details[S.posReceiptPaymentMethod], 'Cash');
       expect(lines.first.name, 'Latte');
@@ -221,8 +251,9 @@ void main() {
       expect(details[S.posTable], '-');
       expect(details.containsKey(S.posDineIn), isFalse);
       expect(details.containsKey(S.posPickup), isFalse);
-      expect(totals[S.posTaxableAmount], '${localizeDigits('20.00')} EGP');
-      expect(totals[S.posVatAmount], '${localizeDigits('0.00')} EGP');
+      expect(totals[S.posSubtotal], '${localizeDigits('20.00')} EGP');
+      expect(totals.containsKey(S.posTaxableAmount), isFalse);
+      expect(totals.containsKey(S.posVatAmount), isFalse);
       expect(totals[S.posTotal], '${localizeDigits('20.00')} EGP');
       expect(totals.containsKey(S.posVatRate), isFalse);
       expect(details[S.posReceiptPaymentMethod], 'نقدي');
@@ -271,7 +302,7 @@ void main() {
 
       // لا وسيط HTML: الورقة تحمل النص نفسه الذي في القاعدة، بلا تحويل رموز.
       expect(
-        _asMap(posReceiptDetails(receipt))[S.posInvoiceNumber],
+        _asMap(posReceiptDetails(receipt))[S.posReceiptNumber],
         'POS-<42>&"',
       );
     });
@@ -329,7 +360,7 @@ void main() {
     final fields = _decodeTlv(data!);
     expect(fields[1], 'مقهى النخبة للتجارة');
     expect(fields[2], '310123456789003');
-    expect(fields[3], '2026-10-26T10:15:00Z');
+    expect(fields[3], '2026-10-26T10:15:01Z');
     expect(fields[4], '74.75');
     expect(fields[5], '9.75');
     expect(

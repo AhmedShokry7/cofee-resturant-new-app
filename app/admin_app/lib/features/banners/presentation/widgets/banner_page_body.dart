@@ -2,10 +2,10 @@ import 'package:material_ui/material_ui.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/banners/domain/entities/admin_banner.dart';
 import 'package:admin_app/features/banners/presentation/widgets/banner_records.dart';
 import 'package:admin_app/shared/widgets/admin_page_title.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 /// The title, the add button and the list of the banners.
 ///
@@ -49,11 +49,7 @@ class BannerPageBody extends StatelessWidget {
                 children: [
                   AdminPageTitle(S.banners),
                   if (onAdd != null)
-                    FilledButton.icon(
-                      onPressed: onAdd,
-                      icon: const Icon(AppIcons.add01, size: 18),
-                      label: Text(S.addBanner),
-                    ),
+                    AdminCreateButton(label: S.addBanner, onPressed: onAdd),
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),

@@ -22,10 +22,7 @@ class _NoopRepository extends VisualEditorRepository {
     Map<String, int> knownRevisions = const {},
     bool force = false,
   }) async =>
-      PageSaveResult(
-        savedRevisions: const {},
-        savedAt: DateTime(2026, 1, 1),
-      );
+      PageSaveResult(savedRevisions: const {}, savedAt: DateTime(2026, 1, 1));
 
   @override
   Future<void> discardDraft() async {}

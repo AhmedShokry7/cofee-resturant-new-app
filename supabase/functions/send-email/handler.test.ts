@@ -4,21 +4,22 @@
 // without sending anything: the store, the provider and the environment are
 // injected.
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { sendEmail, type BrevoEmail } from "../_shared/brevo.ts";
+import { type BrevoEmail, sendEmail } from "../_shared/brevo.ts";
 import {
   deliverEmail,
   emailContentOf,
+  type EmailDeliveryRecord,
+  type EmailDeps,
   emailHtmlOf,
+  type EmailNotification,
+  type EmailPreferences,
+  type EmailStore,
   handleEmailRequest,
+  handleInvitationRequest,
   handleUnsubscribe,
   parseEmailNotification,
   unsubscribeTokenFor,
   unsubscribeUrlOf,
-  type EmailDeliveryRecord,
-  type EmailDeps,
-  type EmailNotification,
-  type EmailPreferences,
-  type EmailStore,
 } from "./handler.ts";
 
 const STORAGE_HOST = "project.supabase.co";
@@ -61,15 +62,13 @@ function makeStore(
     customer: overrides.customer === undefined
       ? { address: "customer@example.com", language: "ar" }
       : overrides.customer ?? null,
-    preferences: "preferences" in overrides
-      ? overrides.preferences ?? null
-      : {
-        emailEnabled: true,
-        orderStatus: true,
-        promo: true,
-        loyalty: true,
-        system: true,
-      },
+    preferences: "preferences" in overrides ? overrides.preferences ?? null : {
+      emailEnabled: true,
+      orderStatus: true,
+      promo: true,
+      loyalty: true,
+      system: true,
+    },
     deliveries: [],
     disabled: [],
     async readCustomer() {
@@ -109,7 +108,10 @@ function makeDeps(
   store: FakeStore,
   options: {
     env?: Record<string, string>;
-    send?: (apiKey: string, email: BrevoEmail) => Promise<{ ok: boolean; id?: string; error?: string }>;
+    send?: (
+      apiKey: string,
+      email: BrevoEmail,
+    ) => Promise<{ ok: boolean; id?: string; error?: string }>;
   } = {},
 ): EmailDeps & { sent: BrevoEmail[]; keys: string[] } {
   const envValues: Record<string, string> = {
@@ -141,7 +143,12 @@ Deno.test("a customer without an address is skipped, not failed", async () => {
   const store = makeStore({ customer: null });
   const deps = makeDeps(store);
   const result = await deliverEmail(makeNotification(), deps, FUNCTION_URL);
-  assertEquals(result, { sent: 0, failed: 0, skipped: true, reason: "no_address" });
+  assertEquals(result, {
+    sent: 0,
+    failed: 0,
+    skipped: true,
+    reason: "no_address",
+  });
   assertEquals(store.deliveries[0]?.status, "skipped");
   assertEquals(store.deliveries[0]?.error, "no_address");
   assertEquals(deps.sent.length, 0);
@@ -149,7 +156,11 @@ Deno.test("a customer without an address is skipped, not failed", async () => {
 
 Deno.test("an empty address is a skip too", async () => {
   const store = makeStore({ customer: { address: "  ", language: "ar" } });
-  const result = await deliverEmail(makeNotification(), makeDeps(store), FUNCTION_URL);
+  const result = await deliverEmail(
+    makeNotification(),
+    makeDeps(store),
+    FUNCTION_URL,
+  );
   assertEquals(result.reason, "no_address");
 });
 
@@ -178,14 +189,25 @@ Deno.test("the type switch closes one kind and leaves the others open", async ()
   assertEquals(skipped.sent.length, 0);
 
   const other = makeDeps(store);
-  assertEquals((await deliverEmail(makeNotification({ type: "promo" }), other, FUNCTION_URL)).sent, 1);
+  assertEquals(
+    (await deliverEmail(
+      makeNotification({ type: "promo" }),
+      other,
+      FUNCTION_URL,
+    )).sent,
+    1,
+  );
 });
 
 Deno.test("promo without explicit marketing consent is skipped", async () => {
   const store = makeStore();
   store.readMarketingConsent = async () => ({ status: "missing" as const });
   const deps = makeDeps(store);
-  const result = await deliverEmail(makeNotification({ type: "promo" }), deps, FUNCTION_URL);
+  const result = await deliverEmail(
+    makeNotification({ type: "promo" }),
+    deps,
+    FUNCTION_URL,
+  );
   assertEquals(result.reason, "marketing_consent_required");
   assertEquals(deps.sent.length, 0);
   assertEquals(store.deliveries[0]?.status, "skipped");
@@ -201,7 +223,11 @@ Deno.test("promo with an unverified email is skipped even if consented", async (
     matchesProfile: true,
   });
   const deps = makeDeps(store);
-  const result = await deliverEmail(makeNotification({ type: "promo" }), deps, FUNCTION_URL);
+  const result = await deliverEmail(
+    makeNotification({ type: "promo" }),
+    deps,
+    FUNCTION_URL,
+  );
   assertEquals(result.reason, "email_not_verified");
   assertEquals(deps.sent.length, 0);
 });
@@ -215,16 +241,27 @@ Deno.test("promo with mismatched profile and auth email is skipped", async () =>
     matchesProfile: false,
   });
   const deps = makeDeps(store);
-  const result = await deliverEmail(makeNotification({ type: "promo" }), deps, FUNCTION_URL);
+  const result = await deliverEmail(
+    makeNotification({ type: "promo" }),
+    deps,
+    FUNCTION_URL,
+  );
   assertEquals(result.reason, "email_not_verified");
   assertEquals(deps.sent.length, 0);
 });
 
 Deno.test("notification targeted to another channel is not sent by email", async () => {
   const store = makeStore();
-  store.readMarketingRecipient = async () => ({ channel: "push", purpose: "promotions" });
+  store.readMarketingRecipient = async () => ({
+    channel: "push",
+    purpose: "promotions",
+  });
   const deps = makeDeps(store);
-  const result = await deliverEmail(makeNotification({ type: "promo" }), deps, FUNCTION_URL);
+  const result = await deliverEmail(
+    makeNotification({ type: "promo" }),
+    deps,
+    FUNCTION_URL,
+  );
   assertEquals(result.reason, "channel_not_targeted");
   assertEquals(deps.sent.length, 0);
 });
@@ -235,7 +272,9 @@ Deno.test("the customer's language decides the subject and the body", async () =
   assertEquals(arabic.sent[0].subject, "تحديث حالة الطلب");
   assertEquals(arabic.sent[0].text.startsWith("تحديث حالة الطلب"), true);
 
-  const english = makeDeps(makeStore({ customer: { address: "a@example.com", language: "en" } }));
+  const english = makeDeps(
+    makeStore({ customer: { address: "a@example.com", language: "en" } }),
+  );
   await deliverEmail(makeNotification(), english, FUNCTION_URL);
   assertEquals(english.sent[0].subject, "Order updated");
 });
@@ -274,7 +313,10 @@ Deno.test("the picture is shown only when it is a public object of this project"
 
 Deno.test("text written by an admin cannot open a tag in the mail", () => {
   const html = emailHtmlOf(
-    makeNotification({ titleEn: `</h1><script>alert(1)</script>`, bodyEn: `a"b` }),
+    makeNotification({
+      titleEn: `</h1><script>alert(1)</script>`,
+      bodyEn: `a"b`,
+    }),
     "en",
     "https://project.supabase.co/functions/v1/send-email/unsubscribe",
   );
@@ -285,8 +327,14 @@ Deno.test("text written by an admin cannot open a tag in the mail", () => {
 
 Deno.test("the Arabic mail is written right to left and the English one left to right", () => {
   const url = "https://project.supabase.co/functions/v1/send-email/unsubscribe";
-  assertEquals(emailHtmlOf(makeNotification(), "ar", url).includes('dir="rtl"'), true);
-  assertEquals(emailHtmlOf(makeNotification(), "en", url).includes('dir="ltr"'), true);
+  assertEquals(
+    emailHtmlOf(makeNotification(), "ar", url).includes('dir="rtl"'),
+    true,
+  );
+  assertEquals(
+    emailHtmlOf(makeNotification(), "en", url).includes('dir="ltr"'),
+    true,
+  );
 });
 
 Deno.test("one-click unsubscribe rides in the headers and matches the link in the body", async () => {
@@ -297,7 +345,10 @@ Deno.test("one-click unsubscribe rides in the headers and matches the link in th
   const token = await unsubscribeTokenFor(USER_ID, "webhook-secret");
   const expected = unsubscribeUrlOf(FUNCTION_URL, USER_ID, token);
   assertEquals(email.headers?.["List-Unsubscribe"], `<${expected}>`);
-  assertEquals(email.headers?.["List-Unsubscribe-Post"], "List-Unsubscribe=One-Click");
+  assertEquals(
+    email.headers?.["List-Unsubscribe-Post"],
+    "List-Unsubscribe=One-Click",
+  );
   assertEquals(email.html.includes(expected.replace(/&/g, "&amp;")), true);
   assertEquals(email.text.includes(expected), true);
 });
@@ -319,7 +370,8 @@ Deno.test("a provider refusal is stored with its reason", async () => {
   const result = await deliverEmail(
     makeNotification(),
     makeDeps(store, {
-      send: () => Promise.resolve({ ok: false, error: "brevo 422: invalid sender" }),
+      send: () =>
+        Promise.resolve({ ok: false, error: "brevo 422: invalid sender" }),
     }),
     FUNCTION_URL,
   );
@@ -339,7 +391,11 @@ Deno.test("the request route checks the shared secret", async () => {
   });
 
   const noHeader = await handleEmailRequest(
-    new Request(FUNCTION_URL, { method: "POST", body, headers: { "Content-Type": "application/json" } }),
+    new Request(FUNCTION_URL, {
+      method: "POST",
+      body,
+      headers: { "Content-Type": "application/json" },
+    }),
     deps,
   );
   assertEquals(noHeader.status, 401);
@@ -348,7 +404,10 @@ Deno.test("the request route checks the shared secret", async () => {
     new Request(FUNCTION_URL, {
       method: "POST",
       body,
-      headers: { "Content-Type": "application/json", "x-email-secret": "guess" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-email-secret": "guess",
+      },
     }),
     deps,
   );
@@ -358,7 +417,10 @@ Deno.test("the request route checks the shared secret", async () => {
     new Request(FUNCTION_URL, {
       method: "POST",
       body,
-      headers: { "Content-Type": "application/json", "x-email-secret": "webhook-secret" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-email-secret": "webhook-secret",
+      },
     }),
     deps,
   );
@@ -372,7 +434,10 @@ Deno.test("a body without the two ids is refused before anything is read", async
     new Request(FUNCTION_URL, {
       method: "POST",
       body: JSON.stringify({ type: "promo" }),
-      headers: { "Content-Type": "application/json", "x-email-secret": "webhook-secret" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-email-secret": "webhook-secret",
+      },
     }),
     deps,
   );
@@ -384,7 +449,8 @@ Deno.test("a valid unsubscribe link switches the mail off once", async () => {
   const token = await unsubscribeTokenFor(USER_ID, "webhook-secret");
   const url = unsubscribeUrlOf(FUNCTION_URL, USER_ID, token);
   const response = await handleUnsubscribe(new Request(url), {
-    env: (name) => name === "EMAIL_WEBHOOK_SECRET" ? "webhook-secret" : undefined,
+    env: (name) =>
+      name === "EMAIL_WEBHOOK_SECRET" ? "webhook-secret" : undefined,
     store,
     unsubscribeToken: unsubscribeTokenFor,
   });
@@ -396,9 +462,12 @@ Deno.test("a valid unsubscribe link switches the mail off once", async () => {
 Deno.test("a forged unsubscribe link changes nothing", async () => {
   const store = makeStore();
   const response = await handleUnsubscribe(
-    new Request(`${FUNCTION_URL}/unsubscribe?user_id=${USER_ID}&token=${"0".repeat(64)}`),
+    new Request(
+      `${FUNCTION_URL}/unsubscribe?user_id=${USER_ID}&token=${"0".repeat(64)}`,
+    ),
     {
-      env: (name) => name === "EMAIL_WEBHOOK_SECRET" ? "webhook-secret" : undefined,
+      env: (name) =>
+        name === "EMAIL_WEBHOOK_SECRET" ? "webhook-secret" : undefined,
       store,
       unsubscribeToken: unsubscribeTokenFor,
     },
@@ -414,7 +483,8 @@ Deno.test("the token of one customer does not open the link of another", async (
   const response = await handleUnsubscribe(
     new Request(unsubscribeUrlOf(FUNCTION_URL, USER_ID, token)),
     {
-      env: (name) => name === "EMAIL_WEBHOOK_SECRET" ? "webhook-secret" : undefined,
+      env: (name) =>
+        name === "EMAIL_WEBHOOK_SECRET" ? "webhook-secret" : undefined,
       store,
       unsubscribeToken: unsubscribeTokenFor,
     },
@@ -452,7 +522,9 @@ Deno.test("the Brevo provider call sends one transactional email with the key in
     (input, init) => {
       calls.push({ url: String(input), init: init ?? {} });
       return Promise.resolve(
-        new Response(JSON.stringify({ messageId: "brevo-id" }), { status: 201 }),
+        new Response(JSON.stringify({ messageId: "brevo-id" }), {
+          status: 201,
+        }),
       );
     },
   );
@@ -461,7 +533,10 @@ Deno.test("the Brevo provider call sends one transactional email with the key in
   const headers = calls[0].init.headers as Record<string, string>;
   assertEquals(headers["api-key"], "brevo_secret");
   const requestBody = JSON.parse(String(calls[0].init.body));
-  assertEquals(requestBody.sender, { name: "New Coffee", email: "mail@example.com" });
+  assertEquals(requestBody.sender, {
+    name: "New Coffee",
+    email: "mail@example.com",
+  });
   assertEquals(requestBody.to, [{ email: "customer@example.com" }]);
   assertEquals(requestBody.textContent, "ready");
   assertEquals(requestBody.htmlContent, "<p>ready</p>");
@@ -487,15 +562,195 @@ Deno.test("a provider error keeps a short description of its own", async () => {
   assertEquals(result.ok, false);
   assertEquals(
     result.error,
-    "brevo 422: validation_error: the sending domain is not verified",
+    "brevo 422: the sending domain is not verified",
   );
+});
+
+Deno.test("invitation route uses caller JWT for the permission-checked RPC and emails the invite URL", async () => {
+  const calls: Array<
+    { url: string; authorization: string | null; body: string | null }
+  > = [];
+  const sent: BrevoEmail[] = [];
+  const token = "3f6a2b1e-8c4d-4e5f-9a0b-1c2d3e4f5a6b";
+  const response = await handleInvitationRequest(
+    new Request(
+      "https://project.supabase.co/functions/v1/send-email/send-invitation",
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer caller-jwt",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: "chef@example.com",
+          full_name: "Chef One",
+          role_code: "manager",
+          branch_id: null,
+        }),
+      },
+    ),
+    {
+      env: (name) =>
+        ({
+          SUPABASE_URL: "https://project.supabase.co/",
+          SUPABASE_PUBLISHABLE_KEY: "public-key",
+          BREVO_API_KEY: "brevo-key",
+          EMAIL_FROM: "New Coffee <mail@example.com>",
+          ADMIN_APP_URL: "https://admin.example.test/admin/",
+        } as Record<string, string>)[name],
+      fetch: async (input, init) => {
+        const url = String(input);
+        calls.push({
+          url,
+          authorization: new Headers(init?.headers).get("Authorization"),
+          body: typeof init?.body === "string" ? init.body : null,
+        });
+        if (url.endsWith("/auth/v1/user")) {
+          return new Response("{}", { status: 200 });
+        }
+        if (url.endsWith("/rpc/admin_invite_staff")) {
+          return Response.json({
+            ok: true,
+            invitation_id: NOTIFICATION_ID,
+            token,
+            email: "chef@example.com",
+            full_name: "Chef One",
+            expires_at: "2030-01-01T00:00:00Z",
+          });
+        }
+        throw new Error("unexpected request");
+      },
+      send: async (_key, email) => {
+        sent.push(email);
+        return { ok: true };
+      },
+    },
+  );
+  const payload = await response.json();
+  assertEquals(response.status, 200);
+  assertEquals(payload.ok, true);
+  assertEquals(payload.email_sent, true);
+  assertEquals(
+    payload.acceptance_url,
+    `https://admin.example.test/admin/?invite=${token}`,
+  );
+  assertEquals(calls[1].authorization, "Bearer caller-jwt");
+  assertEquals(
+    calls[1].body,
+    JSON.stringify({
+      p_email: "chef@example.com",
+      p_full_name: "Chef One",
+      p_role_code: "manager",
+      p_branch_id: null,
+    }),
+  );
+  assertEquals(sent.length, 1);
+  assertEquals(sent[0].to, "chef@example.com");
+  assertEquals(sent[0].text.includes(payload.acceptance_url), true);
+  assertEquals(sent[0].html.includes(payload.acceptance_url), true);
+});
+
+Deno.test("invitation route never sends mail after the permission-checked RPC refuses", async () => {
+  let sendCount = 0;
+  const response = await handleInvitationRequest(
+    new Request(
+      "https://project.supabase.co/functions/v1/send-email/send-invitation",
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer caller-jwt",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: "chef@example.com",
+          full_name: "Chef One",
+          role_code: "manager",
+          branch_id: null,
+        }),
+      },
+    ),
+    {
+      env: (name) =>
+        ({
+          SUPABASE_URL: "https://project.supabase.co",
+          SUPABASE_PUBLISHABLE_KEY: "public-key",
+          BREVO_API_KEY: "brevo-key",
+          EMAIL_FROM: "mail@example.com",
+          ADMIN_APP_URL: "https://admin.example.test/",
+        } as Record<string, string>)[name],
+      fetch: async (input) =>
+        String(input).endsWith("/auth/v1/user")
+          ? new Response("{}", { status: 200 })
+          : Response.json({ ok: false, reason: "not_your_branch" }),
+      send: async () => {
+        sendCount++;
+        return { ok: true };
+      },
+    },
+  );
+  assertEquals(await response.json(), {
+    ok: false,
+    reason: "not_your_branch",
+    invitation_id: null,
+  });
+  assertEquals(sendCount, 0);
+});
+
+Deno.test("invitation route fails closed without a configured HTTPS app URL", async () => {
+  let fetchCount = 0;
+  const response = await handleInvitationRequest(
+    new Request(
+      "https://project.supabase.co/functions/v1/send-email/send-invitation",
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer caller-jwt",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: "chef@example.com",
+          full_name: "Chef One",
+          role_code: "manager",
+          branch_id: null,
+        }),
+      },
+    ),
+    {
+      env: (name) =>
+        ({
+          SUPABASE_URL: "https://project.supabase.co",
+          SUPABASE_PUBLISHABLE_KEY: "public-key",
+          BREVO_API_KEY: "brevo-key",
+          EMAIL_FROM: "mail@example.com",
+        } as Record<string, string>)[name],
+      fetch: async () => {
+        fetchCount++;
+        return new Response("{}", { status: 200 });
+      },
+      send: async () => ({ ok: true }),
+    },
+  );
+  assertEquals(await response.json(), {
+    ok: false,
+    reason: "email_not_configured",
+  });
+  assertEquals(fetchCount, 0);
 });
 
 Deno.test("a body that is not json still gives a bounded reason", async () => {
   const result = await sendEmail(
     "brevo_secret",
-    { from: "a@example.com", to: "b@example.com", subject: "s", text: "t", html: "h" },
-    () => Promise.resolve(new Response("<html>502</html>".repeat(30), { status: 502 })),
+    {
+      from: "a@example.com",
+      to: "b@example.com",
+      subject: "s",
+      text: "t",
+      html: "h",
+    },
+    () =>
+      Promise.resolve(
+        new Response("<html>502</html>".repeat(30), { status: 502 }),
+      ),
   );
   assertEquals(result.ok, false);
   assertEquals(result.error!.length <= "brevo 502: ".length + 200, true);

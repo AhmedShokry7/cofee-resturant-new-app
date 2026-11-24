@@ -20,6 +20,7 @@ import 'package:admin_app/features/subscription_plans_admin/presentation/manager
 import 'package:admin_app/features/subscription_plans_admin/presentation/widgets/plan_format.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/widgets/subscription_plan_product_picker.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/admin_help_button.dart';
 import 'package:admin_app/shared/widgets/category_image_dialog.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
 import 'package:admin_app/shared/widgets/custom_text_form_field.dart';
@@ -231,6 +232,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
                           fieldKey: const Key('plan-price'),
                           controller: _price,
                           label: S.subscriptionPlanPriceLabel,
+                          helpMessage: S.subscriptionPlanPriceHelp,
                           hint: '0.00',
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
@@ -258,6 +260,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
                           fieldKey: const Key('plan-duration'),
                           controller: _duration,
                           label: S.subscriptionPlanDurationDays,
+                          helpMessage: S.subscriptionPlanDurationHelp,
                           hint: '30',
                           keyboardType: TextInputType.number,
                           inputFormatters: [_integerFormatter],
@@ -267,6 +270,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
                           fieldKey: const Key('plan-cups'),
                           controller: _cups,
                           label: S.subscriptionPlanCupsLabel,
+                          helpMessage: S.subscriptionPlanCycleCupsHelp,
                           hint: '10',
                           keyboardType: TextInputType.number,
                           inputFormatters: [_integerFormatter],
@@ -276,6 +280,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
                           fieldKey: const Key('plan-rollover'),
                           controller: _rollover,
                           label: S.subscriptionPlanRolloverLabel,
+                          helpMessage: S.subscriptionPlanRolloverHelp,
                           hint: '0',
                           keyboardType: TextInputType.number,
                           inputFormatters: [_integerFormatter],
@@ -285,6 +290,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
                       _section(S.subscriptionPlanBenefitsSection),
                       _choiceRow<String>(
                         label: S.subscriptionPlanBonusType,
+                        helpMessage: S.subscriptionPlanBonusHelp,
                         values: const ['none', 'percent', 'fixed', 'points'],
                         selected: _bonusType,
                         labelFor: (value) => switch (value) {
@@ -318,12 +324,14 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
                       if (_bonusType != 'none')
                         _switchTile(
                           title: S.subscriptionPlanBonusExpires,
+                          helpMessage: S.subscriptionPlanBonusExpiryHelp,
                           value: _bonusExpiresWithCycle,
                           onChanged: (value) =>
                               setState(() => _bonusExpiresWithCycle = value),
                         ),
                       _choiceRow<String>(
                         label: S.subscriptionPlanRenewalPolicy,
+                        helpMessage: S.subscriptionPlanRenewalHelp,
                         values: const ['manual', 'auto'],
                         selected: _renewalPolicy,
                         labelFor: (value) => value == 'auto'
@@ -336,13 +344,17 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
                       ),
                       _switchTile(
                         title: S.subscriptionPlanAutoRenewSupported,
+                        helpMessage: S.subscriptionPlanAutoRenewSupportHelp,
                         value: _autoRenewSupported,
                         onChanged: (value) => setState(() {
                           _autoRenewSupported = value;
                           if (!value) _renewalPolicy = 'manual';
                         }),
                       ),
-                      _section(S.subscriptionPlanProductsSection),
+                      _section(
+                        S.subscriptionPlanProductsSection,
+                        helpMessage: S.subscriptionPlanProductScopeHelp,
+                      ),
                       _productsSection(planState),
                       _section(S.subscriptionPlanVisibilitySection),
                       _switchTile(
@@ -477,7 +489,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
     );
   }
 
-  Widget _section(String title) {
+  Widget _section(String title, {String? helpMessage}) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.sm),
@@ -492,15 +504,19 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
             ),
           ),
           const SizedBox(width: AppSizes.px8),
-          Text(
-            title,
-            style: TextStyle(
-              color: adminHeadingColor(theme),
-              fontSize: AppFontSizes.size12_5,
-              fontWeight: AppFontWeights.bold,
-              height: AppTextHeights.line1_5,
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                color: adminHeadingColor(theme),
+                fontSize: AppFontSizes.size12_5,
+                fontWeight: AppFontWeights.bold,
+                height: AppTextHeights.line1_5,
+              ),
             ),
           ),
+          if (helpMessage != null)
+            AdminHelpButton(title: title, message: helpMessage),
         ],
       ),
     );
@@ -527,6 +543,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
     required String label,
     Key? fieldKey,
     String? hint,
+    String? helpMessage,
     TextInputType? keyboardType,
     TextInputAction textInputAction = TextInputAction.next,
     List<TextInputFormatter>? inputFormatters,
@@ -538,6 +555,9 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
       key: fieldKey,
       controller: controller,
       label: label,
+      labelTrailing: helpMessage == null
+          ? null
+          : AdminHelpButton(title: label, message: helpMessage),
       hint: hint ?? label,
       keyboardType: keyboardType,
       textInputAction: textInputAction,
@@ -550,6 +570,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
 
   Widget _choiceRow<T>({
     required String label,
+    String? helpMessage,
     required List<T> values,
     required T selected,
     required String Function(T value) labelFor,
@@ -561,14 +582,22 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: adminMutedColor(theme),
-              fontSize: AppFontSizes.size10_5,
-              fontWeight: AppFontWeights.semiBold,
-              height: AppTextHeights.line1_5,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: adminMutedColor(theme),
+                    fontSize: AppFontSizes.size10_5,
+                    fontWeight: AppFontWeights.semiBold,
+                    height: AppTextHeights.line1_5,
+                  ),
+                ),
+              ),
+              if (helpMessage != null)
+                AdminHelpButton(title: label, message: helpMessage),
+            ],
           ),
           const SizedBox(height: AppSizes.px6),
           Wrap(
@@ -598,6 +627,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
   Widget _switchTile({
     required String title,
     String? subtitle,
+    String? helpMessage,
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
@@ -605,14 +635,22 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
       dense: true,
-      title: Text(
-        title,
-        style: TextStyle(
-          color: adminBodyColor(theme),
-          fontSize: AppFontSizes.size11_5,
-          fontWeight: AppFontWeights.semiBold,
-          height: AppTextHeights.line1_5,
-        ),
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                color: adminBodyColor(theme),
+                fontSize: AppFontSizes.size11_5,
+                fontWeight: AppFontWeights.semiBold,
+                height: AppTextHeights.line1_5,
+              ),
+            ),
+          ),
+          if (helpMessage != null)
+            AdminHelpButton(title: title, message: helpMessage),
+        ],
       ),
       subtitle: subtitle == null
           ? null
@@ -861,6 +899,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
           _ScopeRow(
             label: S.branches,
             value: subscriptionPlanBranchesScope(plan),
+            helpMessage: S.subscriptionPlanBranchScopeHelp,
           ),
         ],
       ),
@@ -1179,10 +1218,15 @@ class _ProductOptionsMessage extends StatelessWidget {
 }
 
 class _ScopeRow extends StatelessWidget {
-  const _ScopeRow({required this.label, required this.value});
+  const _ScopeRow({
+    required this.label,
+    required this.value,
+    required this.helpMessage,
+  });
 
   final String label;
   final String value;
+  final String helpMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -1208,6 +1252,7 @@ class _ScopeRow extends StatelessWidget {
             height: AppTextHeights.line1_5,
           ),
         ),
+        AdminHelpButton(title: label, message: helpMessage),
       ],
     );
   }

@@ -268,10 +268,7 @@ void main() {
     );
     expect(find.byKey(const Key('notification-health-setup')), findsOneWidget);
 
-    expect(
-      find.byKey(const Key('notification-email-channel')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('notification-email-channel')), findsOneWidget);
     expect(find.text(S.notificationsEmailTitle), findsOneWidget);
     expect(find.text(S.notificationsEmailNoTarget), findsOneWidget);
 

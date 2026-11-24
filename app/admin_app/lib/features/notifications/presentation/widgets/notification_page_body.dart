@@ -2,8 +2,6 @@ import 'package:material_ui/material_ui.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification_metrics.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_push_health.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_directory.dart';
@@ -13,7 +11,7 @@ import 'package:admin_app/shared/widgets/admin_inline_error.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
 import 'package:admin_app/shared/widgets/admin_read_only_hint.dart';
-import 'package:admin_app/shared/widgets/custom_btn.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 class NotificationPageBody extends StatelessWidget {
   const NotificationPageBody({
@@ -55,15 +53,10 @@ class NotificationPageBody extends StatelessWidget {
               subtitle: S.notificationsDescription,
               actions: [
                 if (canSend)
-                  CustomBtn(
+                  AdminCreateButton(
                     key: const Key('notification-compose-open'),
-                    text: S.notificationsCompose,
+                    label: S.notificationsCompose,
                     onPressed: onCompose,
-                    leadingIcon: const Icon(AppIcons.add01, size: 18),
-                    height: 42,
-                    borderRadius: AppRadius.pill,
-                    backgroundColor: AppColor.primaryColor,
-                    textColor: AppColor.whiteColor,
                   ),
               ],
               footer: canManage || canSend

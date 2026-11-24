@@ -8,9 +8,11 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
+import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
 import 'package:new_coffee/features/orders/presentation/views/leave_review_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/track_order_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/widgets/order_status_badge.dart';
+import 'package:new_coffee/features/orders/presentation/views/widgets/order_invoice_card.dart';
 import 'package:new_coffee/shared/widgets/app_icon.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/labeled_value_row.dart';
@@ -25,7 +27,12 @@ import 'package:new_coffee/shared/widgets/price_label.dart';
 /// Leaving with `true` says the order changed underneath — a cancellation or a
 /// submitted review — so whoever opened this page drops the row it still holds.
 class OrderDetailsView extends StatefulWidget {
-  const OrderDetailsView({super.key, required this.order, this.lines});
+  const OrderDetailsView({
+    super.key,
+    required this.order,
+    this.lines,
+    this.invoiceRepository,
+  });
 
   final OrderItemModel order;
 
@@ -33,6 +40,7 @@ class OrderDetailsView extends StatefulWidget {
   /// them. A route is built by the root navigator, so the only way a line can
   /// arrive here is as an argument — the list page's providers are not above it.
   final List<OrderItemModel>? lines;
+  final OrderInvoiceRepository? invoiceRepository;
 
   @override
   State<OrderDetailsView> createState() => _OrderDetailsViewState();
@@ -82,6 +90,13 @@ class _OrderDetailsViewState extends State<OrderDetailsView> {
           ),
           SizedBox(height: AppSpacing.lg),
           _InvoiceCard(lines: lines),
+          if (order.orderId.isNotEmpty && widget.invoiceRepository != null) ...[
+            SizedBox(height: AppSpacing.md),
+            OrderInvoiceCard(
+              orderId: order.orderId,
+              repository: widget.invoiceRepository!,
+            ),
+          ],
           SizedBox(height: AppSpacing.lg),
           if (order.isDelivery) ...[
             _DetailRow(label: S.fulfillmentMethod, value: S.deliveryMethod),

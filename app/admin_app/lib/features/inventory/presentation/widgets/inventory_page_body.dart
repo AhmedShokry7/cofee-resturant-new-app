@@ -2,9 +2,9 @@ import 'package:material_ui/material_ui.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/inventory/domain/entities/admin_inventory_filters.dart';
+import 'package:admin_app/features/inventory/presentation/widgets/inventory_categories_dialog.dart';
 import 'package:admin_app/features/inventory/domain/entities/admin_inventory_item.dart';
 import 'package:admin_app/features/inventory/domain/entities/admin_inventory_metrics.dart';
 import 'package:admin_app/features/inventory/presentation/models/inventory_filters.dart';
@@ -15,6 +15,8 @@ import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_directory_page_layout.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
 import 'package:admin_app/shared/widgets/admin_read_only_hint.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
+import 'package:admin_app/shared/widgets/admin_toolbar.dart';
 import 'package:admin_app/shared/widgets/custom_btn.dart';
 
 class InventoryPageBody extends StatelessWidget {
@@ -46,6 +48,9 @@ class InventoryPageBody extends StatelessWidget {
     required this.onClearFilters,
     required this.onPageChanged,
     required this.onRefresh,
+    this.onManageCategories,
+    this.onCategorySelection,
+    this.selectedCategory,
     this.errorMessage,
   });
 
@@ -75,6 +80,9 @@ class InventoryPageBody extends StatelessWidget {
   final VoidCallback onClearFilters;
   final ValueChanged<int> onPageChanged;
   final VoidCallback onRefresh;
+  final VoidCallback? onManageCategories;
+  final ValueChanged<String?>? onCategorySelection;
+  final String? selectedCategory;
   final String? errorMessage;
 
   @override
@@ -126,15 +134,26 @@ class InventoryPageBody extends StatelessWidget {
                     borderRadius: AppRadius.pill,
                   ),
                 if (canEdit)
-                  CustomBtn(
+                  AdminToolbarButton(
+                    key: const Key('inventory-manage-categories'),
+                    label: S.inventoryCategories,
+                    icon: AppIcons.tag01,
+                    onPressed:
+                        onManageCategories ??
+                        (onCategorySelection == null
+                            ? null
+                            : () => showInventoryCategoriesDialog(
+                                context: context,
+                                categories: filters.categories,
+                                selectedCategory: selectedCategory,
+                                onSelected: onCategorySelection!,
+                              )),
+                  ),
+                if (canEdit)
+                  AdminCreateButton(
                     key: const Key('inventory-add-material'),
-                    text: S.addRawMaterial,
+                    label: S.addRawMaterial,
                     onPressed: onAdd,
-                    leadingIcon: const Icon(AppIcons.add01, size: 18),
-                    height: 42,
-                    borderRadius: AppRadius.pill,
-                    backgroundColor: AppColor.primaryColor,
-                    textColor: AppColor.whiteColor,
                   ),
               ],
               footer: canAdjust
@@ -147,7 +166,10 @@ class InventoryPageBody extends StatelessWidget {
             InventoryMetricsCards(metrics: metrics),
             const SizedBox(height: AppSizes.px16),
           ];
-            return AdminDirectoryPageLayout(sections: sections, directory: directory);
+          return AdminDirectoryPageLayout(
+            sections: sections,
+            directory: directory,
+          );
         },
       ),
     );

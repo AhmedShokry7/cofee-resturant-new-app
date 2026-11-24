@@ -11,6 +11,7 @@ import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 import 'package:admin_app/features/bundles/domain/entities/admin_bundle.dart';
 import 'package:admin_app/features/bundles/presentation/manager/admin_bundle_cubit.dart';
 import 'package:admin_app/core/models/admin_product.dart';
@@ -517,10 +518,9 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                     style: Theme.of(context).textTheme.titleSmall
                         ?.copyWith(fontWeight: AppFontWeights.semiBold),
                   ),
-                  TextButton.icon(
+                  AdminCreateButton(
+                    label: S.addComponent,
                     onPressed: _addComponent,
-                    icon: const Icon(AppIcons.add01, size: 16),
-                    label: Text(S.addComponent),
                   ),
                 ],
               ),

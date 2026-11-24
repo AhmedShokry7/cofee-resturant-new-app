@@ -1,7 +1,7 @@
 import 'dart:convert';
+
 import 'package:github/github.dart';
-import 'package:flutter/foundation.dart';
-import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
+import 'package:admin_app/features/visual_editor/presentation/models/visual_editor_model.dart';
 
 /// Service that pushes the editor JSON to a GitHub repo.
 class VisualEditorSyncService {
@@ -27,25 +27,37 @@ class VisualEditorSyncService {
     // Get the current SHA of the file if it exists.
     String? sha;
     try {
-      final existing = await github.repositories.getContent(
+      final existing = await github.repositories.getContents(
         repoSlug,
         filePath,
         ref: branch,
       );
-      sha = existing.sha;
-    } catch (e) {
+      sha = existing.file?.sha;
+    } on NotFound {
       // File does not exist yet – that's fine.
     }
 
     final encoded = base64Encode(utf8.encode(model.exportJson()));
-    final create = CreateFileOptions(
-      path: filePath,
-      message: 'Update visual editor state',
-      content: encoded,
-      branch: branch,
-      sha: sha,
-    );
-    await github.repositories.createFile(repoSlug, create);
+    if (sha == null) {
+      await github.repositories.createFile(
+        repoSlug,
+        CreateFile(
+          path: filePath,
+          message: 'Update visual editor state',
+          content: encoded,
+          branch: branch,
+        ),
+      );
+    } else {
+      await github.repositories.updateFile(
+        repoSlug,
+        filePath,
+        'Update visual editor state',
+        encoded,
+        sha,
+        branch: branch,
+      );
+    }
   }
 
   /// Publish a raw JSON string (useful when we already have a map).
@@ -54,22 +66,35 @@ class VisualEditorSyncService {
     final repoSlug = RepositorySlug(owner, repo);
     String? sha;
     try {
-      final existing = await github.repositories.getContent(
+      final existing = await github.repositories.getContents(
         repoSlug,
         filePath,
         ref: branch,
       );
-      sha = existing.sha;
-    } catch (_) {}
+      sha = existing.file?.sha;
+    } on NotFound {
+      // File does not exist yet – that's fine.
+    }
     final encoded = base64Encode(utf8.encode(jsonString));
-    final create = CreateFileOptions(
-      path: filePath,
-      message: 'Export visual editor state',
-      content: encoded,
-      branch: branch,
-      sha: sha,
-    );
-    await github.repositories.createFile(repoSlug, create);
+    if (sha == null) {
+      await github.repositories.createFile(
+        repoSlug,
+        CreateFile(
+          path: filePath,
+          message: 'Export visual editor state',
+          content: encoded,
+          branch: branch,
+        ),
+      );
+    } else {
+      await github.repositories.updateFile(
+        repoSlug,
+        filePath,
+        'Export visual editor state',
+        encoded,
+        sha,
+        branch: branch,
+      );
+    }
   }
-
 }

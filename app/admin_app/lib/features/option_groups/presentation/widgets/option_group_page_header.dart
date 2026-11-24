@@ -1,11 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 
-import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
-import 'package:admin_app/shared/widgets/custom_btn.dart';
 
 class OptionGroupPageHeader extends StatelessWidget {
   const OptionGroupPageHeader({super.key, this.onAdd});
@@ -21,15 +18,7 @@ class OptionGroupPageHeader extends StatelessWidget {
       subtitle: S.addonsPageDescription,
       actions: [
         if (onAdd != null)
-          CustomBtn(
-            text: S.addAddonGroup,
-            onPressed: onAdd,
-            leadingIcon: const Icon(AppIcons.add01, size: 18),
-            height: 42,
-            borderRadius: AppRadius.pill,
-            backgroundColor: AppColor.primaryColor,
-            textColor: AppColor.whiteColor,
-          ),
+          AdminCreateButton(label: S.addAddonGroup, onPressed: onAdd),
       ],
     );
   }

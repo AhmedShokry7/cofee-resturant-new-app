@@ -35,7 +35,6 @@ class _KitchenPageState extends State<KitchenPage> with WidgetsBindingObserver {
   late final bool _ownsCubit;
   late final TextEditingController _searchText;
   Timer? _clockTimer;
-  Timer? _pollTimer;
 
   @override
   void initState() {
@@ -52,12 +51,6 @@ class _KitchenPageState extends State<KitchenPage> with WidgetsBindingObserver {
         const Duration(seconds: 30),
         (_) => _cubit.tick(),
       );
-      // Realtime is the primary path; this is the safety net for a blocked
-      // websocket or a project with realtime disabled.
-      _pollTimer = Timer.periodic(
-        const Duration(seconds: 30),
-        (_) => _cubit.refreshLive(),
-      );
     }
   }
 
@@ -73,7 +66,6 @@ class _KitchenPageState extends State<KitchenPage> with WidgetsBindingObserver {
   @override
   void dispose() {
     _clockTimer?.cancel();
-    _pollTimer?.cancel();
     if (_ownsCubit) WidgetsBinding.instance.removeObserver(this);
     widget.searchController.bind(null);
     _searchText.dispose();
@@ -85,7 +77,7 @@ class _KitchenPageState extends State<KitchenPage> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && _ownsCubit) {
       _cubit.tick();
-      _cubit.refreshLive();
+      _cubit.reconcileOnResume();
     }
   }
 
@@ -184,6 +176,7 @@ class _KitchenPageState extends State<KitchenPage> with WidgetsBindingObserver {
             branchId: state.branchId,
             isRefreshing: state.isRefreshing,
             lastUpdatedAt: state.lastUpdatedAt,
+            realtimeStatus: state.realtimeStatus,
             busyTicketIds: state.busyTicketIds,
             busyItemIds: state.busyItemIds,
             hasActiveFilters: state.hasActiveFilters,

@@ -12,6 +12,7 @@ import 'package:admin_app/features/inventory/presentation/manager/admin_inventor
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_format.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_material_dialog.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_movement_dialog.dart';
+import 'package:admin_app/features/inventory/presentation/widgets/inventory_categories_dialog.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_page_body.dart';
 import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
@@ -95,6 +96,22 @@ class _InventoryPageState extends State<InventoryPage> {
           );
     if (saved != true || !mounted) return;
     _showMessage(item == null ? S.materialCreated : S.materialUpdated);
+  }
+
+  Future<void> _openCategories() async {
+    if (!widget.canEdit) return;
+    while (mounted) {
+      final changed = await showInventoryCategoriesDialog(
+        context: context,
+        categories: _cubit.state.filters.categories,
+        selectedCategory: _cubit.state.category,
+        onSelected: _cubit.setCategory,
+        onCreate: _cubit.createInventoryCategory,
+        onRename: _cubit.renameInventoryCategory,
+        onDelete: _cubit.deleteInventoryCategory,
+      );
+      if (changed != true || !mounted) return;
+    }
   }
 
   Future<void> _openMovement([AdminInventoryItem? item]) async {
@@ -228,6 +245,9 @@ class _InventoryPageState extends State<InventoryPage> {
             onClearFilters: _clearFilters,
             onPageChanged: _cubit.setPage,
             onRefresh: _cubit.refresh,
+            onManageCategories: _openCategories,
+            onCategorySelection: _cubit.setCategory,
+            selectedCategory: state.category,
             // القاعدة تُبقي الصفوف القديمة وتضبط الخطأ معًا كي لا تُحذف قائمة
             // صالحة لرفضٍ في إعادة القراءة؛ لذلك تُعرض الرسالة متى وُجدت، لا
             // حين تنقلب الحالة إلى failure وحدها.

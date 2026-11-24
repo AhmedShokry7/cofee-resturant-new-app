@@ -10,6 +10,7 @@ import 'package:admin_app/features/ai_knowledge/data/ai_knowledge_repository.dar
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/custom_btn.dart';
@@ -466,9 +467,8 @@ class _AiKnowledgePageState extends State<AiKnowledgePage>
     title: S.aiKnowledgeArticlesTab,
     subtitle: S.aiKnowledgeArticlesHint,
     trailing: widget.canManage
-        ? CustomBtn(
-            text: S.aiKnowledgeAddArticle,
-            leadingIcon: const Icon(AppIcons.add01),
+        ? AdminCreateButton(
+            label: S.aiKnowledgeAddArticle,
             onPressed: () => _editArticle(),
           )
         : null,
@@ -478,9 +478,8 @@ class _AiKnowledgePageState extends State<AiKnowledgePage>
             message: S.aiKnowledgeNoArticles,
             hint: S.aiKnowledgeArticlesHint,
             action: widget.canManage
-                ? CustomBtn(
-                    text: S.aiKnowledgeAddArticle,
-                    leadingIcon: const Icon(AppIcons.add01),
+                ? AdminCreateButton(
+                    label: S.aiKnowledgeAddArticle,
                     onPressed: () => _editArticle(),
                   )
                 : null,
@@ -547,9 +546,8 @@ class _AiKnowledgePageState extends State<AiKnowledgePage>
         title: S.aiKnowledgeExamplesTitle,
         subtitle: S.aiKnowledgeExamplesHint,
         trailing: widget.canManage
-            ? CustomBtn(
-                text: S.aiKnowledgeAddExample,
-                leadingIcon: const Icon(AppIcons.add01),
+            ? AdminCreateButton(
+                label: S.aiKnowledgeAddExample,
                 onPressed: () => _editReplyExample(),
               )
             : null,
@@ -559,9 +557,8 @@ class _AiKnowledgePageState extends State<AiKnowledgePage>
                 message: S.aiKnowledgeNoExamples,
                 hint: S.aiKnowledgeExamplesHint,
                 action: widget.canManage
-                    ? CustomBtn(
-                        text: S.aiKnowledgeAddExample,
-                        leadingIcon: const Icon(AppIcons.add01),
+                    ? AdminCreateButton(
+                        label: S.aiKnowledgeAddExample,
                         onPressed: () => _editReplyExample(),
                       )
                     : null,

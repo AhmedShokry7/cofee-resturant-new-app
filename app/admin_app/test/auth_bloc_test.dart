@@ -69,6 +69,14 @@ class _FakeAuthRepository implements AuthRepository {
     required String email,
     required String password,
   }) async => InvitationAcceptOutcome.unknown;
+
+  @override
+  Future<InvitationAcceptOutcome> confirmEmailAndAccept({
+    required String token,
+    required String email,
+    required String password,
+    required String confirmationCode,
+  }) async => InvitationAcceptOutcome.unknown;
 }
 
 AuthBloc _bloc(_FakeAuthRepository repository) => AuthBloc(

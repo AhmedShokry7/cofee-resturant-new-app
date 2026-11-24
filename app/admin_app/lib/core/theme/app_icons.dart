@@ -71,6 +71,7 @@ abstract final class AppIcons {
   static const globe02 = HugeIcons.strokeRoundedGlobe02;
   static const gridView = HugeIcons.strokeRoundedGridView;
   static const home01 = HugeIcons.strokeRoundedHome01;
+  static const helpCircle = HugeIcons.strokeRoundedHelpCircle;
   static const iceCream01 = HugeIcons.strokeRoundedIceCream01;
   static const image01 = HugeIcons.strokeRoundedImage01;
   static const imageAdd01 = HugeIcons.strokeRoundedImageAdd01;

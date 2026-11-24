@@ -19,6 +19,7 @@ import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_format.d
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_money_bits.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_reward_target_picker.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
+import 'package:admin_app/shared/widgets/admin_help_button.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/custom_text_form_field.dart';
@@ -134,7 +135,10 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
                       _section(S.loyaltyRewardTargetSection),
                       _typeSelector(),
                       _targetSelector(state),
-                      _section(S.loyaltyRewardPointsSection),
+                      _section(
+                        S.loyaltyRewardPointsSection,
+                        helpMessage: S.loyaltyRewardPointsTooltip,
+                      ),
                       _row([
                         _field(
                           fieldKey: const Key('loyalty-reward-points'),
@@ -144,6 +148,7 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
                           keyboardType: TextInputType.number,
                           validator: _validatePoints,
                           helper: S.loyaltyRewardPointsHelp,
+                          helpMessage: S.loyaltyRewardPointsTooltip,
                         ),
                         _field(
                           fieldKey: const Key('loyalty-reward-stock'),
@@ -153,6 +158,7 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
                           keyboardType: TextInputType.number,
                           validator: _validateStock,
                           helper: S.loyaltyRewardStockHelp,
+                          helpMessage: S.loyaltyRewardStockTooltip,
                         ),
                       ]),
                       _switchTile(
@@ -184,7 +190,7 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
     );
   }
 
-  Widget _section(String title) {
+  Widget _section(String title, {String? helpMessage}) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.sm),
@@ -199,15 +205,19 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
             ),
           ),
           const SizedBox(width: AppSizes.px8),
-          Text(
-            title,
-            style: TextStyle(
-              color: adminHeadingColor(theme),
-              fontSize: AppFontSizes.size12_5,
-              fontWeight: AppFontWeights.bold,
-              height: AppTextHeights.line1_5,
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                color: adminHeadingColor(theme),
+                fontSize: AppFontSizes.size12_5,
+                fontWeight: AppFontWeights.bold,
+                height: AppTextHeights.line1_5,
+              ),
             ),
           ),
+          if (helpMessage != null)
+            AdminHelpButton(title: title, message: helpMessage),
         ],
       ),
     );
@@ -432,6 +442,7 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
     required TextInputType keyboardType,
     required String? Function(String?) validator,
     required String helper,
+    String? helpMessage,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -440,6 +451,9 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
           key: fieldKey,
           controller: controller,
           label: label,
+          labelTrailing: helpMessage == null
+              ? null
+              : AdminHelpButton(title: label, message: helpMessage),
           hint: hint,
           keyboardType: keyboardType,
           validator: validator,

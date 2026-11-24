@@ -2,6 +2,7 @@ import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_filters
 import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_metrics.dart';
 import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_ticket.dart';
 import 'package:admin_app/features/kitchen/domain/repositories/kitchen_repository.dart';
+import 'package:admin_app/core/services/postgres_changes_feed.dart';
 
 enum AdminKitchenStatus { initial, loading, ready, failure }
 
@@ -20,6 +21,7 @@ class AdminKitchenState {
     this.lastUpdatedAt,
     this.now,
     this.loadFailure,
+    this.realtimeStatus = RealtimeFeedStatus.connecting,
   });
 
   final AdminKitchenStatus status;
@@ -41,6 +43,7 @@ class AdminKitchenState {
 
   /// Why the last board read failed; the page turns it into localized copy.
   final KitchenLoadFailure? loadFailure;
+  final RealtimeFeedStatus realtimeStatus;
 
   bool get isLoading => status == AdminKitchenStatus.loading;
   bool get isFailure => status == AdminKitchenStatus.failure;
@@ -80,6 +83,7 @@ class AdminKitchenState {
     DateTime? now,
     KitchenLoadFailure? loadFailure,
     bool clearLoadFailure = false,
+    RealtimeFeedStatus? realtimeStatus,
   }) {
     return AdminKitchenState(
       status: status ?? this.status,
@@ -95,6 +99,7 @@ class AdminKitchenState {
       lastUpdatedAt: lastUpdatedAt ?? this.lastUpdatedAt,
       now: now ?? this.now,
       loadFailure: clearLoadFailure ? null : (loadFailure ?? this.loadFailure),
+      realtimeStatus: realtimeStatus ?? this.realtimeStatus,
     );
   }
 }

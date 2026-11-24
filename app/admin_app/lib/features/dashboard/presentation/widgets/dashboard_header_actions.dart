@@ -3,9 +3,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/navigation/admin_navigator.dart';
-import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 import 'package:admin_app/shared/widgets/app_icon.dart';
 
 /// زر العمل الأخضر في زاوية ترويسة اللوحة.
@@ -25,19 +25,10 @@ class DashboardAddProductButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final select = AdminNavigator.maybeOf(context);
     if (!canAdd || select == null) return const SizedBox.shrink();
-    return FilledButton.icon(
+    return AdminCreateButton(
       key: const Key('dashboard-add-product'),
+      label: S.addProduct,
       onPressed: () => select('products'),
-      style: FilledButton.styleFrom(
-        backgroundColor: AppColor.adminAccent,
-        foregroundColor: AppColor.whiteColor,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.px16,
-          vertical: AppSizes.px10,
-        ),
-      ),
-      icon: const AppIcon(AppIcons.add01, size: AppSizes.px16),
-      label: Text(S.addProduct),
     );
   }
 }

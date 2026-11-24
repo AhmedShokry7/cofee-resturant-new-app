@@ -13,6 +13,7 @@ import 'package:admin_app/features/loyalty/presentation/manager/admin_loyalty_cu
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_format.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_money_bits.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
+import 'package:admin_app/shared/widgets/admin_help_button.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
 import 'package:admin_app/shared/widgets/custom_text_form_field.dart';
@@ -41,12 +42,12 @@ class LoyaltyRuleDialog extends StatefulWidget {
 }
 
 class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
-  static const _previewAmount = 100.0;
-  static const _previewPoints = 100.0;
+  static const _ratePresets = <double>[0.5, 1, 2, 5];
 
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _rate;
   late final TextEditingController _value;
+  late final TextEditingController _previewAmount;
   late bool _isActive;
   bool _saving = false;
   AutovalidateMode _autovalidate = AutovalidateMode.disabled;
@@ -60,9 +61,11 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
       text: _numberText(rule?.pointsPerCurrencyUnit ?? 1),
     );
     _value = TextEditingController(text: _numberText(rule?.pointValue ?? 0.05));
+    _previewAmount = TextEditingController(text: '100');
     _isActive = rule?.isActive ?? true;
     _rate.addListener(_onFieldChanged);
     _value.addListener(_onFieldChanged);
+    _previewAmount.addListener(_onFieldChanged);
   }
 
   @override
@@ -71,6 +74,9 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
       ..removeListener(_onFieldChanged)
       ..dispose();
     _value
+      ..removeListener(_onFieldChanged)
+      ..dispose();
+    _previewAmount
       ..removeListener(_onFieldChanged)
       ..dispose();
     super.dispose();
@@ -124,18 +130,24 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
                         label: S.loyaltyProgramRateField,
                         hint: S.loyaltyProgramRateHint,
                         helper: S.loyaltyProgramRateHelp,
+                        helpMessage: S.loyaltyProgramRateTooltip,
                         validator: _validateRate,
                       ),
+                      _ratePresetPicker(),
                       _field(
                         fieldKey: const Key('loyalty-rule-value'),
                         controller: _value,
                         label: S.loyaltyProgramValueField,
                         hint: S.loyaltyProgramValueHint,
                         helper: S.loyaltyProgramValueHelp,
+                        helpMessage: S.loyaltyProgramValueTooltip,
                         validator: _validateValue,
                         suffixIcon: const CurrencyIcon(size: 10),
                       ),
+                      _previewAmountField(),
                       _preview(),
+                      const SizedBox(height: AppSpacing.sm),
+                      _changeImpact(),
                       const SizedBox(height: AppSpacing.sm),
                       _switchTile(),
                       if (_error != null) ...[
@@ -212,7 +224,8 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
     required TextEditingController controller,
     required String label,
     required String hint,
-    required String helper,
+    required String? helper,
+    String? helpMessage,
     required String? Function(String?) validator,
     Widget? suffixIcon,
   }) {
@@ -223,24 +236,111 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
           key: fieldKey,
           controller: controller,
           label: label,
+          labelTrailing: helpMessage == null
+              ? null
+              : AdminHelpButton(title: label, message: helpMessage),
           hint: hint,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           validator: validator,
           suffixIcon: suffixIcon,
           bottomPadding: 4,
         ),
-        Padding(
-          padding: const EdgeInsetsDirectional.only(start: 12, bottom: 12),
-          child: Text(
-            helper,
-            style: TextStyle(
-              color: adminMutedColor(Theme.of(context)),
-              fontSize: AppFontSizes.size9,
-              height: AppTextHeights.line1_5,
+        if (helper != null && helper.isNotEmpty)
+          Padding(
+            padding: const EdgeInsetsDirectional.only(start: 12, bottom: 12),
+            child: Text(
+              helper,
+              style: TextStyle(
+                color: adminMutedColor(Theme.of(context)),
+                fontSize: AppFontSizes.size9,
+                height: AppTextHeights.line1_5,
+              ),
             ),
           ),
-        ),
       ],
+    );
+  }
+
+  Widget _ratePresetPicker() {
+    final theme = Theme.of(context);
+    final selectedRate = _parse(_rate.text);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsetsDirectional.only(start: 12, bottom: 6),
+            child: Text(
+              S.loyaltyProgramPresetsLabel,
+              style: TextStyle(
+                color: adminMutedColor(theme),
+                fontSize: AppFontSizes.size9,
+              ),
+            ),
+          ),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              for (final rate in _ratePresets)
+                ChoiceChip(
+                  key: ValueKey('loyalty-rate-preset-$rate'),
+                  label: Text(localizeDigits(S.loyaltyProgramPreset(rate))),
+                  selected: selectedRate == rate,
+                  onSelected: _saving
+                      ? null
+                      : (_) => _rate.text = _numberText(rate),
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _previewAmountField() => _field(
+    fieldKey: const Key('loyalty-rule-preview-amount'),
+    controller: _previewAmount,
+    label: S.loyaltyProgramPreviewAmountLabel,
+    hint: S.loyaltyProgramPreviewAmountHint,
+    helper: null,
+    validator: (_) => null,
+    suffixIcon: const CurrencyIcon(size: 10),
+  );
+
+  Widget _changeImpact() {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: adminTintedSurfaceColor(theme),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: adminCardBorderColor(theme)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppIcon(
+            AppIcons.informationCircle,
+            size: 15,
+            color: adminMutedColor(theme),
+          ),
+          const SizedBox(width: AppSizes.px8),
+          Expanded(
+            child: Text(
+              S.loyaltyProgramChangeImpact,
+              style: TextStyle(
+                color: adminMutedColor(theme),
+                fontSize: AppFontSizes.size9,
+                height: AppTextHeights.line1_5,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -248,16 +348,21 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
     final theme = Theme.of(context);
     final rate = _parse(_rate.text);
     final value = _parse(_value.text);
+    final amount = _parse(_previewAmount.text);
     final valid =
         rate != null &&
         rate > 0 &&
         rate <= 1000 &&
         value != null &&
         value >= 0 &&
-        value <= 1000;
-    final points = valid ? (_previewAmount * rate).floor() : 0;
-    final worth = valid ? _previewPoints * value : 0;
-    final earnAmount = loyaltyCompactNumber(_previewAmount);
+        value <= 1000 &&
+        amount != null &&
+        amount > 0 &&
+        amount <= 1000000;
+    final points = valid ? (amount * rate).floor() : 0;
+    final worth = valid ? points * value : 0;
+    final returnPercent = valid ? worth / amount * 100 : 0;
+    final earnAmount = loyaltyCompactNumber(amount ?? 0);
     final worthAmount = loyaltyCompactNumber(worth);
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -323,8 +428,24 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
               sentence: loyaltyMoneySentence(
                 worthAmount,
                 S.loyaltyProgramPreviewWorth(
-                  loyaltyCompactNumber(_previewPoints),
+                  loyaltyCompactNumber(points),
                   loyaltyMoneySlot(worthAmount),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSizes.px6),
+            Padding(
+              padding: const EdgeInsetsDirectional.only(start: 22),
+              child: Text(
+                localizeDigits(
+                  S.loyaltyProgramPreviewReturn(
+                    loyaltyCompactNumber(returnPercent),
+                  ),
+                ),
+                style: TextStyle(
+                  color: adminFlagForeground(theme, AppColor.adminAccent),
+                  fontSize: AppFontSizes.size9,
+                  height: AppTextHeights.line1_5,
                 ),
               ),
             ),
@@ -437,16 +558,21 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
   }
 
   String? _validateRate(String? value) {
-    final rate = _parse(value ?? '');
-    if (rate == null || rate <= 0 || rate > 1000) {
+    final raw = value ?? '';
+    final rate = _parse(raw);
+    if (rate == null || rate <= 0 || rate > 1000 || !_hasPrecision(raw, 4)) {
       return S.loyaltyProgramInvalidRate;
     }
     return null;
   }
 
   String? _validateValue(String? value) {
-    final pointValue = _parse(value ?? '');
-    if (pointValue == null || pointValue < 0 || pointValue > 1000) {
+    final raw = value ?? '';
+    final pointValue = _parse(raw);
+    if (pointValue == null ||
+        pointValue < 0 ||
+        pointValue > 1000 ||
+        !_hasPrecision(raw, 2)) {
       return S.loyaltyProgramInvalidValue;
     }
     return null;
@@ -456,6 +582,13 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
     final normalized = normalizeDigits(raw.trim()).replaceAll(',', '');
     if (normalized.isEmpty || normalized == '.') return null;
     return double.tryParse(normalized);
+  }
+
+  static bool _hasPrecision(String raw, int decimalPlaces) {
+    final normalized = normalizeDigits(raw.trim()).replaceAll(',', '');
+    final decimalIndex = normalized.indexOf('.');
+    return decimalIndex < 0 ||
+        normalized.length - decimalIndex - 1 <= decimalPlaces;
   }
 
   static String _numberText(double value) {

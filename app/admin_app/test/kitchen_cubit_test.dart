@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/services/postgres_changes_feed.dart';
 import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_filters.dart';
 import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_metrics.dart';
 import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_ticket.dart';
@@ -142,6 +143,7 @@ class _FakeKitchenFeed extends KitchenRealtimeFeed {
   @override
   void start(VoidCallback onChanged) {
     started = true;
+    onStatusChanged?.call(RealtimeFeedStatus.connected);
     _handler = onChanged;
   }
 
@@ -523,6 +525,41 @@ void main() {
       expect(repository.boardCalls, 2);
       expect(repository.metricsCalls, 2);
       expect(cubit.state.isRefreshing, isFalse);
+      expect(cubit.state.realtimeStatus, RealtimeFeedStatus.connected);
+    });
+
+    test('coalesces live refreshes during an active board request', () async {
+      final repository = _FakeKitchenRepository()..total = 1;
+      final cubit = AdminKitchenCubit(
+        repository: repository,
+        realtimeFeed: _FakeKitchenFeed(),
+      );
+      addTearDown(cubit.close);
+      await cubit.load();
+      repository.boardGate = Completer<void>();
+
+      final first = cubit.refreshLive();
+      final burst1 = cubit.refreshLive();
+      final burst2 = cubit.refreshLive();
+      await Future<void>.delayed(Duration.zero);
+      repository.boardGate!.complete();
+      await Future.wait([first, burst1, burst2]);
+
+      expect(repository.boardCalls, 3);
+    });
+
+    test('resume reconciles board without waiting for another event', () async {
+      final repository = _FakeKitchenRepository()..total = 1;
+      final cubit = AdminKitchenCubit(
+        repository: repository,
+        realtimeFeed: _FakeKitchenFeed(),
+      );
+      addTearDown(cubit.close);
+      await cubit.load();
+
+      await cubit.reconcileOnResume();
+
+      expect(repository.boardCalls, 2);
     });
 
     test('tick moves the clock forward for the elapsed timers', () async {

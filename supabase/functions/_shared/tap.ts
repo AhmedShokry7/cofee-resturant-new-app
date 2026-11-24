@@ -6,14 +6,30 @@ export function env(name: string): string {
 }
 
 export function tapSecretKey(): string {
-  return env("TAP_SECRET_KEY");
+  const mode = env("TAP_ENV");
+  const key = env("TAP_SECRET_KEY");
+  if (mode === "sandbox" && !key.startsWith("sk_test_")) {
+    throw new Error("TAP_ENV=sandbox requires a Tap test secret key");
+  }
+  if (mode === "production" && !key.startsWith("sk_live_")) {
+    throw new Error("TAP_ENV=production requires a Tap live secret key");
+  }
+  if (mode !== "sandbox" && mode !== "production") {
+    throw new Error("TAP_ENV must be sandbox or production");
+  }
+  return key;
 }
 
 export function tapBaseUrl(): string {
-  return Deno.env.get("TAP_BASE_URL") ?? "https://api.tap.company/v2";
+  // Tap selects test/live processing from the secret API key. Keep the API
+  // hostname fixed so a deployment cannot redirect credentials elsewhere.
+  return "https://api.tap.company/v2";
 }
 
-export async function tapRequest(path: string, init: RequestInit = {}): Promise<any> {
+export async function tapRequest(
+  path: string,
+  init: RequestInit = {},
+): Promise<any> {
   const response = await fetch(`${tapBaseUrl()}${path}`, {
     ...init,
     headers: {
@@ -43,7 +59,9 @@ export function serviceRoleKey(): string {
   return env("SUPABASE_SERVICE_ROLE_KEY");
 }
 
-export async function getUserFromRequest(req: Request): Promise<{ id: string; email?: string } | null> {
+export async function getUserFromRequest(
+  req: Request,
+): Promise<{ id: string; email?: string } | null> {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) return null;
   const token = authHeader.slice(7);
@@ -66,7 +84,10 @@ export function serviceClientHeaders(): Record<string, string> {
   };
 }
 
-export async function serviceFetch(path: string, init: RequestInit = {}): Promise<any> {
+export async function serviceFetch(
+  path: string,
+  init: RequestInit = {},
+): Promise<any> {
   const response = await fetch(`${supabaseUrl()}/rest/v1${path}`, {
     ...init,
     headers: {
@@ -102,7 +123,10 @@ export async function verifyTapWebhookHash(
   return difference === 0;
 }
 
-export function hmacSha256Hex(message: string, secret: string): Promise<string> {
+export function hmacSha256Hex(
+  message: string,
+  secret: string,
+): Promise<string> {
   return crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),

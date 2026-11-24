@@ -11,6 +11,7 @@ import 'package:admin_app/core/utils/dining_format.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
 
@@ -143,34 +144,36 @@ class DiningTableCard extends StatelessWidget {
             const SizedBox(height: AppSizes.px4),
             Align(
               alignment: AlignmentDirectional.centerStart,
-              child: TextButton.icon(
-                onPressed: reservation != null ? onOpenReservation : onBook,
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColor.adminAccent,
-                  visualDensity: VisualDensity.compact,
-                  minimumSize: const Size(0, 26),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.xs,
-                  ),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                icon: AppIcon(
-                  reservation != null
-                      ? AppIcons.calendar01
-                      : AppIcons.calendarAdd01,
-                  size: 14,
-                  color: AppColor.adminAccent,
-                ),
-                label: Text(
-                  reservation != null
-                      ? S.tableOpenReservation
-                      : S.tableBookAction,
-                  style: const TextStyle(
-                    fontSize: AppFontSizes.size10,
-                    fontWeight: AppFontWeights.semiBold,
-                  ),
-                ),
-              ),
+              child: reservation != null
+                  ? TextButton.icon(
+                      onPressed: onOpenReservation,
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColor.adminAccent,
+                        visualDensity: VisualDensity.compact,
+                        minimumSize: const Size(0, 26),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.xs,
+                        ),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      icon: const AppIcon(
+                        AppIcons.calendar01,
+                        size: 14,
+                        color: AppColor.adminAccent,
+                      ),
+                      label: Text(
+                        S.tableOpenReservation,
+                        style: const TextStyle(
+                          fontSize: AppFontSizes.size10,
+                          fontWeight: AppFontWeights.semiBold,
+                        ),
+                      ),
+                    )
+                  : AdminCreateButton(
+                      label: S.tableBookAction,
+                      onPressed: onBook,
+                      icon: AppIcons.calendarAdd01,
+                    ),
             ),
           ],
         ],

@@ -5,7 +5,6 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/dining_enums.dart';
 import 'package:admin_app/core/models/dining_reservation.dart';
 import 'package:admin_app/core/models/dining_table.dart';
-import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/tables/presentation/manager/dining_tables_state.dart';
 import 'package:admin_app/features/tables/presentation/widgets/dining_directory.dart';
@@ -15,7 +14,7 @@ import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_directory_page_layout.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
 import 'package:admin_app/shared/widgets/admin_read_only_hint.dart';
-import 'package:admin_app/shared/widgets/custom_btn.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 class TablesPageBody extends StatelessWidget {
   const TablesPageBody({
@@ -74,7 +73,6 @@ class TablesPageBody extends StatelessWidget {
           // السكرول على الصفحة كاملة: الترويسة والبطاقات والقائمة تتحرك
           // معًا، والقائمة تأخذ ارتفاعًا متجاوبًا مع مساحة الشاشة.
 
-
           final directory = DiningDirectory(
             tables: state.filteredTables,
             allTables: state.tables,
@@ -114,27 +112,19 @@ class TablesPageBody extends StatelessWidget {
               subtitle: S.tablesSubtitle,
               actions: [
                 if (canManage)
-                  CustomBtn(
+                  AdminCreateButton(
                     key: const Key('tables-add'),
-                    text: S.addTable,
+                    label: S.addTable,
                     onPressed: onAddTable,
-                    leadingIcon: const Icon(AppIcons.add01, size: 18),
-                    height: 42,
-                    borderRadius: AppRadius.pill,
-                    backgroundColor: AppColor.primaryColor,
-                    textColor: AppColor.whiteColor,
                   ),
                 if (canManage)
-                  CustomBtn(
+                  AdminCreateButton(
                     key: const Key('tables-book'),
-                    text: S.addReservation,
-                    onPressed: onAddReservation,
-                    enabled: state.tables.isNotEmpty,
-                    leadingIcon: const Icon(AppIcons.calendarAdd01, size: 17),
-                    height: 42,
-                    borderRadius: AppRadius.pill,
-                    backgroundColor: AppColor.adminAccentSurface,
-                    textColor: AppColor.adminAccent,
+                    label: S.addReservation,
+                    onPressed: state.tables.isNotEmpty
+                        ? onAddReservation
+                        : null,
+                    icon: AppIcons.calendarAdd01,
                   ),
               ],
               footer: canManage
@@ -148,7 +138,10 @@ class TablesPageBody extends StatelessWidget {
             const SizedBox(height: AppSizes.px16),
           ];
 
-            return AdminDirectoryPageLayout(sections: sections, directory: directory);
+          return AdminDirectoryPageLayout(
+            sections: sections,
+            directory: directory,
+          );
         },
       ),
     );

@@ -163,11 +163,7 @@ class _RoleCard extends StatelessWidget {
                       size: 15,
                       color: accent,
                     ),
-                    label: Text(
-                      canManage
-                          ? S.roleManagePermissions
-                          : S.roleViewPermissions,
-                    ),
+                    label: Text(canManage ? S.editRole : S.roleViewPermissions),
                   ),
                 ),
               ],

@@ -35,6 +35,9 @@ AdminSubscription _subscription({
   cupsReserved: reserved,
   autoRenew: true,
   paymentReference: 'pay_123',
+  paymentMethodCode: 'cash',
+  paymentMethodNameAr: 'نقدًا',
+  paymentMethodNameEn: 'Cash',
   createdAt: DateTime(2026, 9, 30),
   usageCount: 3,
   lastUsedAt: DateTime(2026, 10, 20),
@@ -44,13 +47,16 @@ class _FakeRepository extends AdminSubscriptionRepository {
   _FakeRepository({
     this.usage = const <AdminSubscriptionUsage>[],
     this.outcome = SubscriptionCancelOutcome.cancelled,
+    this.removeOutcome = SubscriptionRemoveOutcome.removed,
     this.usageError,
   });
 
   final List<AdminSubscriptionUsage> usage;
   SubscriptionCancelOutcome outcome;
+  SubscriptionRemoveOutcome removeOutcome;
   final Object? usageError;
   int cancelCalls = 0;
+  int removeCalls = 0;
 
   @override
   Future<List<AdminSubscription>> loadSubscriptions() async =>
@@ -68,6 +74,14 @@ class _FakeRepository extends AdminSubscriptionRepository {
   ) async {
     cancelCalls++;
     return outcome;
+  }
+
+  @override
+  Future<SubscriptionRemoveOutcome> removeSubscription(
+    String subscriptionId,
+  ) async {
+    removeCalls++;
+    return removeOutcome;
   }
 }
 
@@ -145,6 +159,8 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text(S.subscriptionsDetailsTitle), findsOneWidget);
     expect(find.text('Sara Ali'), findsOneWidget);
+    expect(find.text(S.subscriptionsPaymentMethod), findsOneWidget);
+    expect(find.text(S.subscriptionsCashPaymentMethod), findsOneWidget);
     expect(find.text('Gold plan'), findsNWidgets(2));
     expect(find.text(S.subscriptionStatusExpiringSoon), findsNothing);
     expect(find.text(S.subscriptionsCupsRemaining), findsWidgets);
@@ -171,6 +187,53 @@ void main() {
 
     expect(find.text(S.subscriptionsCancelPendingMessage), findsOneWidget);
     expect(find.text(S.subscriptionsCancelMessage), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('removing asks for confirmation and keeps the audit record', (
+    tester,
+  ) async {
+    final repository = _FakeRepository();
+    await _openDialog(
+      tester,
+      subscription: _subscription(),
+      repository: repository,
+    );
+
+    await tester.tap(find.text(S.subscriptionsRemoveAction));
+    await tester.pumpAndSettle();
+    expect(find.text(S.subscriptionsRemoveTitle), findsOneWidget);
+    expect(find.text(S.subscriptionsRemoveMessage), findsOneWidget);
+
+    await tester.tap(find.text(S.subscriptionsRemoveConfirm));
+    await tester.pumpAndSettle();
+
+    expect(repository.removeCalls, 1);
+    expect(find.text(S.subscriptionsDetailsTitle), findsNothing);
+    expect(find.text(S.subscriptionsRemoveSuccess), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('reserved cups prevent removing the subscription', (
+    tester,
+  ) async {
+    final repository = _FakeRepository(
+      removeOutcome: SubscriptionRemoveOutcome.reservedCups,
+    );
+    await _openDialog(
+      tester,
+      subscription: _subscription(),
+      repository: repository,
+    );
+
+    await tester.tap(find.text(S.subscriptionsRemoveAction));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(S.subscriptionsRemoveConfirm));
+    await tester.pumpAndSettle();
+
+    expect(repository.removeCalls, 1);
+    expect(find.text(S.subscriptionsDetailsTitle), findsOneWidget);
+    expect(find.text(S.subscriptionsRemoveReserved), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

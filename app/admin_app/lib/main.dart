@@ -16,6 +16,7 @@ import 'package:admin_app/features/auth/domain/usecases/sign_out.dart';
 import 'package:admin_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:admin_app/features/auth/presentation/bloc/auth_event.dart';
 import 'package:admin_app/features/auth/presentation/pages/auth_gate.dart';
+import 'package:admin_app/features/auth/presentation/services/invitation_link_dispatcher.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +29,10 @@ Future<void> main() async {
 
   await _guard('locale.init', () => AppLocale.instance.initialize());
   await _guard('theme.init', () => AppTheme.instance.initialize());
+  await _guard(
+    'invitation_links.init',
+    InvitationLinkDispatcher.instance.start,
+  );
   await _guard('supabase.init', () => SupabaseService.init());
 
   AppConfig.debugLogConfiguration();

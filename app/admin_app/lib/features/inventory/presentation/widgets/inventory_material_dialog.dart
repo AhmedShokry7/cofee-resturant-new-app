@@ -8,6 +8,7 @@ import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/inventory/domain/entities/admin_inventory_draft.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_filters.dart';
 import 'package:admin_app/features/inventory/domain/entities/admin_inventory_item.dart';
 import 'package:admin_app/features/inventory/domain/entities/inventory_material_save_outcome.dart';
 import 'package:admin_app/features/inventory/presentation/manager/admin_inventory_cubit.dart';
@@ -21,7 +22,10 @@ Future<bool?> showInventoryMaterialCreateDialog({
 }) {
   return showDialog<bool>(
     context: context,
-    builder: (context) => InventoryMaterialDialog(onSave: cubit.saveMaterial),
+    builder: (context) => InventoryMaterialDialog(
+      categories: cubit.state.filters.categories,
+      onSave: cubit.saveMaterial,
+    ),
   );
 }
 
@@ -32,8 +36,11 @@ Future<bool?> showInventoryMaterialEditDialog({
 }) {
   return showDialog<bool>(
     context: context,
-    builder: (context) =>
-        InventoryMaterialDialog(initialItem: item, onSave: cubit.saveMaterial),
+    builder: (context) => InventoryMaterialDialog(
+      categories: cubit.state.filters.categories,
+      initialItem: item,
+      onSave: cubit.saveMaterial,
+    ),
   );
 }
 
@@ -43,11 +50,13 @@ class InventoryMaterialDialog extends StatefulWidget {
     super.key,
     required this.onSave,
     this.initialItem,
+    this.categories = const <AdminInventoryCategoryOption>[],
   });
 
   final Future<InventoryMaterialSaveOutcome> Function(AdminInventoryDraft draft)
   onSave;
   final AdminInventoryItem? initialItem;
+  final List<AdminInventoryCategoryOption> categories;
 
   @override
   State<InventoryMaterialDialog> createState() =>
@@ -58,11 +67,11 @@ class _InventoryMaterialDialogState extends State<InventoryMaterialDialog> {
   late final TextEditingController _skuController;
   late final TextEditingController _nameArController;
   late final TextEditingController _nameEnController;
-  late final TextEditingController _categoryController;
   late final TextEditingController _unitCostController;
   late final TextEditingController _reorderController;
   late final TextEditingController _notesController;
   late String _unit;
+  late String _category;
   String? _error;
   bool _saving = false;
 
@@ -78,7 +87,7 @@ class _InventoryMaterialDialogState extends State<InventoryMaterialDialog> {
     _skuController = TextEditingController(text: item?.sku ?? '');
     _nameArController = TextEditingController(text: item?.nameAr ?? '');
     _nameEnController = TextEditingController(text: item?.nameEn ?? '');
-    _categoryController = TextEditingController(text: item?.category ?? '');
+    _category = item?.category.trim() ?? '';
     _unitCostController = TextEditingController(
       text: item == null ? '' : _numberForInput(item.unitCost),
     );
@@ -94,7 +103,6 @@ class _InventoryMaterialDialogState extends State<InventoryMaterialDialog> {
     _skuController.dispose();
     _nameArController.dispose();
     _nameEnController.dispose();
-    _categoryController.dispose();
     _unitCostController.dispose();
     _reorderController.dispose();
     _notesController.dispose();
@@ -126,7 +134,11 @@ class _InventoryMaterialDialogState extends State<InventoryMaterialDialog> {
       setState(() => _error = S.materialSaveInvalidSku);
       return;
     }
-    final category = _categoryController.text.trim();
+    final category = _category.trim();
+    if (category.isEmpty) {
+      setState(() => _error = S.materialNeedsCategory);
+      return;
+    }
     if (category.length > 80) {
       setState(() => _error = S.materialSaveInvalidCategory);
       return;
@@ -228,10 +240,31 @@ class _InventoryMaterialDialogState extends State<InventoryMaterialDialog> {
                           hint: S.materialSkuHint,
                           textCapitalization: TextCapitalization.characters,
                         );
-                        final category = _MaterialField(
-                          controller: _categoryController,
-                          label: S.category,
-                          hint: S.materialCategoryHint,
+                        final category = DropdownButtonFormField<String>(
+                          key: const Key('inventory-material-category'),
+                          initialValue: _category.isEmpty ? null : _category,
+                          decoration: InputDecoration(labelText: S.category),
+                          items: [
+                            if (_category.isNotEmpty &&
+                                !widget.categories.any(
+                                  (option) => option.value == _category,
+                                ))
+                              DropdownMenuItem(
+                                value: _category,
+                                child: Text(_category),
+                              ),
+                            for (final option in widget.categories)
+                              DropdownMenuItem(
+                                value: option.value,
+                                child: Text(option.value),
+                              ),
+                          ],
+                          onChanged: _saving || widget.categories.isEmpty
+                              ? null
+                              : (value) {
+                                  if (value == null) return;
+                                  setState(() => _category = value);
+                                },
                         );
                         return constraints.maxWidth < 480
                             ? Column(

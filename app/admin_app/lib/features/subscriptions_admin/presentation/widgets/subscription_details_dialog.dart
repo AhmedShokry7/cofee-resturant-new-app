@@ -80,6 +80,65 @@ class _SubscriptionDetailsDialogState extends State<SubscriptionDetailsDialog> {
     }
   }
 
+  Future<void> _confirmRemove() async {
+    if (_cancelling) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const AppIcon(
+          AppIcons.delete01,
+          size: 26,
+          color: AppColor.errorColor,
+        ),
+        title: Text(S.subscriptionsRemoveTitle),
+        content: Text(
+          _subscription.isPendingPayment
+              ? S.subscriptionsRemovePendingMessage
+              : S.subscriptionsRemoveMessage,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(S.subscriptionsCancelKeep),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColor.errorColor,
+              foregroundColor: AppColor.whiteColor,
+            ),
+            child: Text(S.subscriptionsRemoveConfirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _cancelling = true);
+    final outcome = await widget.cubit.removeSubscription(_subscription.id);
+    if (!mounted) return;
+    setState(() => _cancelling = false);
+
+    switch (outcome) {
+      case SubscriptionRemoveOutcome.removed:
+        final messenger = ScaffoldMessenger.of(context);
+        Navigator.of(context).pop();
+        messenger.showSnackBar(
+          SnackBar(content: Text(S.subscriptionsRemoveSuccess)),
+        );
+        break;
+      case SubscriptionRemoveOutcome.notFound:
+        _showMessage(S.subscriptionsRemoveNotFound);
+        break;
+      case SubscriptionRemoveOutcome.reservedCups:
+        _showMessage(S.subscriptionsRemoveReserved);
+        break;
+      case SubscriptionRemoveOutcome.failed:
+        _showMessage(S.subscriptionsRemoveFailed);
+        break;
+    }
+  }
+
   Future<void> _confirmCancel() async {
     if (!_subscription.isCancellable || _cancelling) return;
     final confirmed = await showDialog<bool>(
@@ -229,6 +288,7 @@ class _SubscriptionDetailsDialogState extends State<SubscriptionDetailsDialog> {
               canCancel: canCancel,
               cancelEnabled: _subscription.isCancellable,
               onCancel: _confirmCancel,
+              onRemove: _confirmRemove,
               onClose: () => Navigator.of(context).pop(),
               dark: dark,
             ),
@@ -684,6 +744,10 @@ class _PeriodSection extends StatelessWidget {
             value: subscriptionDaysRemaining(subscription),
           ),
           _InfoRow(
+            label: S.subscriptionsPaymentMethod,
+            value: subscriptionPaymentMethod(subscription),
+          ),
+          _InfoRow(
             label: S.subscriptionsPaymentReference,
             value: reference.isEmpty ? '—' : reference,
           ),
@@ -966,6 +1030,7 @@ class _DialogFooter extends StatelessWidget {
     required this.canCancel,
     required this.cancelEnabled,
     required this.onCancel,
+    required this.onRemove,
     required this.onClose,
     required this.dark,
   });
@@ -974,6 +1039,7 @@ class _DialogFooter extends StatelessWidget {
   final bool canCancel;
   final bool cancelEnabled;
   final VoidCallback onCancel;
+  final VoidCallback onRemove;
   final VoidCallback onClose;
   final bool dark;
 
@@ -1027,7 +1093,11 @@ class _DialogFooter extends StatelessWidget {
           ),
         ),
       ),
-      child: Row(
+      child: Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.xs,
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           if (canCancel)
             Tooltip(
@@ -1036,7 +1106,22 @@ class _DialogFooter extends StatelessWidget {
                   : S.subscriptionsCancelReserved,
               child: cancelButton,
             ),
-          const Spacer(),
+          OutlinedButton.icon(
+            onPressed: cancelling ? null : onRemove,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColor.errorColor,
+              side: BorderSide(
+                color: AppColor.errorColor.withValues(alpha: .45),
+              ),
+              minimumSize: const Size(0, 38),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+            ),
+            icon: const AppIcon(AppIcons.delete01, size: 15),
+            label: Text(S.subscriptionsRemoveAction),
+          ),
           TextButton(
             onPressed: cancelling ? null : onClose,
             child: Text(S.close),

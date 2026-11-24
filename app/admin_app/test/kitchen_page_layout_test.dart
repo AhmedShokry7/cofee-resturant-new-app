@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/services/postgres_changes_feed.dart';
 import 'package:admin_app/core/theme/theme_class.dart';
 import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_filters.dart';
 import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_metrics.dart';
@@ -137,6 +138,7 @@ class _KitchenHarness extends StatefulWidget {
     this.onTicketStatus,
     this.onToggleItem,
     this.onClearFilters,
+    this.realtimeStatus = RealtimeFeedStatus.connected,
   });
 
   final List<AdminKitchenTicket> tickets;
@@ -148,6 +150,7 @@ class _KitchenHarness extends StatefulWidget {
   onTicketStatus;
   final ValueChanged<AdminKitchenTicketItem>? onToggleItem;
   final VoidCallback? onClearFilters;
+  final RealtimeFeedStatus realtimeStatus;
 
   @override
   State<_KitchenHarness> createState() => _KitchenHarnessState();
@@ -178,6 +181,7 @@ class _KitchenHarnessState extends State<_KitchenHarness> {
       branchId: _branchId,
       isRefreshing: false,
       lastUpdatedAt: widget.now,
+      realtimeStatus: widget.realtimeStatus,
       busyTicketIds: const <String>{},
       busyItemIds: const <String>{},
       hasActiveFilters: _filtersActive,
@@ -335,6 +339,24 @@ void main() {
       await tester.pump();
       expect(tappedTicket?.id, 't1');
       expect(tappedStatus, KitchenTicketStatus.preparing);
+    });
+
+    testWidgets('the connecting state is shown instead of claiming live', (
+      tester,
+    ) async {
+      _setViewport(tester, 1500);
+      await _pump(
+        tester,
+        _KitchenHarness(
+          tickets: const <AdminKitchenTicket>[],
+          metrics: AdminKitchenMetrics.empty,
+          now: _now,
+          realtimeStatus: RealtimeFeedStatus.reconnecting,
+        ),
+      );
+
+      expect(find.text(S.kitchenReconnecting), findsOneWidget);
+      expect(find.text(S.kitchenLive), findsNothing);
     });
 
     testWidgets('the narrow board opens the first column that has work', (

@@ -19,7 +19,10 @@ void main() {
               child: AdminMetricGrid(
                 children: [
                   for (var i = 0; i < 4; i++)
-                    SizedBox(height: 60, child: ColoredBox(color: Colors.primaries[i])),
+                    SizedBox(
+                      height: 60,
+                      child: ColoredBox(color: Colors.primaries[i]),
+                    ),
                 ],
               ),
             ),

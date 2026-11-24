@@ -41,6 +41,7 @@ Future<_Opened> _open(
   AdminInviteOptions? options,
   StaffInviteOutcome outcome = StaffInviteOutcome.success,
   String? code = _token,
+  bool emailSent = true,
 }) async {
   tester.view.physicalSize = const Size(1200, 1000);
   tester.view.devicePixelRatio = 1;
@@ -51,6 +52,7 @@ Future<_Opened> _open(
     options: options ?? _options(),
     inviteOutcome: outcome,
     inviteCode: code,
+    inviteEmailSent: emailSent,
   );
   final cubit = AdminStaffCubit(repository: repository);
   final opened = _Opened(repository, cubit);
@@ -180,6 +182,19 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(StaffInviteDialog), findsNothing);
       expect(opened.answer, isTrue);
+    },
+  );
+
+  testWidgets(
+    'an email delivery failure offers the configured acceptance URL',
+    (tester) async {
+      await _open(tester, emailSent: false);
+      await _fillAndSend(tester);
+
+      expect(find.text(S.staffInviteEmailDeliveryFailed), findsOneWidget);
+      final block = tester.widget<StaffCodeBlock>(find.byType(StaffCodeBlock));
+      expect(block.acceptanceUrl, 'https://admin.example.test/?invite=$_token');
+      expect(find.text(S.staffInviteEmailDeliveryFailed), findsOneWidget);
     },
   );
 

@@ -9,6 +9,7 @@ import 'package:admin_app/features/inventory/domain/entities/admin_inventory_ite
 import 'package:admin_app/features/inventory/domain/entities/admin_inventory_material_option.dart';
 import 'package:admin_app/features/inventory/domain/entities/admin_inventory_metrics.dart';
 import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement_draft.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_category_mutation_outcome.dart';
 import 'package:admin_app/features/inventory/domain/entities/inventory_material_save_outcome.dart';
 import 'package:admin_app/features/inventory/domain/entities/inventory_movement_outcome.dart';
 import 'package:admin_app/features/inventory/domain/entities/inventory_mutation_outcome.dart';
@@ -28,7 +29,8 @@ class AdminInventoryCubit extends Cubit<AdminInventoryState> {
     : this._withUseCases(repository ?? InventoryDependencies.repository);
 
   AdminInventoryCubit._withUseCases(InventoryRepository repository)
-    : _loadInventoryPage = LoadInventoryPageUseCase(repository),
+    : _repository = repository,
+      _loadInventoryPage = LoadInventoryPageUseCase(repository),
       _loadInventoryMetrics = LoadInventoryMetricsUseCase(repository),
       _loadInventoryFilters = LoadInventoryFiltersUseCase(repository),
       _searchMaterials = SearchMaterialsUseCase(repository),
@@ -123,6 +125,40 @@ class AdminInventoryCubit extends Cubit<AdminInventoryState> {
     String? branchId,
   }) {
     return _searchMaterials(search: search, branchId: branchId);
+  }
+
+  Future<InventoryCategoryMutationOutcome> createInventoryCategory(
+    String name,
+  ) => _mutateCategory(() => _repository.createInventoryCategory(name));
+
+  Future<InventoryCategoryMutationOutcome> renameInventoryCategory({
+    required String currentName,
+    required String newName,
+  }) => _mutateCategory(
+    () => _repository.renameInventoryCategory(
+      currentName: currentName,
+      newName: newName,
+    ),
+  );
+
+  Future<InventoryCategoryMutationOutcome> deleteInventoryCategory({
+    required String name,
+    String? reassignTo,
+  }) => _mutateCategory(
+    () =>
+        _repository.deleteInventoryCategory(name: name, reassignTo: reassignTo),
+  );
+
+  final InventoryRepository _repository;
+
+  Future<InventoryCategoryMutationOutcome> _mutateCategory(
+    Future<InventoryCategoryMutationOutcome> Function() mutate,
+  ) async {
+    final outcome = await mutate();
+    if (outcome == InventoryCategoryMutationOutcome.success) {
+      await refresh();
+    }
+    return outcome;
   }
 
   Future<InventoryMaterialSaveOutcome> saveMaterial(

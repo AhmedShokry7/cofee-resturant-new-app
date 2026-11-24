@@ -39,6 +39,29 @@ class S {
   static String get subtotal => _ar ? 'المجموع الفرعي' : 'Subtotal';
   static String get deliveryFee => _ar ? 'رسوم التوصيل' : 'Delivery Fee';
   static String get vat => _ar ? 'ضريبة القيمة المضافة' : 'VAT';
+  static String get taxableAmount =>
+      _ar ? 'المبلغ الخاضع للضريبة' : 'Taxable amount';
+  static String get invoiceNumber => _ar ? 'رقم الفاتورة' : 'Invoice number';
+  static String get invoiceStatus => _ar ? 'حالة الفاتورة' : 'Invoice status';
+  static String get invoiceDocumentStatus =>
+      _ar ? 'حالة الملف' : 'Document status';
+  static String get invoiceIssueDate => _ar ? 'تاريخ الإصدار' : 'Issue date';
+  static String get invoicePending => _ar
+      ? 'الفاتورة لم تصدر بعد. سيظل إيصال الطلب متاحاً هنا.'
+      : 'The invoice has not been issued yet. Your order receipt is still available here.';
+  static String get invoiceUnavailable => _ar
+      ? 'تعذّر تجهيز الفاتورة حالياً. حاول لاحقاً.'
+      : 'The invoice is unavailable right now. Please try again later.';
+  static String get invoiceDocumentUnavailable => _ar
+      ? 'الفاتورة صادرة، لكن ملفها غير متاح للتنزيل حالياً.'
+      : 'The invoice is issued, but its document is not available to download yet.';
+  static String get downloadInvoice =>
+      _ar ? 'تنزيل الفاتورة' : 'Download invoice';
+  static String get invoiceDownloadFailed =>
+      _ar ? 'تعذّر فتح ملف الفاتورة.' : 'Could not open the invoice document.';
+  static String get invoiceLoadFailed => _ar
+      ? 'تعذّر التحقق من حالة الفاتورة.'
+      : 'Could not check the invoice status.';
   static String get vatIncluded => _ar
       ? 'أسعار المنتجات تشمل ضريبة القيمة المضافة'
       : 'Product prices include VAT';
@@ -1357,6 +1380,9 @@ class S {
   static String get subscriptionPlans =>
       _ar ? 'باقات اشتراك القهوة' : 'Coffee subscription plans';
   static String get mySubscription => _ar ? 'اشتراكي' : 'My subscription';
+  static String get myBundles => _ar ? 'باقاتي الشخصية' : 'My Bundles';
+  static String get myReservations => _ar ? 'حجوزاتي' : 'My Reservations';
+  static String get productSubscriptions => _ar ? 'اشتراكات المنتجات' : 'Product Subscriptions';
   static String get noPlansAvailable =>
       _ar ? 'لا توجد باقات متاحة حالياً' : 'No plans available';
   static String get noSubscriptionYet =>

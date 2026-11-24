@@ -30,6 +30,12 @@ import 'package:new_coffee/features/content/presentation/views/help_page.dart';
 import 'package:new_coffee/features/content/presentation/views/privacy_policy_page.dart';
 import 'package:new_coffee/features/search/presentation/views/search_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plans_page.dart';
+import 'package:new_coffee/features/customer_bundles/presentation/views/my_bundles_page.dart';
+import 'package:new_coffee/features/customer_bundles/presentation/views/customer_bundle_editor_page.dart';
+import 'package:new_coffee/features/customer_reservations/presentation/views/my_reservations_page.dart';
+import 'package:new_coffee/features/customer_reservations/presentation/views/reservation_form_page.dart';
+import 'package:new_coffee/features/product_subscriptions/presentation/views/my_product_subscriptions_page.dart';
+import 'package:new_coffee/features/product_subscriptions/presentation/views/product_subscription_form_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/cashier_subscription_consume_page.dart';
 import 'package:new_coffee/features/welcome/presentation/views/welcome_view.dart';
@@ -94,6 +100,18 @@ class AppRoutes {
         _designable('assistant_memory', const AssistantMemoryPage()),
     SubscriptionPlansPage.routeName: (context) =>
         _designable('subscription_plans', const SubscriptionPlansPage()),
+    MyBundlesPage.routeName: (context) =>
+        _designable('my_bundles', const MyBundlesPage()),
+    CustomerBundleEditorPage.routeName: (context) =>
+        _designable('customer_bundle_editor', const CustomerBundleEditorPage()),
+    MyReservationsPage.routeName: (context) =>
+        _designable('my_reservations', const MyReservationsPage()),
+    ReservationFormPage.routeName: (context) =>
+        _designable('reservation_form', const ReservationFormPage()),
+    MyProductSubscriptionsPage.routeName: (context) =>
+        _designable('my_product_subscriptions', const MyProductSubscriptionsPage()),
+    ProductSubscriptionFormPage.routeName: (context) =>
+        _designable('product_subscription_form', const ProductSubscriptionFormPage()),
     SubscriptionDetailsPage.routeName: (context) =>
         _designable('subscription_details', const SubscriptionDetailsPage()),
     CashierSubscriptionConsumePage.routeName: (context) => _designable(

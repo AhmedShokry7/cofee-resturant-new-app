@@ -9,6 +9,8 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/checkout/data/model/order_model.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
+import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
+import 'package:new_coffee/features/orders/presentation/views/widgets/order_invoice_card.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
@@ -23,9 +25,15 @@ class EReceiptPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<CheckoutCubit>().state;
     final order = state.lastOrder;
+    final ordersRepository = context.read<OrdersRepository>();
+    final invoiceRepository = ordersRepository is OrderInvoiceRepository
+        ? ordersRepository as OrderInvoiceRepository
+        : null;
 
     return Scaffold(
-      appBar: AppBar(title: DesignText(S.eReceipt, page: 'e_receipt', label: 'eReceipt')),
+      appBar: AppBar(
+        title: DesignText(S.eReceipt, page: 'e_receipt', label: 'eReceipt'),
+      ),
       body: order == null
           ? EmptyState(
               icon: AppIcons.receipt,
@@ -36,6 +44,14 @@ class EReceiptPage extends StatelessWidget {
               padding: AppLayout.pageBody,
               children: [
                 _ReceiptCard(order: order),
+                if (order.orderId.isNotEmpty && invoiceRepository != null) ...[
+                  SizedBox(height: AppSpacing.md),
+                  OrderInvoiceCard(
+                    orderId: order.orderId,
+                    currentOrder: order,
+                    repository: invoiceRepository,
+                  ),
+                ],
                 SizedBox(height: AppSpacing.lg),
                 _InfoCard(
                   label: S.fulfillmentMethod,

@@ -19,6 +19,7 @@ import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/admin_toolbar.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 /// Opens the customer directory for the current counter sale.
 ///
@@ -214,9 +215,9 @@ class _PosCustomerDialogState extends State<_PosCustomerDialog> {
         icon: AppIcons.userSearch01,
         message: hasQuery ? S.posCustomerNoResults : S.posCustomerEmpty,
         hint: hasQuery ? S.posCustomerNoResultsHint : S.posCustomerEmptyHint,
-        action: TextButton(
+        action: AdminCreateButton(
+          label: S.posCustomerAddTab,
           onPressed: () => _setMode(_CustomerDialogMode.add),
-          child: Text(S.posCustomerAddTab),
         ),
       );
     } else {
@@ -825,7 +826,7 @@ class _CustomerErrorState extends StatelessWidget {
               icon: const Icon(AppIcons.refresh, size: 15),
               label: Text(S.retry),
             ),
-            TextButton(onPressed: onAdd, child: Text(S.posCustomerAddTab)),
+            AdminCreateButton(label: S.posCustomerAddTab, onPressed: onAdd),
           ],
         ),
       ),

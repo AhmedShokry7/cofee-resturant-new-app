@@ -52,10 +52,20 @@ String loyaltyCompactNumber(num value) {
 
 String loyaltyProgramEarnRate(AdminLoyaltyRule rule) => localizeDigits(
   S.loyaltyProgramEarnRate(
-    loyaltyCompactNumber(rule.pointsPerCurrencyUnit),
+    loyaltyRateNumber(rule.pointsPerCurrencyUnit),
     loyaltyCompactNumber(1),
   ),
 );
+
+/// Formats an earning rate at the precision supported by the rule column.
+String loyaltyRateNumber(double value) {
+  final rounded = value.roundToDouble();
+  if ((value - rounded).abs() < 0.00005) return rounded.toInt().toString();
+  return value
+      .toStringAsFixed(4)
+      .replaceFirst(RegExp(r'0+$'), '')
+      .replaceFirst(RegExp(r'\.$'), '');
+}
 
 String loyaltyProgramPointValue(AdminLoyaltyRule rule) => localizeDigits(
   S.loyaltyProgramPointValue(loyaltyCompactNumber(rule.pointValue)),

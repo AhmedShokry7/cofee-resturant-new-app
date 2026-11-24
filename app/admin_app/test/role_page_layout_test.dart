@@ -32,6 +32,7 @@ Future<void> _pumpPage(
   String search = '',
   bool canManage = false,
   ValueChanged<AdminRole>? onManage,
+  VoidCallback? onCreate,
   TextDirection direction = TextDirection.ltr,
 }) async {
   await tester.pumpWidget(
@@ -45,6 +46,7 @@ Future<void> _pumpPage(
             onSearchChanged: (_) {},
             onManage: onManage ?? (_) {},
             canManage: canManage,
+            onCreate: onCreate,
           ),
         ),
       ),
@@ -90,7 +92,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('a manager can open one role permissions', (tester) async {
+  testWidgets('a manager can open one role editor', (tester) async {
     _setViewport(tester, 1280, 800);
     final opened = <String>[];
     await _pumpPage(
@@ -100,8 +102,8 @@ void main() {
       onManage: (role) => opened.add(role.id),
     );
 
-    expect(find.byTooltip(S.roleManagePermissions), findsWidgets);
-    await tester.tap(find.byTooltip(S.roleManagePermissions).first);
+    expect(find.byTooltip(S.editRole), findsWidgets);
+    await tester.tap(find.byTooltip(S.editRole).first);
     await tester.pump();
 
     expect(opened, ['r1']);
@@ -118,13 +120,62 @@ void main() {
     );
 
     expect(find.byTooltip(S.roleViewPermissions), findsWidgets);
-    expect(find.byTooltip(S.roleManagePermissions), findsNothing);
+    expect(find.byTooltip(S.editRole), findsNothing);
     expect(find.text(rolePermissionPreview(_role(1))), findsWidgets);
 
     await tester.tap(find.byTooltip(S.roleViewPermissions).first);
     await tester.pump();
 
     expect(opened, ['r1']);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a manager sees the create action and can start it', (
+    tester,
+  ) async {
+    _setViewport(tester, 1280, 800);
+    var created = 0;
+    await _pumpPage(
+      tester,
+      roles: [_role(2)],
+      canManage: true,
+      onCreate: () => created++,
+    );
+
+    expect(find.text(S.createRole), findsOneWidget);
+    await tester.tap(find.text(S.createRole));
+    await tester.pump();
+
+    expect(created, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the create action stays visible on a narrow RTL page', (
+    tester,
+  ) async {
+    AppLocale.instance.debugSet(AppLanguage.arabic);
+    _setViewport(tester, 360, 800);
+    var created = 0;
+    await _pumpPage(
+      tester,
+      roles: [_role(2)],
+      canManage: true,
+      onCreate: () => created++,
+      direction: TextDirection.rtl,
+    );
+
+    expect(find.text(S.createRole), findsOneWidget);
+    await tester.tap(find.text(S.createRole));
+    await tester.pump();
+    expect(created, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a read-only role list hides the create action', (tester) async {
+    _setViewport(tester, 1280, 800);
+    await _pumpPage(tester, roles: [_role(2)]);
+
+    expect(find.text(S.createRole), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

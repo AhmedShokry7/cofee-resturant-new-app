@@ -58,6 +58,22 @@ class _FakeAuthRepository implements AuthRepository {
     accepted.add({'token': token, 'email': email, 'password': password});
     return acceptOutcome ?? InvitationAcceptOutcome.accepted;
   }
+
+  @override
+  Future<InvitationAcceptOutcome> confirmEmailAndAccept({
+    required String token,
+    required String email,
+    required String password,
+    required String confirmationCode,
+  }) async {
+    accepted.add({
+      'token': token,
+      'email': email,
+      'password': password,
+      'confirmationCode': confirmationCode,
+    });
+    return acceptOutcome ?? InvitationAcceptOutcome.accepted;
+  }
 }
 
 const _session = AdminSession(
@@ -175,6 +191,65 @@ void main() {
       expect(cubit.state.status, InvitationAcceptStatus.refused);
       expect(cubit.state.outcome, InvitationAcceptOutcome.failed);
     });
+
+    test(
+      'email confirmation needed waits without accepting, then completes',
+      () async {
+        final repository = _FakeAuthRepository(
+          lookup: const InvitationLookup.found(_preview),
+          acceptOutcome: InvitationAcceptOutcome.emailConfirmationNeeded,
+        );
+        final cubit = InvitationAcceptCubit(repository: repository);
+        addTearDown(cubit.close);
+
+        await cubit.check(_token);
+        expect(
+          await cubit.accept(token: _token, password: 'secret123'),
+          isNull,
+        );
+        expect(cubit.state.status, InvitationAcceptStatus.awaitingConfirmation);
+
+        repository.acceptOutcome = InvitationAcceptOutcome.accepted;
+        final email = await cubit.confirmEmail(
+          token: _token,
+          confirmationCode: '12345678',
+        );
+        expect(email, _invitedEmail);
+        expect(cubit.state.status, InvitationAcceptStatus.accepted);
+        expect(repository.accepted.last, {
+          'token': _token,
+          'email': _invitedEmail,
+          'password': 'secret123',
+          'confirmationCode': '12345678',
+        });
+      },
+    );
+
+    test(
+      'an invalid confirmation code is named, never a generic failure',
+      () async {
+        final repository = _FakeAuthRepository(
+          lookup: const InvitationLookup.found(_preview),
+          acceptOutcome: InvitationAcceptOutcome.emailConfirmationNeeded,
+        );
+        final cubit = InvitationAcceptCubit(repository: repository);
+        addTearDown(cubit.close);
+
+        await cubit.check(_token);
+        await cubit.accept(token: _token, password: 'secret123');
+        repository.acceptOutcome =
+            InvitationAcceptOutcome.emailConfirmationCodeInvalid;
+        expect(
+          await cubit.confirmEmail(token: _token, confirmationCode: '00000000'),
+          isNull,
+        );
+        expect(cubit.state.status, InvitationAcceptStatus.refused);
+        expect(
+          cubit.state.outcome,
+          InvitationAcceptOutcome.emailConfirmationCodeInvalid,
+        );
+      },
+    );
   });
 
   group('the repository', () {
@@ -379,5 +454,13 @@ class _ThrowingRepository implements AuthRepository {
     required String token,
     required String email,
     required String password,
+  }) async => InvitationAcceptOutcome.failed;
+
+  @override
+  Future<InvitationAcceptOutcome> confirmEmailAndAccept({
+    required String token,
+    required String email,
+    required String password,
+    required String confirmationCode,
   }) async => InvitationAcceptOutcome.failed;
 }

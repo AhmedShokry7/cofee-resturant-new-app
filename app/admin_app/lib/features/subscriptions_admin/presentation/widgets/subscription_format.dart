@@ -137,6 +137,22 @@ String subscriptionDaysRemaining(AdminSubscription subscription) {
 String subscriptionAutoRenewValue(AdminSubscription subscription) =>
     subscription.autoRenew ? S.yes : S.no;
 
+String subscriptionPaymentMethod(AdminSubscription subscription) {
+  if (subscription.paymentMethodCode?.trim() == 'cash') {
+    return S.subscriptionsCashPaymentMethod;
+  }
+  final name = AppLocale.instance.isArabic
+      ? subscription.paymentMethodNameAr?.trim()
+      : subscription.paymentMethodNameEn?.trim();
+  if (name != null && name.isNotEmpty) return name;
+  final fallback = AppLocale.instance.isArabic
+      ? subscription.paymentMethodNameEn?.trim()
+      : subscription.paymentMethodNameAr?.trim();
+  if (fallback != null && fallback.isNotEmpty) return fallback;
+  final code = subscription.paymentMethodCode?.trim() ?? '';
+  return code.isEmpty ? '—' : code;
+}
+
 String subscriptionUsageMethodLabel(String method) => switch (method) {
   'qr' => S.subscriptionsUsageMethodQr,
   'app_order' => S.subscriptionsUsageMethodAppOrder,

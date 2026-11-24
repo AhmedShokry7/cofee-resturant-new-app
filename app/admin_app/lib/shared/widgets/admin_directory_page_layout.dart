@@ -8,15 +8,22 @@ class AdminDirectoryPageLayout extends StatelessWidget {
     super.key,
     required this.sections,
     required this.directory,
+    this.scrollOnNarrowWidth = false,
   });
 
   final List<Widget> sections;
   final Widget directory;
 
+  /// Some pages have tall summary sections that need to scroll with the
+  /// directory on phones, even when the viewport itself is desktop-height.
+  final bool scrollOnNarrowWidth;
+
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
-      if (!constraints.hasBoundedHeight || constraints.maxHeight < 720) {
+      if (!constraints.hasBoundedHeight ||
+          constraints.maxHeight < 720 ||
+          (scrollOnNarrowWidth && constraints.maxWidth < 600)) {
         final directoryHeight = constraints.hasBoundedHeight
             ? (constraints.maxHeight - 240).clamp(420.0, 840.0).toDouble()
             : 560.0;
@@ -33,7 +40,10 @@ class AdminDirectoryPageLayout extends StatelessWidget {
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [...sections, Expanded(child: directory)],
+        children: [
+          ...sections,
+          Expanded(child: directory),
+        ],
       );
     },
   );

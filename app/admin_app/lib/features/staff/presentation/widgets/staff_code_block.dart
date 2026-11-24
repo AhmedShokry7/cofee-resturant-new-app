@@ -8,15 +8,23 @@ import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/features/auth/presentation/models/invitation_link.dart';
 
 /// رمز دعوة بحروف لاتينية ثابتة العرض مع زر نسخه.
 ///
 /// الرمز يُرسل إلى المدعو كما هو، فلا يُعرض داخل نص عربي مخلوط ولا يُقرأ من
 /// القائمة مرة ثانية: القاعدة تعطيه كاتب الدعوة وحده.
 class StaffCodeBlock extends StatelessWidget {
-  const StaffCodeBlock({super.key, required this.code});
+  const StaffCodeBlock({
+    super.key,
+    required this.code,
+    this.acceptanceUrl,
+    this.applicationUrl,
+  });
 
   final String code;
+  final String? acceptanceUrl;
+  final String? applicationUrl;
 
   Future<void> _copy(BuildContext context) async {
     await Clipboard.setData(ClipboardData(text: code));
@@ -25,6 +33,29 @@ class StaffCodeBlock extends StatelessWidget {
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(S.staffInviteCodeCopied)));
+  }
+
+  Future<void> _copyLink(BuildContext context) async {
+    final uri = acceptanceUrl == null
+        ? InvitationLink.acceptanceUri(
+            Uri.base,
+            code,
+            applicationUrl: applicationUrl,
+          )
+        : Uri.tryParse(acceptanceUrl!);
+    if (uri == null || uri.scheme != 'https' || uri.host.isEmpty) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(S.staffInviteLinkUnavailable)));
+      return;
+    }
+    await Clipboard.setData(ClipboardData(text: uri.toString()));
+    if (!context.mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(S.staffInviteLinkCopied)));
   }
 
   @override
@@ -62,6 +93,20 @@ class StaffCodeBlock extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSizes.px4),
+          IconButton(
+            tooltip: S.staffInviteLinkCopy,
+            onPressed: () => _copyLink(context),
+            style: IconButton.styleFrom(
+              fixedSize: const Size(AppSizes.px30, AppSizes.px30),
+              padding: EdgeInsets.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            icon: AppIcon(
+              AppIcons.link01,
+              size: 16,
+              color: adminMutedColor(theme),
+            ),
+          ),
           IconButton(
             tooltip: S.staffInviteCodeCopy,
             onPressed: () => _copy(context),

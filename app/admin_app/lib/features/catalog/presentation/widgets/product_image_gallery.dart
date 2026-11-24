@@ -16,6 +16,7 @@ import 'package:admin_app/core/catalog/admin_product_exception.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_dialogs.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_image_editor.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_image_settings.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 /// The gallery of the pictures of one product.
 ///
@@ -870,11 +871,7 @@ class _Actions extends StatelessWidget {
       spacing: AppSpacing.sm,
       runSpacing: AppSpacing.sm,
       children: [
-        FilledButton.icon(
-          onPressed: busy ? null : onAdd,
-          icon: const Icon(AppIcons.add01, size: 18),
-          label: Text(S.addImage),
-        ),
+        AdminCreateButton(label: S.addImage, onPressed: busy ? null : onAdd),
         OutlinedButton.icon(
           onPressed: busy ? null : onReplace,
           icon: const Icon(AppIcons.imageAdd01, size: 18),

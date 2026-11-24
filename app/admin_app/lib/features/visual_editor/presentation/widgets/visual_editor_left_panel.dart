@@ -1,5 +1,4 @@
-import 'package:flutter_treeview/flutter_treeview.dart';
-
+import 'package:material_ui/material_ui.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
@@ -186,59 +185,7 @@ class _VisualEditorLeftPanelState extends State<VisualEditorLeftPanel> {
   }
 
   // --- 1. الشريط الرأسي الداكن الأخضر الزيتوني ---
-  
-        // --- 1. الشريط الرأسي الداكن الأخضر الزيتوني ---
-        Widget _buildDarkNavigationRail(BuildContext context, bool dark) {
-          const railColor = Color(0xFF1E3527); // Dark olive green
-
-          return Container(
-            width: VisualEditorTokens.navRailWidth,
-            color: railColor,
-            child: Column(
-              children: [
-                const SizedBox(height: AppSpacing.sm),
-                _buildRailIconItem(
-                  tool: VisualEditorLeftTool.pages,
-                  icon: Icons.grid_view_rounded,
-                  label: 'الصفحات',
-                ),
-                // Add more rail items as needed...
-              ],
-            ),
-          );
-        }
-
-        // --- 2. لوحة العمل المجاورة (TreeView) ---
-        Widget _buildLeftWorkspaceContent(BuildContext context, bool dark) {
-          // Build simple TreeView using flutter_treeview
-          final nodes = _featureGroups
-              .map((group) => Node(
-                    key: group.title,
-                    label: group.title,
-                    children: group.pageIds
-                        .map((id) => Node(key: id, label: id))
-                        .toList(),
-                  ))
-              .toList();
-          final controller = TreeViewController(children: nodes);
-
-          return Padding(
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            child: TreeView(
-              controller: controller,
-              allowParentSelect: true,
-              supportParentDoubleTap: true,
-              onNodeTap: (key) {
-                // Simple handling: if leaf node, select page
-                final node = controller.getNode(key);
-                if (node != null && node.children.isEmpty) {
-                  widget.onPageSelected(key);
-                }
-              },
-            ),
-          );
-        }
-
+  Widget _buildDarkNavigationRail(BuildContext context, bool dark) {
     const railColor = Color(0xFF1E3527); // Dark olive green
 
     return Container(

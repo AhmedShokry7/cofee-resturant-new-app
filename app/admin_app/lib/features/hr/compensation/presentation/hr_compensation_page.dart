@@ -13,6 +13,7 @@ import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 _HrCompensationCopy get _copy =>
     _HrCompensationCopy(AppLocale.instance.isArabic);
@@ -84,14 +85,13 @@ class _HrCompensationPageState extends State<HrCompensationPage> {
                 subtitle: S.hrCompensationSubtitle,
                 actions: [
                   if (state.selectedStaffId != null)
-                    FilledButton.icon(
+                    AdminCreateButton(
+                      label: S.hrSaveCompensation,
                       onPressed:
                           state.saving ||
                               state.status == HrCompensationStatus.loading
                           ? null
                           : () => _addCompensation(context, state),
-                      icon: const AppIcon(AppIcons.add01, size: 18),
-                      label: Text(S.hrSaveCompensation),
                     ),
                 ],
               ),

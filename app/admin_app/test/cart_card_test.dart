@@ -5,7 +5,9 @@ import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/carts/data/models/admin_cart.dart';
 import 'package:admin_app/features/carts/presentation/widgets/cart_details_dialog.dart';
+import 'package:admin_app/features/carts/presentation/widgets/cart_metrics_cards.dart';
 import 'package:admin_app/features/carts/presentation/widgets/cart_records.dart';
+import 'package:admin_app/shared/widgets/admin_metric_card.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 AdminCart _cart({String status = 'active'}) {
@@ -43,6 +45,29 @@ AdminCart _cart({String status = 'active'}) {
 }
 
 Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
+
+AdminCart _cartAt(int index) => AdminCart(
+  id: 'c$index',
+  customerName: 'Customer $index',
+  customerEmail: 'customer$index@example.com',
+  branchId: 'b1',
+  branchNameAr: 'الفرع الرئيسي',
+  branchNameEn: 'Main branch',
+  status: 'active',
+  total: 10,
+  updatedAt: DateTime(2026, 2, 3, 10, 15),
+  items: <AdminCartItem>[
+    AdminCartItem(
+      id: 'i$index',
+      productId: 'p1',
+      productNameEn: 'Latte',
+      productNameAr: 'لاتيه',
+      quantity: 1,
+      unitPrice: 10,
+      lineTotal: 10,
+    ),
+  ],
+);
 
 void main() {
   setUp(() {
@@ -93,6 +118,88 @@ void main() {
     expect(find.text(S.cartStatusActive), findsOneWidget);
     expect(find.text('Active'), findsNothing);
     expect(find.text(S.cartItemsCount(2)), findsOneWidget);
+  });
+
+  testWidgets('the cart list paginates the eligible carts', (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        SizedBox(
+          width: 800,
+          height: 700,
+          child: CartRecords(
+            carts: [for (var index = 1; index <= 9; index++) _cartAt(index)],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text(S.cartsRowsLabel(1, 8, 9)), findsOneWidget);
+    expect(find.text('Customer 1'), findsOneWidget);
+    expect(find.text('Customer 9'), findsNothing);
+
+    await tester.tap(find.byTooltip(S.nextPage));
+    await tester.pumpAndSettle();
+
+    expect(find.text(S.cartsRowsLabel(9, 9, 9)), findsOneWidget);
+    expect(find.byType(CartCard), findsOneWidget);
+    expect(find.text('Customer 9'), findsOneWidget);
+  });
+
+  testWidgets('search filters the eligible list and resets pagination', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        SizedBox(
+          width: 800,
+          height: 700,
+          child: CartRecords(
+            carts: [for (var index = 1; index <= 9; index++) _cartAt(index)],
+            search: 'Customer 9',
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text(S.cartsRowsLabel(1, 1, 1)), findsOneWidget);
+    expect(find.text('Customer 9'), findsOneWidget);
+    expect(find.byType(CartCard), findsOneWidget);
+  });
+
+  testWidgets('summary cards count the same eligible carts', (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        SizedBox(
+          width: 900,
+          child: CartMetricsCards(
+            carts: [
+              _cart(status: 'active'),
+              AdminCart(
+                id: 'c2',
+                customerName: 'Mona',
+                branchId: 'b1',
+                status: 'abandoned',
+                total: 20,
+                updatedAt: DateTime(2026, 2, 3, 10, 15),
+                items: const <AdminCartItem>[],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final cards = tester
+        .widgetList<AdminMetricCard>(find.byType(AdminMetricCard))
+        .toList();
+    expect(cards, hasLength(4));
+    expect(cards[0].value, '2');
+    expect(cards[1].value, '1');
+    expect(cards[2].value, '1');
+    expect(cards[3].value, '65.50');
   });
 
   testWidgets('an abandoned cart is shown as abandoned', (tester) async {

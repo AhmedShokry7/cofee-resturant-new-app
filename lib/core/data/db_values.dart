@@ -88,6 +88,22 @@ class Db {
     return const {};
   }
 
+  /// Parse a [DateTime] from a dynamic value returned by PostgREST.
+  /// Accepts ISO 8601 strings, numeric milliseconds, or returns [fallback] if null/unparseable.
+  static DateTime parseDateTime(dynamic value, {DateTime? fallback}) {
+    final defaultValue = fallback ?? DateTime.now();
+    if (value == null) return defaultValue;
+    if (value is DateTime) return value;
+    if (value is String) {
+      final parsed = DateTime.tryParse(value);
+      return parsed ?? defaultValue;
+    }
+    if (value is int || value is double) {
+      return DateTime.tryParse(value.toString()) ?? defaultValue;
+    }
+    return defaultValue;
+  }
+
   /// A Postgres `uuid` when the value really is one, otherwise null.
   ///
   /// A uuid column turns a wild string into a `22P02` server error, and the

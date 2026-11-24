@@ -7,6 +7,7 @@ import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
 import 'package:admin_app/features/notifications/presentation/models/notification_filters.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_actions_menu.dart';
+import 'package:admin_app/features/notifications/presentation/widgets/notification_bulk_bar.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_cards.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_table.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_toolbar.dart';
@@ -42,6 +43,14 @@ class NotificationDirectory extends StatefulWidget {
     required this.onPageChanged,
     required this.onOpen,
     required this.onAction,
+    this.selectedIds = const <String>{},
+    this.selectedAllMatching = false,
+    this.isBulkBusy = false,
+    this.onToggleSelection,
+    this.onTogglePageSelection,
+    this.onSelectAllMatching,
+    this.onClearSelection,
+    this.onBulkDelete,
   });
 
   final List<AdminNotification> notifications;
@@ -72,6 +81,14 @@ class NotificationDirectory extends StatefulWidget {
   final ValueChanged<AdminNotification> onOpen;
   final void Function(AdminNotification notification, NotificationAction action)
   onAction;
+  final Set<String> selectedIds;
+  final bool selectedAllMatching;
+  final bool isBulkBusy;
+  final ValueChanged<String>? onToggleSelection;
+  final ValueChanged<bool>? onTogglePageSelection;
+  final VoidCallback? onSelectAllMatching;
+  final VoidCallback? onClearSelection;
+  final VoidCallback? onBulkDelete;
 
   @override
   State<NotificationDirectory> createState() => _NotificationDirectoryState();
@@ -166,6 +183,21 @@ class _NotificationDirectoryState extends State<NotificationDirectory> {
                 : null,
           ),
           const SizedBox(height: AppSizes.px10),
+          if (widget.canManage && widget.total > 0) ...[
+            NotificationBulkBar(
+              selectedCount: widget.selectedIds.length,
+              selectedAllMatching: widget.selectedAllMatching,
+              pageSelectedCount: _pageSelectedCount,
+              pageDeletableCount: _pageDeletableCount,
+              isBulkBusy: widget.isBulkBusy,
+              onTogglePageSelection:
+                  widget.onTogglePageSelection ?? (_) {},
+              onSelectAllMatching: widget.onSelectAllMatching ?? () {},
+              onClearSelection: widget.onClearSelection ?? () {},
+              onBulkDelete: widget.onBulkDelete ?? () {},
+            ),
+            const SizedBox(height: AppSizes.px10),
+          ],
           if (widget.total == 0)
             _emptyState()
           else
@@ -178,6 +210,9 @@ class _NotificationDirectoryState extends State<NotificationDirectory> {
                     canManage: widget.canManage,
                     onOpen: widget.onOpen,
                     onAction: widget.onAction,
+                    selectedIds: widget.selectedIds,
+                    onToggleSelection: widget.onToggleSelection,
+                    isBulkBusy: widget.isBulkBusy,
                   );
                 }
                 return NotificationTable(
@@ -186,6 +221,12 @@ class _NotificationDirectoryState extends State<NotificationDirectory> {
                   canManage: widget.canManage,
                   onOpen: widget.onOpen,
                   onAction: widget.onAction,
+                  selectedIds: widget.selectedIds,
+                  onToggleSelection: widget.onToggleSelection,
+                  onTogglePageSelection: widget.onTogglePageSelection,
+                  pageSelectedCount: _pageSelectedCount,
+                  pageDeletableCount: _pageDeletableCount,
+                  isBulkBusy: widget.isBulkBusy,
                 );
               },
             ),
@@ -202,6 +243,16 @@ class _NotificationDirectoryState extends State<NotificationDirectory> {
       ),
     );
   }
+
+  int get _pageDeletableCount => widget.notifications
+      .where((n) => !n.isCampaignSummary)
+      .length;
+
+  int get _pageSelectedCount => widget.notifications
+      .where(
+        (n) => !n.isCampaignSummary && widget.selectedIds.contains(n.id),
+      )
+      .length;
 
   Widget _emptyState() {
     return AdminEmptyState(

@@ -11,6 +11,7 @@ import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 
 class HrSchedulesPage extends StatefulWidget {
@@ -83,13 +84,12 @@ class _HrSchedulesPageState extends State<HrSchedulesPage> {
                 subtitle: S.hrSchedulesSubtitle,
                 actions: [
                   if (widget.canManage && widget.canReadEmployees)
-                    FilledButton.icon(
+                    AdminCreateButton(
+                      label: S.hrCreateSchedule,
                       onPressed:
                           state.employees.isEmpty || state.branches.isEmpty
                           ? null
                           : () => _openEditor(context, state),
-                      icon: const AppIcon(AppIcons.add01, size: 18),
-                      label: Text(S.hrCreateSchedule),
                     ),
                 ],
               ),

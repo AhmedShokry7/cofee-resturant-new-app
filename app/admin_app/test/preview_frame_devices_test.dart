@@ -49,10 +49,12 @@ void main() {
       await tester.pump();
       // جسم المحاكي: الحاوية الملونة بلون كروم الجهاز.
       final container = tester.widget<Container>(
-        find.ancestor(
-          of: find.byType(NativeDesignPreview),
-          matching: find.byType(Container),
-        ).first,
+        find
+            .ancestor(
+              of: find.byType(NativeDesignPreview),
+              matching: find.byType(Container),
+            )
+            .first,
       );
       return tester.getRect(find.byWidget(container));
     }
@@ -102,8 +104,11 @@ void main() {
       await tester.pump();
       await tester.pump();
       // لا استثناء قيود: لوحة المعاينة موجودة بجهازها.
-      expect(find.byType(PreviewPanel), findsOneWidget,
-          reason: 'جهاز ${device.label} يجب أن يُبنى بلا انهيار');
+      expect(
+        find.byType(PreviewPanel),
+        findsOneWidget,
+        reason: 'جهاز ${device.label} يجب أن يُبنى بلا انهيار',
+      );
     }
   });
 }

@@ -7,6 +7,7 @@ import '../../../../core/theme/app_icons.dart';
 import '../../../../shared/widgets/admin_page_frame.dart';
 import '../../../../shared/widgets/admin_page_header.dart';
 import '../../../../shared/widgets/app_icon.dart';
+import '../../../../shared/widgets/admin_create_button.dart';
 import '../domain/offboarding_models.dart';
 import '../domain/offboarding_repository.dart';
 import 'hr_offboarding_cubit.dart';
@@ -72,12 +73,11 @@ class _OffboardingBody extends StatelessWidget {
                   subtitle: HrOffboardingStrings.subtitle,
                   actions: [
                     if (canWrite)
-                      FilledButton.icon(
+                      AdminCreateButton(
+                        label: HrOffboardingStrings.start,
                         onPressed: state.saving
                             ? null
                             : () => _start(context, state.people, cubit),
-                        icon: const AppIcon(AppIcons.add01, size: 18),
-                        label: Text(HrOffboardingStrings.start),
                       ),
                   ],
                 ),

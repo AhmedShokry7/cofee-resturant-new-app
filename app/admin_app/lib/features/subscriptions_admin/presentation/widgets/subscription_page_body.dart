@@ -9,6 +9,7 @@ import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subs
 import 'package:admin_app/shared/widgets/admin_inline_error.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 class SubscriptionPageBody extends StatelessWidget {
   const SubscriptionPageBody({
@@ -20,6 +21,7 @@ class SubscriptionPageBody extends StatelessWidget {
     required this.onOpen,
     this.errorMessage,
     this.onRefresh,
+    this.onCreate,
   });
 
   final List<AdminSubscription> subscriptions;
@@ -29,6 +31,7 @@ class SubscriptionPageBody extends StatelessWidget {
   final ValueChanged<AdminSubscription> onOpen;
   final String? errorMessage;
   final VoidCallback? onRefresh;
+  final VoidCallback? onCreate;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +42,14 @@ class SubscriptionPageBody extends StatelessWidget {
           AdminPageHeader(
             title: S.subscriptions,
             subtitle: S.subscriptionsDescription,
+            actions: onCreate == null
+                ? const <Widget>[]
+                : [
+                    AdminCreateButton(
+                      label: S.subscriptionsCreateAction,
+                      onPressed: onCreate,
+                    ),
+                  ],
           ),
           if (errorMessage != null)
             AdminInlineError(message: errorMessage!, onRetry: onRefresh),

@@ -10,6 +10,7 @@ import 'package:admin_app/features/inventory/domain/entities/admin_inventory_met
 import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement.dart';
 import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement_metrics.dart';
 import 'package:admin_app/features/inventory/presentation/models/inventory_filters.dart';
+import 'package:admin_app/features/inventory/presentation/widgets/inventory_categories_dialog.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_page_body.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/stock_movement_details_dialog.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/stock_movements_page_body.dart';
@@ -210,6 +211,14 @@ class _InventoryHarnessState extends State<_InventoryHarness> {
       isRefreshingRows: false,
       canAdjust: widget.canAdjust,
       canEdit: widget.canEdit,
+      onManageCategories: () => showInventoryCategoriesDialog(
+        context: context,
+        categories: _filters.categories,
+        selectedCategory: _category,
+        onSelected: (value) => setState(() => _category = value),
+      ),
+      onCategorySelection: (value) => setState(() => _category = value),
+      selectedCategory: _category,
       onAdd: () {},
       onEdit: (_) {},
       onMovement: (_) {},
@@ -334,6 +343,10 @@ void main() {
       expect(find.text(S.inventory), findsOneWidget);
       expect(find.text(S.inventorySubtitle), findsOneWidget);
       expect(
+        find.byKey(const Key('inventory-manage-categories')),
+        findsOneWidget,
+      );
+      expect(
         find.byKey(const Key('inventory-record-movement')),
         findsOneWidget,
       );
@@ -360,6 +373,21 @@ void main() {
       expect(find.text(S.inventoryRowsLabel(1, 10, 18)), findsOneWidget);
     });
 
+    testWidgets('category action opens the existing counted category list', (
+      tester,
+    ) async {
+      _setViewport(tester, 1500);
+      await _pumpInventory(tester);
+
+      await tester.tap(find.byKey(const Key('inventory-manage-categories')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(S.inventoryCategories), findsNWidgets(2));
+      expect(find.text('حبوب البن'), findsOneWidget);
+      expect(find.text('4 materials'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('the narrow page switches to material cards', (tester) async {
       _setViewport(tester, 420, 900);
       await _pumpInventory(tester);
@@ -382,6 +410,10 @@ void main() {
       expect(find.text(S.inventoryReadOnly), findsOneWidget);
       expect(find.byKey(const Key('inventory-record-movement')), findsNothing);
       expect(find.byKey(const Key('inventory-add-material')), findsNothing);
+      expect(
+        find.byKey(const Key('inventory-manage-categories')),
+        findsNothing,
+      );
     });
 
     testWidgets('an empty directory explains how to add the first material', (

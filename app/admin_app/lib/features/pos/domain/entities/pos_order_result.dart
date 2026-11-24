@@ -46,6 +46,11 @@ class PosOrderResult {
   const PosOrderResult({
     required this.orderId,
     required this.orderNumber,
+    this.invoiceNumber = '',
+    this.invoiceIssuedAt,
+    this.invoiceIssued = false,
+    this.invoiceType = 'receipt',
+    this.taxRegistrationStatus = 'unconfigured',
     this.subtotal = 0,
     this.taxTotal = 0,
     this.grandTotal = 0,
@@ -81,6 +86,16 @@ class PosOrderResult {
 
   final String orderId;
   final String orderNumber;
+  final String invoiceNumber;
+  final DateTime? invoiceIssuedAt;
+  final bool invoiceIssued;
+  final String invoiceType;
+  final String taxRegistrationStatus;
+
+  bool get isTaxInvoice =>
+      invoiceIssued &&
+      invoiceType == 'simplified' &&
+      taxRegistrationStatus == 'registered';
   final double subtotal;
   final double taxTotal;
   final double grandTotal;
@@ -212,6 +227,15 @@ class PosOrderResult {
     return PosOrderResult(
       orderId: posText(json['order_id']),
       orderNumber: posText(json['order_number']),
+      invoiceNumber: posText(json['invoice_number']),
+      invoiceIssuedAt: posDate(json['invoice_issued_at']),
+      invoiceIssued: posFlag(json['invoice_issued']),
+      invoiceType: posText(json['invoice_type']).isEmpty
+          ? 'receipt'
+          : posText(json['invoice_type']),
+      taxRegistrationStatus: posText(json['tax_registration_status']).isEmpty
+          ? 'unconfigured'
+          : posText(json['tax_registration_status']),
       subtotal: posNumber(json['subtotal']),
       taxTotal: posNumber(json['tax_total']),
       grandTotal: posNumber(json['grand_total']),

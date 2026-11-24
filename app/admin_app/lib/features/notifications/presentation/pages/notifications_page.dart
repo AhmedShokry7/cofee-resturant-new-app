@@ -11,6 +11,7 @@ import 'package:admin_app/features/notifications/domain/repositories/notificatio
 import 'package:admin_app/features/notifications/presentation/manager/admin_notifications_cubit.dart';
 import 'package:admin_app/features/notifications/presentation/manager/admin_notifications_state.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_actions_menu.dart';
+import 'package:admin_app/features/notifications/presentation/widgets/notification_bulk_bar.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_compose_dialog.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_details_dialog.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_campaign_summary_dialog.dart';
@@ -219,6 +220,50 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
   }
 
+  Future<void> _selectAllMatching() async {
+    final outcome = await _cubit.selectAllMatching();
+    if (!mounted) return;
+    switch (outcome) {
+      case NotificationBulkSelectOutcome.selected:
+        _showMessage(
+          S.notificationsBulkSelectedCount(_cubit.state.selectedIds.length),
+        );
+      case NotificationBulkSelectOutcome.none:
+        _showMessage(S.notificationsBulkNoMatching, error: true);
+      case NotificationBulkSelectOutcome.tooMany:
+        _showMessage(S.notificationsBulkTooMany, error: true);
+      case NotificationBulkSelectOutcome.failed:
+        _showMessage(S.notificationsBulkFailed, error: true);
+      case NotificationBulkSelectOutcome.busy:
+        break;
+    }
+  }
+
+  Future<void> _bulkDelete() async {
+    final count = _cubit.state.selectedIds.length;
+    if (count == 0 || _cubit.state.isBulkBusy) return;
+    final confirmed = await showNotificationBulkDeleteDialog(
+      context,
+      count: count,
+    );
+    if (confirmed != true || !mounted) return;
+    final result = await _cubit.deleteSelected();
+    if (!mounted || result == null) return;
+    final failed = result.unprocessedIds.length + result.protectedIds.length;
+    if (result.deletedCount > 0 && failed == 0) {
+      _showMessage(S.notificationsBulkDeletedToast(result.deletedCount));
+    } else if (result.deletedCount > 0) {
+      _showMessage(
+        S.notificationsBulkPartial(result.deletedCount, failed),
+        error: true,
+      );
+    } else if (result.protectedIds.isNotEmpty) {
+      _showMessage(S.notificationsBulkProtected, error: true);
+    } else {
+      _showMessage(S.notificationsBulkFailed, error: true);
+    }
+  }
+
   Future<bool?> _confirmDelete(AdminNotification notification) {
     return showDialog<bool>(
       context: context,
@@ -339,6 +384,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
               onPageChanged: _cubit.setPage,
               onOpen: _openDetails,
               onAction: _handleAction,
+              selectedIds: state.selectedIds,
+              selectedAllMatching: state.selectedAllMatching,
+              isBulkBusy: state.isBulkBusy,
+              onToggleSelection: _cubit.toggleRowSelection,
+              onTogglePageSelection: _cubit.setPageSelection,
+              onSelectAllMatching: _selectAllMatching,
+              onClearSelection: _cubit.clearSelection,
+              onBulkDelete: _bulkDelete,
             ),
           );
         },

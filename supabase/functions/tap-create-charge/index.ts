@@ -43,11 +43,14 @@ Deno.serve(async (req) => {
   let subscription = null;
   if (orderId) {
     const orders = await serviceFetch(
-      `/orders?select=id,user_id,grand_total,currency_code,status,payment_status,branch_id&id=eq.${encodeURIComponent(orderId)}`,
+      `/orders?select=id,user_id,grand_total,currency_code,status,payment_status,branch_id,test_only&id=eq.${encodeURIComponent(orderId)}`,
     );
     order = Array.isArray(orders) ? orders[0] : null;
     if (!order || order.user_id !== user.id) {
       return new Response(JSON.stringify({ error: "Order not found" }), { status: 404 });
+    }
+    if (order.test_only === true) {
+      return new Response(JSON.stringify({ error: "Test orders cannot use Tap" }), { status: 409 });
     }
     if (order.payment_status === "paid") {
       return new Response(JSON.stringify({ error: "Order already paid" }), { status: 409 });

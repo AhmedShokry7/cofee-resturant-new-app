@@ -11,6 +11,7 @@ import 'package:admin_app/shared/widgets/admin_directory_panel.dart';
 import 'package:admin_app/shared/widgets/admin_directory_toolbar.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_pagination.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 class SubscriptionPlanDirectory extends StatefulWidget {
   const SubscriptionPlanDirectory({
@@ -150,10 +151,9 @@ class _SubscriptionPlanDirectoryState extends State<SubscriptionPlanDirectory> {
                           )
                         : hasAny
                         ? null
-                        : TextButton.icon(
+                        : AdminCreateButton(
+                            label: S.subscriptionPlanAddAction,
                             onPressed: widget.onAdd,
-                            icon: const Icon(AppIcons.add01, size: 16),
-                            label: Text(S.subscriptionPlanAddAction),
                           ),
                   )
                 : LayoutBuilder(

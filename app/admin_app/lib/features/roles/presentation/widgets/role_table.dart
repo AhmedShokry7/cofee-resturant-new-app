@@ -233,7 +233,7 @@ class _RoleActionButton extends StatelessWidget {
         ? AppColor.secondaryColor
         : AppColor.adminAccent;
     return IconButton(
-      tooltip: canManage ? S.roleManagePermissions : S.roleViewPermissions,
+      tooltip: canManage ? S.editRole : S.roleViewPermissions,
       onPressed: onPressed,
       style: IconButton.styleFrom(
         fixedSize: const Size(30, 30),

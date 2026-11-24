@@ -168,6 +168,127 @@ abstract interface class OrderLinesRepository {
   Future<List<OrderItemModel>> orderLines(String orderId);
 }
 
+/// Optional, customer-owned access to the issued invoice for an order.
+///
+/// Implementations must use the server authorization boundary rather than
+/// constructing a storage URL from an order or invoice id.
+abstract interface class OrderInvoiceRepository {
+  /// Returns an invoice only when it belongs to the signed-in customer, or
+  /// `null` while no invoice has been issued for this order.
+  Future<OrderInvoice?> invoiceForOrder(String orderId);
+}
+
+/// The customer-safe invoice response returned by `my_order_invoice`.
+class OrderInvoice {
+  const OrderInvoice({
+    required this.invoiceId,
+    required this.invoiceNumber,
+    required this.invoiceType,
+    required this.status,
+    required this.currencyCode,
+    required this.snapshot,
+    this.issuedAt,
+    this.documentStatus = 'pending',
+    this.documentUrl,
+  });
+
+  final String invoiceId;
+  final String invoiceNumber;
+  final String invoiceType;
+  final String status;
+  final DateTime? issuedAt;
+  final String currencyCode;
+  final Map<String, dynamic> snapshot;
+
+  /// A server-authorized, short-lived signed URL. Never synthesize this from
+  /// an object path or expose a public bucket URL from the client.
+  final String? documentUrl;
+  final String documentStatus;
+
+  bool get isIssued =>
+      status.trim().toLowerCase() == 'issued' &&
+      invoiceNumber.trim().isNotEmpty &&
+      issuedAt != null;
+
+  Uri? get secureDocumentUri {
+    if (!isIssued) return null;
+    final value = documentUrl?.trim() ?? '';
+    final uri = Uri.tryParse(value);
+    if (uri == null || uri.scheme != 'https' || uri.host.isEmpty) return null;
+    return uri;
+  }
+
+  double? get taxableAmount => _snapshotNumber(const [
+    'taxable_amount',
+    'taxable_total',
+    'taxable_base',
+  ]);
+
+  double? get vatAmount =>
+      _snapshotNumber(const ['vat_amount', 'vat_total', 'tax_amount']);
+
+  double? get taxRate => _snapshotNumber(const ['tax_rate', 'vat_rate']);
+
+  bool? get taxIncluded => _snapshotFlag(const ['tax_included']);
+
+  double? _snapshotNumber(List<String> keys) {
+    for (final source in [snapshot, _nestedTotals]) {
+      for (final key in keys) {
+        final value = source[key];
+        if (value is num) return value.toDouble();
+        if (value is String) {
+          final parsed = double.tryParse(value);
+          if (parsed != null) return parsed;
+        }
+      }
+    }
+    return null;
+  }
+
+  bool? _snapshotFlag(List<String> keys) {
+    for (final source in [snapshot, _nestedTotals]) {
+      for (final key in keys) {
+        final value = source[key];
+        if (value is bool) return value;
+        if (value is num) return value != 0;
+        if (value is String) {
+          final normalized = value.trim().toLowerCase();
+          if (normalized == 'true' || normalized == '1') return true;
+          if (normalized == 'false' || normalized == '0') return false;
+        }
+      }
+    }
+    return null;
+  }
+
+  Map<String, dynamic> get _nestedTotals {
+    final value = snapshot['totals'];
+    if (value is Map) return Map<String, dynamic>.from(value);
+    return const <String, dynamic>{};
+  }
+
+  factory OrderInvoice.fromJson(Map<String, dynamic> json) {
+    final rawSnapshot = json['snapshot'];
+    final snapshot = rawSnapshot is Map
+        ? Map<String, dynamic>.from(rawSnapshot)
+        : const <String, dynamic>{};
+    final rawDate = json['issued_at']?.toString();
+    return OrderInvoice(
+      invoiceId: json['invoice_id']?.toString() ?? '',
+      invoiceNumber: json['invoice_number']?.toString() ?? '',
+      invoiceType: json['invoice_type']?.toString() ?? '',
+      status: json['status']?.toString() ?? '',
+      issuedAt: rawDate == null ? null : DateTime.tryParse(rawDate),
+      currencyCode: json['currency_code']?.toString().trim().isNotEmpty == true
+          ? json['currency_code'].toString()
+          : 'SAR',
+      snapshot: snapshot,
+      documentStatus: json['document_status']?.toString() ?? 'pending',
+      documentUrl: json['document_url']?.toString(),
+    );
+  }
+}
+
 /// Optional server pricing capability, separate so local fakes and
 /// read-only order repositories keep their smaller contract.
 abstract interface class CheckoutQuoteRepository {

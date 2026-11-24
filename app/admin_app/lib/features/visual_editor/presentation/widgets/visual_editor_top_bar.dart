@@ -9,8 +9,7 @@ import 'package:admin_app/features/visual_editor/presentation/manager/visual_edi
 import 'package:admin_app/features/visual_editor/presentation/widgets/preview_display_controls.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/preview_panel.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_theme_tokens.dart';
-import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_sync_service.dart';
-
+import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_toolbar.dart';
 
 /// الشريط العلوي الاحترافي للمحرر المرئي المطابق تماماً للصورة المرجعية.
 ///

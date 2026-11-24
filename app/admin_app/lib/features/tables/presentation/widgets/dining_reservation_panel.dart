@@ -11,6 +11,7 @@ import 'package:admin_app/core/utils/dining_format.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 enum _ReservationAction { edit, cancel, noShow }
 
@@ -102,22 +103,11 @@ class DiningReservationPanel extends StatelessWidget {
               ),
             ),
             if (canManage && onAdd != null)
-              IconButton(
+              AdminCreateButton(
                 key: const Key('dining-reservation-add'),
-                tooltip: S.addReservation,
                 onPressed: onAdd,
-                style: IconButton.styleFrom(
-                  fixedSize: const Size(32, 32),
-                  padding: EdgeInsets.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  backgroundColor: AppColor.adminAccentSurface,
-                  foregroundColor: AppColor.adminAccent,
-                ),
-                icon: const AppIcon(
-                  AppIcons.add01,
-                  size: 17,
-                  color: AppColor.adminAccent,
-                ),
+                iconOnly: true,
+                tooltip: S.addReservation,
               ),
           ],
         ),
@@ -131,19 +121,9 @@ class DiningReservationPanel extends StatelessWidget {
                   message: emptyMessage ?? S.tablesNoOpenReservations,
                   hint: emptyHint ?? S.tablesNoOpenReservationsHint,
                   action: canManage && onAdd != null
-                      ? TextButton.icon(
+                      ? AdminCreateButton(
+                          label: S.addReservation,
                           onPressed: onAdd,
-                          icon: const AppIcon(
-                            AppIcons.add01,
-                            size: 15,
-                            color: AppColor.adminAccent,
-                          ),
-                          label: Text(
-                            S.addReservation,
-                            style: const TextStyle(
-                              fontSize: AppFontSizes.size10,
-                            ),
-                          ),
                         )
                       : null,
                 )

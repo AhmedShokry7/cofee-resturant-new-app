@@ -50,4 +50,43 @@ class AdminRoleRepository implements RoleRepository {
       },
     );
   }
+
+  @override
+  Future<String> createRole({
+    required String nameAr,
+    required String nameEn,
+    required String description,
+    required List<String> permissionCodes,
+  }) async {
+    final response = await _supabase.rpc(
+      'admin_create_role',
+      params: {
+        'p_name_ar': nameAr,
+        'p_name_en': nameEn,
+        'p_description': description,
+        'p_permission_codes': permissionCodes,
+      },
+    );
+    return '$response';
+  }
+
+  @override
+  Future<void> updateRole({
+    required String roleId,
+    required String nameAr,
+    required String nameEn,
+    required String description,
+    required List<String> permissionCodes,
+  }) async {
+    await _supabase.rpc(
+      'admin_update_role',
+      params: {
+        'p_role_id': roleId,
+        'p_name_ar': nameAr,
+        'p_name_en': nameEn,
+        'p_description': description,
+        'p_permission_codes': permissionCodes,
+      },
+    );
+  }
 }

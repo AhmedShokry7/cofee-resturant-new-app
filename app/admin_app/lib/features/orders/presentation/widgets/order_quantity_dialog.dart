@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 class QuantityDialog extends StatefulWidget {
   const QuantityDialog({super.key, this.initial = 1});
@@ -69,7 +70,7 @@ class _OrderQuantityDialogState extends State<QuantityDialog> {
         onPressed: () => Navigator.of(context).pop(),
         child: Text(S.ordersCancel),
       ),
-      FilledButton(onPressed: _accept, child: Text(S.ordersAdd)),
+      AdminCreateButton(label: S.ordersAdd, onPressed: _accept),
     ],
   );
 }

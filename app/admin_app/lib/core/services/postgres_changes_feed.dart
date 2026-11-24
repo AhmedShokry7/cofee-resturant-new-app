@@ -5,6 +5,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/services/supabase_service.dart';
 
+/// The connection health visible to a Realtime-backed feature.
+enum RealtimeFeedStatus { connecting, connected, reconnecting, unavailable }
+
 /// A table a [PostgresChangesFeed] listens to, with the schema holding it.
 class RealtimeTable {
   const RealtimeTable(this.schema, this.table);
@@ -27,6 +30,7 @@ class PostgresChangesFeed {
     required this.tables,
     required this.channelPrefix,
     this.client,
+    this.debounceDuration = const Duration(milliseconds: 350),
   });
 
   /// The tables whose writes move the counter.
@@ -36,12 +40,14 @@ class PostgresChangesFeed {
   final String channelPrefix;
 
   final SupabaseClient? client;
+  final Duration debounceDuration;
 
   RealtimeChannel? _channel;
   SupabaseClient? _activeClient;
   Timer? _debounce;
   Timer? _retry;
   VoidCallback? _onChanged;
+  ValueChanged<RealtimeFeedStatus>? onStatusChanged;
   int _attempt = 0;
   int _channelSeq = 0;
   bool _disposed = false;
@@ -54,6 +60,7 @@ class PostgresChangesFeed {
     _onChanged = onChanged;
     _activeClient = client ?? SupabaseService.client;
     _attempt = 0;
+    _reportStatus(RealtimeFeedStatus.connecting);
     _open();
   }
 
@@ -82,6 +89,7 @@ class PostgresChangesFeed {
     switch (status) {
       case RealtimeSubscribeStatus.subscribed:
         _attempt = 0;
+        _reportStatus(RealtimeFeedStatus.connected);
         // The first load and the subscribe are raced, and a reconnect may have
         // missed an event: one quiet reload after joining closes the gap.
         _notify();
@@ -89,6 +97,7 @@ class PostgresChangesFeed {
       case RealtimeSubscribeStatus.channelError:
       case RealtimeSubscribeStatus.timedOut:
       case RealtimeSubscribeStatus.closed:
+        _reportStatus(RealtimeFeedStatus.reconnecting);
         _scheduleReconnect();
         break;
     }
@@ -98,7 +107,10 @@ class PostgresChangesFeed {
     if (_disposed || _onChanged == null || _retry != null) return;
     final seconds = 1 << _attempt.clamp(0, 4);
     _attempt = (_attempt + 1).clamp(0, 4);
-    _retry = Timer(Duration(seconds: seconds), _reconnect);
+    _retry = Timer(Duration(seconds: seconds), () {
+      if (_attempt >= 2) _reportStatus(RealtimeFeedStatus.unavailable);
+      _reconnect();
+    });
   }
 
   Future<void> _reconnect() async {
@@ -121,10 +133,13 @@ class PostgresChangesFeed {
 
   void _notify() {
     _debounce?.cancel();
-    _debounce = Timer(
-      const Duration(milliseconds: 350),
-      () => _onChanged?.call(),
-    );
+    _debounce = Timer(debounceDuration, () {
+      if (!_disposed) _onChanged?.call();
+    });
+  }
+
+  void _reportStatus(RealtimeFeedStatus status) {
+    if (!_disposed) onStatusChanged?.call(status);
   }
 
   Future<void> dispose() async {
@@ -134,6 +149,7 @@ class PostgresChangesFeed {
     _debounce?.cancel();
     _debounce = null;
     _onChanged = null;
+    onStatusChanged = null;
     final channel = _channel;
     final client = _activeClient;
     _channel = null;

@@ -12,12 +12,13 @@ import 'package:admin_app/features/carts/data/models/admin_cart.dart';
 import 'package:admin_app/features/carts/presentation/models/cart_status.dart';
 import 'package:admin_app/shared/widgets/admin_directory_panel.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
+import 'package:admin_app/shared/widgets/admin_pagination.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
 
-/// The list of the carts, empty when nothing matches.
-class CartRecords extends StatelessWidget {
+/// The paginated list of eligible carts, empty when nothing matches.
+class CartRecords extends StatefulWidget {
   const CartRecords({
     super.key,
     required this.carts,
@@ -25,7 +26,7 @@ class CartRecords extends StatelessWidget {
     this.onOpen,
   });
 
-  /// Every loaded cart; the list filters them with [search].
+  /// Every loaded eligible cart; the list filters them with [search].
   final List<AdminCart> carts;
 
   /// The word the admin is looking for.
@@ -33,11 +34,26 @@ class CartRecords extends StatelessWidget {
 
   final ValueChanged<AdminCart>? onOpen;
 
+  @override
+  State<CartRecords> createState() => _CartRecordsState();
+}
+
+class _CartRecordsState extends State<CartRecords> {
+  static const _pageSize = 8;
+
+  int _page = 0;
+
+  @override
+  void didUpdateWidget(CartRecords oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.search != widget.search) _page = 0;
+  }
+
   List<AdminCart> get _filtered {
-    final q = search.trim().toLowerCase();
-    if (q.isEmpty) return carts;
+    final q = widget.search.trim().toLowerCase();
+    if (q.isEmpty) return widget.carts;
     final language = AppLocale.instance.language;
-    return carts
+    return widget.carts
         .where(
           (cart) =>
               (cart.customerName ?? '').toLowerCase().contains(q) ||
@@ -53,26 +69,54 @@ class CartRecords extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final carts = _filtered;
-    final filtering = search.trim().isNotEmpty;
+    final filtering = widget.search.trim().isNotEmpty;
+    final pages = carts.isEmpty ? 0 : (carts.length / _pageSize).ceil();
+    final page = pages == 0 ? 0 : _page.clamp(0, pages - 1);
+    final visible = carts
+        .skip(page * _pageSize)
+        .take(_pageSize)
+        .toList(growable: false);
 
     return AdminDirectoryPanel(
-      child: carts.isEmpty
-          ? AdminEmptyState(
-              icon: filtering ? AppIcons.search01 : AppIcons.shoppingBag01,
-              message: filtering ? S.noCartsFound : S.noCartsYet,
-            )
-          : ListView.separated(
-              padding: EdgeInsets.zero,
-              itemCount: carts.length,
-              separatorBuilder: (_, _) => const SizedBox(height: AppSizes.px8),
-              itemBuilder: (context, index) {
-                final cart = carts[index];
-                return CartCard(
-                  cart: cart,
-                  onTap: onOpen == null ? null : () => onOpen!(cart),
-                );
-              },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: carts.isEmpty
+                ? AdminEmptyState(
+                    icon: filtering
+                        ? AppIcons.search01
+                        : AppIcons.shoppingBag01,
+                    message: filtering ? S.noCartsFound : S.noCartsYet,
+                  )
+                : ListView.separated(
+                    padding: EdgeInsets.zero,
+                    itemCount: visible.length,
+                    separatorBuilder: (_, _) =>
+                        const SizedBox(height: AppSizes.px8),
+                    itemBuilder: (context, index) {
+                      final cart = visible[index];
+                      return CartCard(
+                        cart: cart,
+                        onTap: widget.onOpen == null
+                            ? null
+                            : () => widget.onOpen!(cart),
+                      );
+                    },
+                  ),
+          ),
+          if (carts.isNotEmpty)
+            AdminPagination(
+              page: page,
+              pages: pages,
+              count: carts.length,
+              pageSize: _pageSize,
+              labelBuilder: (first, last, count) =>
+                  S.cartsRowsLabel(first, last, count),
+              onChanged: (value) => setState(() => _page = value),
             ),
+        ],
+      ),
     );
   }
 }

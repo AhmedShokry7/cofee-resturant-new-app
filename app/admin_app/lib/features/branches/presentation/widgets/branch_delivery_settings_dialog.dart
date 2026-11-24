@@ -14,6 +14,7 @@ import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
 import 'package:admin_app/shared/widgets/delivery_zone_form_dialog.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 Future<void> showBranchDeliverySettingsDialog({
   required BuildContext context,
@@ -208,12 +209,11 @@ class _BranchDeliverySettingsDialogState
                           ?.copyWith(fontWeight: AppFontWeights.bold),
                     ),
                   ),
-                  FilledButton.icon(
+                  AdminCreateButton(
+                    label: S.addDeliveryZone,
                     onPressed: _saving || !hasLocation
                         ? null
                         : () => _editZone(),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: Text(S.addDeliveryZone),
                   ),
                 ],
               ),
@@ -619,11 +619,7 @@ class _EmptyZones extends StatelessWidget {
             style: Theme.of(context).textTheme.titleSmall,
           ),
           const SizedBox(height: AppSpacing.sm),
-          FilledButton.icon(
-            onPressed: onAdd,
-            icon: const Icon(Icons.add),
-            label: Text(S.addDeliveryZone),
-          ),
+          AdminCreateButton(label: S.addDeliveryZone, onPressed: onAdd),
           if (!hasLocation) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(

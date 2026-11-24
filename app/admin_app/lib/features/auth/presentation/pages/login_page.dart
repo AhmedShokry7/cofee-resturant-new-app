@@ -5,6 +5,9 @@ import 'package:admin_app/core/config/app_config.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:admin_app/features/auth/presentation/bloc/auth_event.dart';
+import 'package:admin_app/features/auth/presentation/models/invitation_link.dart';
+import 'package:admin_app/features/auth/presentation/services/invitation_link_dispatcher.dart';
+import 'package:admin_app/features/auth/presentation/widgets/invitation_accept_dialog.dart';
 import 'package:admin_app/features/auth/presentation/widgets/login_screen.dart';
 
 /// صفحة الدخول: تملك حقول النموذج وترسل أحداث المصادقة إلى البلوك.
@@ -21,12 +24,58 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _linkDispatcher = InvitationLinkDispatcher.instance;
+  int? _handledLinkId;
+
+  @override
+  void initState() {
+    super.initState();
+    _linkDispatcher.events.addListener(_onInvitationLink);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _onInvitationLink());
+  }
 
   @override
   void dispose() {
+    _linkDispatcher.events.removeListener(_onInvitationLink);
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _onInvitationLink() {
+    final event = _linkDispatcher.events.value;
+    if (!mounted || event == null || event.id == _handledLinkId) return;
+    _handledLinkId = event.id;
+    final token = InvitationLink.tokenFromUri(event.uri);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final credentials = await showInvitationAcceptDialog(
+        context,
+        initialToken: token,
+        invalidLink: token == null,
+      );
+      if (!mounted) return;
+      _linkDispatcher.acknowledge(event.id);
+      _linkDispatcher.replaceBrowserUrl(
+        InvitationLink.withoutInviteParameter(Uri.base),
+      );
+      if (credentials == null) return;
+      _emailController.text = credentials.email;
+      _passwordController.text = credentials.password;
+      _finishInvitation();
+    });
+  }
+
+  /// Signup and email OTP verification already leave a valid Supabase
+  /// session. Reuse it after the invitation RPC instead of signing in a
+  /// second time and risking an incorrect-credentials error.
+  void _finishInvitation() {
+    if (SupabaseService.isReady &&
+        SupabaseService.client.auth.currentSession != null) {
+      context.read<AuthBloc>().add(const AuthSessionCheckRequested());
+      return;
+    }
+    _submit();
   }
 
   void _submit() {

@@ -1,5 +1,5 @@
-# Points the Supabase CLI at the development project so `supabase migration list`
-# and `supabase migration repair` work without an interactive `supabase link`.
+# Points the Supabase CLI at the authorized TEST/DEVELOPMENT project confirmed
+# by the owner on 2026-11-24, so migration commands use that project reference.
 # No credentials live in this file; the access token comes from the environment.
 project_id = "webzzasosevzymftgszn"
 
@@ -7,3 +7,20 @@ project_id = "webzzasosevzymftgszn"
 # The webhook handler verifies that HMAC before processing the payload.
 [functions.tap-webhook]
 verify_jwt = false
+
+[functions.invoice-documents]
+verify_jwt = true
+
+[functions.send-email]
+# The function exposes existing secret-verified webhook/auth-hook routes and
+# verifies the caller JWT itself for /send-invitation.
+verify_jwt = false
+
+# Phase 1.3 simulated payment adapter. It is test-project scoped in code and
+# separately requires a dedicated allowlisted test-customer GoTrue session.
+[functions.phase13-test-payment]
+verify_jwt = true
+
+# Authenticated checkout forwards the genuine customer JWT to the test-only RPC.
+[functions.phase13-test-checkout]
+verify_jwt = true

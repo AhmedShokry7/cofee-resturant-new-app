@@ -446,8 +446,22 @@ class S {
       _ar ? 'اختر كلمة مرور لحسابك' : 'Choose a password for your account';
   static String get invitationAcceptSubmit =>
       _ar ? 'قبول الدعوة' : 'Accept invitation';
+  static String get invitationIncompleteLink => _ar
+      ? 'رابط الدعوة غير مكتمل. افتح الرابط كاملاً أو أدخل رمز القبول.'
+      : 'This invitation link is incomplete. Open the full link or enter its acceptance code.';
   static String get invitationUnknown =>
       _ar ? 'هذا الرمز غير معروف.' : 'That code is not known.';
+  static String get invitationNetworkFailure => _ar
+      ? 'تعذر الاتصال بخدمة التحقق. تحقق من الإنترنت وحاول مجدداً.'
+      : 'Could not connect to invitation verification. Check your connection and try again.';
+  static String get invitationServiceFailure => _ar
+      ? 'تعذر التحقق من الدعوة الآن. حاول مجدداً لاحقاً.'
+      : 'Invitation verification is temporarily unavailable. Please try again later.';
+  static String get invitationInvalidLink => _ar
+      ? 'رابط الدعوة غير صالح. تحقق من الرابط الكامل.'
+      : 'This invitation link is invalid. Check that you have the complete link.';
+  static String get invitationLinkCopied =>
+      _ar ? 'تم نسخ رابط الدعوة' : 'Invitation link copied';
   static String get invitationAlreadyAccepted =>
       _ar ? 'استُخدم هذا الرمز من قبل.' : 'This code has already been used.';
   static String get invitationCancelled =>
@@ -464,8 +478,21 @@ class S {
       ? 'هذا الحساب عليه طلبات عميل، فلا يقلبه النظام إلى موظف.'
       : 'This account has customer orders, so it cannot become staff.';
   static String get invitationConfirmationNeeded => _ar
-      ? 'لا يقبل النظام دعوة قبل تأكيد البريد أولًا.'
-      : 'The system will not accept an invitation before the email is confirmed.';
+      ? 'أرسلنا كود تأكيد إلى بريدك. اكتبه هنا لإكمال القبول.'
+      : 'We sent a confirmation code to your email. Enter it here to finish accepting.';
+  static String get invitationConfirmationCodeLabel =>
+      _ar ? 'كود تأكيد البريد' : 'Email confirmation code';
+  static String get invitationConfirmationCodeHint => _ar
+      ? 'الكود المكوّن من 8 أرقام الذي وصل إلى بريدك.'
+      : 'The 8-digit code sent to your email.';
+  static String get invitationConfirmEmailSubmit =>
+      _ar ? 'تأكيد البريد وقبول الدعوة' : 'Confirm email and accept';
+  static String get invitationConfirmationCodeInvalid => _ar
+      ? 'كود التأكيد غير صحيح أو انتهت صلاحيته. تحقق من البريد وحاول مجددًا.'
+      : 'The confirmation code is wrong or expired. Check your email and try again.';
+  static String get invitationConfirmationCodeRequired => _ar
+      ? 'اكتب كود تأكيد البريد أولًا.'
+      : 'Enter the email confirmation code first.';
   static String get invitationWeakPassword => _ar
       ? 'كلمة المرور أضعف مما يطلبه النظام.'
       : 'That password is weaker than the system requires.';
@@ -635,6 +662,7 @@ class S {
   static String get no => _ar ? 'لا' : 'No';
   static String get customerDetails =>
       _ar ? 'تفاصيل العميل' : 'Customer details';
+  static String get adminHelpTooltip => _ar ? 'مساعدة' : 'Help';
   static String get customerManagement =>
       _ar ? 'إدارة العميل' : 'Customer management';
   static String get customerDefaultAddress => _ar ? 'افتراضي' : 'Default';
@@ -813,8 +841,8 @@ class S {
   static String get staffInviteTitle =>
       _ar ? 'دعوة موظف جديد' : 'Invite a new staff member';
   static String get staffInviteDescription => _ar
-      ? 'تُنشأ الدعوة باسم وبريد ودور، ويحصل الموظف على رمز يقبله بنفسه من شاشة الدخول.'
-      : 'The invitation holds a name, an email and a role. The invitee uses its code themselves on the sign-in screen.';
+      ? 'تُنشأ الدعوة باسم وبريد ودور، ويُرسل رابط قبول آمن إلى بريد الموظف.'
+      : 'Create an invitation with a name, email and role; a secure acceptance link is sent to the employee.';
   static String get staffInviteName => _ar ? 'اسم الموظف' : 'Staff name';
   static String get staffInviteEmail => _ar ? 'بريد الموظف' : 'Staff email';
   static String get staffInviteRole => _ar ? 'الدور' : 'Role';
@@ -832,6 +860,19 @@ class S {
   static String get staffInviteCodeCopy => _ar ? 'نسخ الرمز' : 'Copy code';
   static String get staffInviteCodeCopied =>
       _ar ? 'تم نسخ الرمز' : 'The code was copied';
+  static String get staffInviteLinkCopy =>
+      _ar ? 'نسخ رابط الدعوة' : 'Copy invitation link';
+  static String get staffInviteLinkCopied =>
+      _ar ? 'تم نسخ رابط الدعوة' : 'Invitation link copied';
+  static String get staffInviteEmailSent => _ar
+      ? 'أُرسلت رسالة الدعوة إلى بريد الموظف.'
+      : 'The invitation email was sent to the employee.';
+  static String get staffInviteEmailDeliveryFailed => _ar
+      ? 'تعذّر إرسال البريد. استخدم زر نسخ الرابط لإرساله للموظف يدويًا.'
+      : 'Email could not be sent. Use Copy invitation link to share it manually.';
+  static String get staffInviteLinkUnavailable => _ar
+      ? 'رابط التطبيق غير مُعدّ؛ لا يمكن إنشاء رابط الدعوة.'
+      : 'The app link is not configured, so an invitation link cannot be created.';
   static String get staffNoInvitations =>
       _ar ? 'لا دعوات مُرسلة بعد.' : 'No invitations have been sent yet.';
   static String get staffInvitationPending =>
@@ -1115,6 +1156,14 @@ class S {
   static String get cartsDescription => _ar
       ? 'تابعي سلال العملاء النشطة والمتروكة من مكان واحد.'
       : 'Review active and abandoned customer carts in one place.';
+  static String get cartsMetricEligible =>
+      _ar ? 'سلال مؤهلة' : 'Eligible carts';
+  static String get cartsMetricActive => _ar ? 'سلال نشطة' : 'Active carts';
+  static String get cartsMetricAbandoned =>
+      _ar ? 'سلال متروكة' : 'Abandoned carts';
+  static String get cartsMetricValue => _ar ? 'قيمة السلال' : 'Cart value';
+  static String cartsRowsLabel(int from, int to, int count) =>
+      _ar ? 'عرض $from–$to من $count سلة' : 'Showing $from–$to of $count carts';
   static String get stockMovements => _ar ? 'حركة المخزون' : 'Stock movements';
   static String get payments => _ar ? 'المدفوعات' : 'Payments';
   static String get paymentsDescription => _ar
@@ -1132,6 +1181,75 @@ class S {
   static String get paymentsPrintFailed => _ar
       ? 'تعذر فتح نافذة الطباعة. حاول مرة أخرى.'
       : 'The print dialog could not be opened. Please try again.';
+
+  static String get financeInvoices => _ar ? 'الفواتير' : 'Invoices';
+  static String get financeTaxSummary => _ar ? 'ملخص الضريبة' : 'Tax summary';
+  static String get financeTaxSettings =>
+      _ar ? 'إعدادات الضريبة' : 'Tax settings';
+  static String get financeRegistrationStatus =>
+      _ar ? 'حالة التسجيل الضريبي' : 'Registration status';
+  static String get financeRegistered => _ar ? 'مسجل' : 'Registered';
+  static String get financeNotRegistered => _ar ? 'غير مسجل' : 'Not registered';
+  static String get financeUnconfigured => _ar ? 'غير مهيأ' : 'Unconfigured';
+  static String get financeTaxRate => _ar ? 'نسبة الضريبة (%)' : 'Tax rate (%)';
+  static String get financeTaxIncluded =>
+      _ar ? 'الأسعار تشمل الضريبة' : 'Prices include tax';
+  static String get financeDeliveryTaxable =>
+      _ar ? 'رسوم التوصيل خاضعة للضريبة' : 'Delivery fee is taxable';
+  static String get financeSave => _ar ? 'حفظ الإعدادات' : 'Save settings';
+  static String get financePeriod => _ar ? 'الفترة' : 'Period';
+  static String get financeBranch => _ar ? 'الفرع' : 'Branch';
+  static String get financeAllBranches => _ar ? 'كل الفروع' : 'All branches';
+  static String get financeInvoiceNumber =>
+      _ar ? 'رقم الفاتورة' : 'Invoice number';
+  static String get financeStatus => _ar ? 'الحالة' : 'Status';
+  static String get financeDate => _ar ? 'التاريخ' : 'Date';
+  static String get financeSubtotal => _ar ? 'المجموع قبل الضريبة' : 'Subtotal';
+  static String get financeVat => _ar ? 'ضريبة القيمة المضافة' : 'VAT';
+  static String get financeTotal => _ar ? 'الإجمالي' : 'Total';
+  static String get financeSearch =>
+      _ar ? 'بحث في الفواتير' : 'Search invoices';
+  static String get financeNoInvoices =>
+      _ar ? 'لا توجد فواتير في هذه الفترة.' : 'No invoices in this period.';
+  static String get financeLoadFailed => _ar
+      ? 'تعذر تحميل البيانات المالية.'
+      : 'Finance data could not be loaded.';
+  static String get financeDownloadInvoice =>
+      _ar ? 'تنزيل الفاتورة' : 'Download invoice';
+  static String get financeInvoiceUnavailable => _ar
+      ? 'ملف الفاتورة غير متاح حاليًا. أعد المحاولة.'
+      : 'Invoice document is unavailable. Please retry.';
+  static String get financeReconciliation =>
+      _ar ? 'مطابقة الطلبات والفواتير' : 'Order and invoice reconciliation';
+  static String get financePaidOrders =>
+      _ar ? 'الطلبات المدفوعة' : 'Paid orders';
+  static String get financeMissingInvoices =>
+      _ar ? 'فواتير مفقودة' : 'Missing invoices';
+  static String get financePaymentMismatches =>
+      _ar ? 'اختلافات الدفع' : 'Payment mismatches';
+  static String get financeDocumentsUnavailable =>
+      _ar ? 'ملفات غير جاهزة' : 'Documents not ready';
+  static String get financeRefundReconciliation =>
+      _ar ? 'مطابقة المبالغ المستردة' : 'Refund reconciliation';
+  static String get financeRefundRequested => _ar ? 'المطلوب' : 'Requested';
+  static String get financeRefundConfirmed => _ar ? 'المؤكد' : 'Confirmed';
+  static String get financeRefundPending => _ar ? 'معلق' : 'Pending';
+  static String get financeRefundFailed => _ar ? 'فاشل' : 'Failed';
+  static String get financeFullRefunds => _ar ? 'استرداد كامل' : 'Full refunds';
+  static String get financePartialRefunds =>
+      _ar ? 'استرداد جزئي' : 'Partial refunds';
+  static String get financeRefundable =>
+      _ar ? 'المتبقي للاسترداد' : 'Remaining refundable';
+  static String get financeAdjustments =>
+      _ar ? 'الإشعارات الدائنة والمدينة' : 'Credit and debit notes';
+  static String get financeCreditNotes => _ar ? 'دائن' : 'Credit';
+  static String get financeDebitNotes => _ar ? 'مدين' : 'Debit';
+  static String get financeTaxableBase =>
+      _ar ? 'الوعاء الضريبي' : 'Taxable base';
+  static String get financeNetSales => _ar ? 'صافي المبيعات' : 'Net sales';
+  static String get financeSaved =>
+      _ar ? 'تم حفظ إعدادات الضريبة.' : 'Tax settings saved.';
+  static String get financeExport => _ar ? 'تصدير الملخص' : 'Export summary';
 
   static String get paymentsPrintTitle =>
       _ar ? 'كشف المدفوعات' : 'Payments statement';
@@ -1154,6 +1272,78 @@ class S {
   static String get subscriptionsDescription => _ar
       ? 'تابعي اشتراكات العملاء والباقات والتجديدات وسجل الاستخدام من مكان واحد.'
       : 'Track customer subscriptions, plans, renewals and usage in one place.';
+  static String get subscriptionsCreateAction =>
+      _ar ? 'اشتراك جديد' : 'New subscription';
+  static String get subscriptionsCreateTitle =>
+      _ar ? 'إنشاء اشتراك للعميل' : 'Create a customer subscription';
+  static String get subscriptionsCreateSubtitle => _ar
+      ? 'اختاري العميل والباقة وسجلي المبلغ المستلم لتفعيل الاشتراك فورًا.'
+      : 'Choose a customer and plan, then record the payment received to activate the subscription.';
+  static String get subscriptionsCreateCustomer => _ar ? 'العميل' : 'Customer';
+  static String get subscriptionsCreateSearchCustomer =>
+      _ar ? 'البحث عن عميل' : 'Search customers';
+  static String get subscriptionsCreateSearchHint =>
+      _ar ? 'الاسم أو الهاتف أو البريد' : 'Name, phone, or email';
+  static String get subscriptionsCreateNoCustomers => _ar
+      ? 'لا يوجد عملاء مسجلون للاختيار.'
+      : 'No registered customers are available.';
+  static String get subscriptionsCreateNoCustomerMatches =>
+      _ar ? 'لا يوجد عميل مطابق للبحث.' : 'No customers match this search.';
+  static String get subscriptionsCreatePlan => _ar ? 'الباقة' : 'Plan';
+  static String get subscriptionsCreatePlanHint =>
+      _ar ? 'اختاري باقة معروضة للبيع' : 'Choose a plan on sale';
+  static String get subscriptionsCreateNoPlans => _ar
+      ? 'لا توجد باقات نشطة ومعروضة للبيع.'
+      : 'There are no active plans on sale.';
+  static String subscriptionsCreatePlanSummary(String duration, String cups) =>
+      _ar
+      ? 'المدة: $duration · الأكواب المشمولة: $cups'
+      : 'Duration: $duration · Included cups: $cups';
+  static String get subscriptionsCashPaymentMethod =>
+      _ar ? 'الدفع نقدي' : 'Cash payment';
+  static String get subscriptionsCreatePaymentMethod =>
+      _ar ? 'طريقة الدفع' : 'Payment method';
+  static String get subscriptionsCreatePaymentHint => _ar
+      ? 'اختاري الطريقة التي استلم بها المبلغ'
+      : 'Choose how the payment was received';
+  static String get subscriptionsCreateNoPaymentMethods => _ar
+      ? 'لا توجد طرق دفع نشطة. حدّث إعدادات الدفع أولًا.'
+      : 'No active payment methods are available. Update payment settings first.';
+  static String get subscriptionsCreateConfirmPayment => _ar
+      ? 'أؤكد استلام كامل مبلغ الباقة من العميل'
+      : 'I confirm the customer paid the full plan amount';
+  static String get subscriptionsCreateConfirmPaymentHint => _ar
+      ? 'سيُسجل المبلغ كدفعة مستلمة بهذه الطريقة ويُفعّل الاشتراك فورًا.'
+      : 'The payment will be recorded under this method and the subscription activated immediately.';
+  static String get subscriptionsCreateFreePlanHint => _ar
+      ? 'هذه الباقة مجانية؛ سيُفعّل الاشتراك دون تسجيل دفعة.'
+      : 'This plan is free; the subscription will be activated without a payment transaction.';
+  static String get subscriptionsCreateSaving =>
+      _ar ? 'جارٍ التفعيل...' : 'Activating...';
+  static String get subscriptionsCreateSuccess => _ar
+      ? 'تم إنشاء الاشتراك وتفعيله للعميل.'
+      : 'The subscription was created and activated.';
+  static String get subscriptionsCreateFailed => _ar
+      ? 'تعذر إنشاء الاشتراك. حاول مرة أخرى.'
+      : 'The subscription could not be created. Please try again.';
+  static String get subscriptionsCreateDatabaseNeedsUpdate => _ar
+      ? 'ميزة إنشاء الاشتراك غير مفعّلة في قاعدة البيانات. طبّق تحديث قاعدة البيانات ثم أعد المحاولة.'
+      : 'Subscription creation is not enabled in the database. Apply the database update, then try again.';
+  static String get subscriptionsCreateCustomerUnavailable => _ar
+      ? 'العميل غير متاح أو لم يعد مؤهلًا للاشتراك.'
+      : 'The customer is unavailable or is no longer eligible.';
+  static String get subscriptionsCreatePlanUnavailable => _ar
+      ? 'الباقة لم تعد متاحة للبيع. حدّث الاختيار.'
+      : 'The plan is no longer available for sale. Refresh your selection.';
+  static String get subscriptionsCreatePaymentUnavailable => _ar
+      ? 'طريقة الدفع غير متاحة أو لم تعد نشطة.'
+      : 'The payment method is unavailable or inactive.';
+  static String get subscriptionsCreateConflict => _ar
+      ? 'تعذر التحقق من نتيجة المحاولة السابقة. أعد تحميل الصفحة قبل المحاولة مجددًا.'
+      : 'The previous attempt could not be verified. Refresh the page before trying again.';
+  static String get subscriptionsCreateInvalid => _ar
+      ? 'تحقق من بيانات الاشتراك وحاول مرة أخرى.'
+      : 'Check the subscription details and try again.';
   static String get subscriptionsActiveMetric =>
       _ar ? 'اشتراكات نشطة' : 'Active subscriptions';
   static String get subscriptionsExpiringSoonMetric =>
@@ -1208,6 +1398,8 @@ class S {
       _ar ? 'الفترة والدفع' : 'Period and payment';
   static String get subscriptionsPaymentReference =>
       _ar ? 'مرجع الدفع' : 'Payment reference';
+  static String get subscriptionsPaymentMethod =>
+      _ar ? 'طريقة الدفع' : 'Payment method';
   static String get subscriptionsBonusBalance =>
       _ar ? 'رصيد المكافآت' : 'Bonus balance';
   static String get subscriptionsBonusUntil =>
@@ -1259,6 +1451,30 @@ class S {
   static String get subscriptionStatusExpired => _ar ? 'منتهي' : 'Expired';
   static String get subscriptionsCancelAction =>
       _ar ? 'إلغاء الاشتراك' : 'Cancel subscription';
+  static String get subscriptionsRemoveAction =>
+      _ar ? 'إزالة من القائمة' : 'Remove from list';
+  static String get subscriptionsRemoveTitle =>
+      _ar ? 'إزالة الاشتراك من القائمة؟' : 'Remove subscription from the list?';
+  static String get subscriptionsRemoveMessage => _ar
+      ? 'سيُخفى الاشتراك من قائمة الإدارة مع الاحتفاظ بسجل الدفع والاستخدام للتدقيق. إذا كان نشطًا فسيتوقف فورًا، ولن يستفيد العميل من الأكواب المتبقية. هذا الإجراء لا يسترد المبلغ المدفوع.'
+      : 'The subscription will be hidden from the admin list while payment and usage history are retained for audit. If active, it stops immediately and remaining cups can no longer be used. This does not refund the payment.';
+  static String get subscriptionsRemovePendingMessage => _ar
+      ? 'سيُخفى طلب الاشتراك المعلق من القائمة مع الاحتفاظ بسجل التدقيق. لا يشمل ذلك استردادًا ماليًا.'
+      : 'The pending subscription will be hidden from the list with its audit history retained. This does not issue a refund.';
+  static String get subscriptionsRemoveConfirm =>
+      _ar ? 'نعم، إزالة' : 'Yes, remove';
+  static String get subscriptionsRemoveSuccess => _ar
+      ? 'تمت إزالة الاشتراك من القائمة.'
+      : 'Subscription removed from the list.';
+  static String get subscriptionsRemoveReserved => _ar
+      ? 'لا يمكن الإزالة الآن لوجود أكواب محجوزة. أنهِ الطلبات أو ألغِها ثم حاول مرة أخرى.'
+      : 'This subscription has reserved cups. Finish or cancel those orders before removing it.';
+  static String get subscriptionsRemoveNotFound => _ar
+      ? 'لم يعد هذا الاشتراك موجودًا.'
+      : 'This subscription no longer exists.';
+  static String get subscriptionsRemoveFailed => _ar
+      ? 'تعذرت إزالة الاشتراك من القائمة. حاول مرة أخرى.'
+      : 'The subscription could not be removed from the list. Please try again.';
   static String get subscriptionsCancelTitle =>
       _ar ? 'إلغاء الاشتراك؟' : 'Cancel this subscription?';
   static String get subscriptionsCancelMessage => _ar
@@ -1394,6 +1610,36 @@ class S {
       _ar ? 'الأكواب في الدورة' : 'Cups per cycle';
   static String get subscriptionPlanRolloverLabel =>
       _ar ? 'حد ترحيل الأكواب' : 'Rollover cap';
+  static String get subscriptionPlanPriceHelp => _ar
+      ? 'المبلغ الذي يدفعه العميل للاشتراك في هذه الباقة، بعملة الباقة.'
+      : 'The amount charged to subscribe to this plan, in the plan currency.';
+  static String get subscriptionPlanDurationHelp => _ar
+      ? 'مدة كل دورة اشتراك بالأيام. تحدد تاريخ نهاية الدورة.'
+      : 'Length of each subscription cycle in days. This determines the cycle end date.';
+  static String get subscriptionPlanCycleCupsHelp => _ar
+      ? 'هذا رصيد أكواب واحد مشترك لكل المنتجات المؤهلة، وليس عددًا مستقلًا لكل منتج. يُخصم كوب واحد لكل وحدة عند تأكيد الاستبدال.'
+      : 'This is one shared cup balance across all eligible products, not a separate allowance per product. One cup is deducted per unit when redemption is confirmed.';
+  static String get subscriptionPlanRolloverHelp => _ar
+      ? 'أقصى عدد من الأكواب غير المستخدمة التي يمكن ترحيلها إلى الدورة التالية؛ الصفر يعني عدم ترحيل أكواب.'
+      : 'Maximum unused cups carried into the next cycle; zero means no cups carry over.';
+  static String get subscriptionPlanBonusHelp => _ar
+      ? 'تُسجل قيمة المكافأة في رصيد الاشتراك بحسب النوع المحدد. لا تغيّر عدد الأكواب؛ تحقق من طريقة استخدام رصيد المكافأة قبل ضبطه.'
+      : 'The bonus value is recorded in the subscription balance using the selected type. It does not change cup count; verify how the bonus balance is used before configuring it.';
+  static String get subscriptionPlanBonusExpiryHelp => _ar
+      ? 'عند التفعيل ينتهي رصيد المكافأة مع نهاية دورة الاشتراك.'
+      : 'When enabled, the bonus balance expires at the end of the subscription cycle.';
+  static String get subscriptionPlanAutoRenewSupportHelp => _ar
+      ? 'هذا يتيح إظهار خيار التجديد للعميل حيثما كان مدعومًا، لكنه لا ينفذ تحصيلًا أو تجديدًا تلقائيًا مجدولًا.'
+      : 'This allows the customer renewal option where supported; it does not charge or schedule an automatic renewal.';
+  static String get subscriptionPlanRenewalHelp => _ar
+      ? 'هذا يحدد سياسة الباقة ودعمها فقط. لا ينفذ هذا الإعداد تحصيلًا أو تجديدًا تلقائيًا مجدولًا.'
+      : 'This records the plan policy and support only. It does not itself charge or schedule an automatic renewal.';
+  static String get subscriptionPlanProductScopeHelp => _ar
+      ? 'عند تحديد منتجات، يجب أن تكون المنتجات المستبدلة ضمن القائمة المحددة، ويغطي كل كوب وحدة واحدة. رصيد الأكواب مشترك بين المنتجات المؤهلة.'
+      : 'When products are selected, every redeemed product must be on that list and each cup covers one unit. The cup balance is shared across eligible products.';
+  static String get subscriptionPlanBranchScopeHelp => _ar
+      ? 'نطاق الفروع المعروض هنا للقراءة فقط؛ لا يمكن تغيير الفروع من هذا النموذج.'
+      : 'The branch scope shown here is read-only; branches cannot be changed in this form.';
   static String get subscriptionPlanBenefitsSection =>
       _ar ? 'المزايا والتجديد' : 'Perks and renewal';
   static String get subscriptionPlanBonusType =>
@@ -1463,11 +1709,11 @@ class S {
       ? 'حدّدي المنتجات التي يمكن استبدال أكواب الباقة بها، أو اتركيها لكل منتجات القائمة.'
       : 'Choose which products plan cups can be redeemed against, or keep every menu product.';
   static String get subscriptionPlanProductsAllHint => _ar
-      ? 'تُستخدم أكواب الباقة مع أي منتج متاح في القائمة.'
-      : 'Plan cups can be used with any available menu product.';
+      ? 'رصيد الأكواب واحد للباقة كلها، ويُستخدم مع أي منتج متاح؛ كوب واحد لكل وحدة.'
+      : 'The cup balance is shared by the whole plan and can be used for any available product; one cup per unit.';
   static String get subscriptionPlanProductsSelectedHint => _ar
-      ? 'تُستخدم أكواب الباقة فقط مع المنتجات المحددة أدناه.'
-      : 'Plan cups can only be used with the products selected below.';
+      ? 'رصيد الأكواب واحد مشترك بين المنتجات المحددة، وليس رصيدًا منفصلًا لكل منتج؛ كوب واحد لكل وحدة مستبدلة.'
+      : 'Cups are one shared balance across selected products, not a separate allowance per product; one cup per redeemed unit.';
   static String subscriptionPlanProductsSelectedCount(int count) =>
       _ar ? 'محدد: $count' : 'Selected: $count';
   static String get subscriptionPlanProductsChoose =>
@@ -1524,7 +1770,7 @@ class S {
   static String get loyaltyProgramEarnRateLabel =>
       _ar ? 'معدل الكسب' : 'Earning rate';
   static String get loyaltyProgramPointValueLabel =>
-      _ar ? 'قيمة النقطة' : 'Point value';
+      _ar ? 'قيمة مرجعية للنقطة' : 'Point value (reference only)';
   static String get loyaltyProgramValidityLabel =>
       _ar ? 'الصلاحية' : 'Validity';
   static String get loyaltyProgramOngoing => _ar ? 'ساري' : 'Ongoing';
@@ -1546,31 +1792,67 @@ class S {
   static String get loyaltyProgramDialogTitle =>
       _ar ? 'برنامج كسب النقاط' : 'Points earning program';
   static String get loyaltyProgramDialogIntro => _ar
-      ? 'حدّدي عدد النقاط التي يكسبها العميل مقابل كل ١ ${S.currency} من قيمة الطلب، وقيمة النقطة عند الاستبدال.'
-      : 'Set how many points a customer earns for every 1 ${S.currency} spent, and what a point is worth when redeemed.';
+      ? 'تحكمي في معدل كسب النقاط وقيمة النقطة، وعايني العائد قبل تفعيل البرنامج أو حفظ التغييرات.'
+      : 'Control the points earning rate and point value, then preview the return before activating the program or saving changes.';
   static String get loyaltyProgramRateField =>
-      _ar ? 'نقاط لكل ١ ${S.currency}' : 'Points per 1 ${S.currency}';
+      _ar ? 'نقاط لكل ريال' : 'Points per SAR';
   static String get loyaltyProgramRateHint => _ar ? 'مثال: ١' : 'For example 1';
   static String get loyaltyProgramRateHelp => _ar
-      ? 'عدد النقاط التي تُضاف للعميل مقابل كل وحدة من قيمة الطلب.'
-      : 'The points added for every unit of the order total.';
+      ? 'تُضرب قيمة المنتجات بعد الخصم في هذا المعدل، ثم تُقرّب النقاط إلى الأسفل. لا تشمل الضريبة أو التوصيل.'
+      : 'The discounted merchandise subtotal is multiplied by this rate, then rounded down to whole points. Tax and delivery are excluded.';
+  static String get loyaltyProgramRateTooltip => _ar
+      ? 'معدل الكسب ينطبق على الطلبات الجديدة فقط. الإلغاء يعكس النقاط المكتسبة للطلب.'
+      : 'The earning rate applies to new orders only. Cancelling an order reverses its earned points.';
+  static String get loyaltyProgramPresetsLabel => _ar
+      ? 'معدلات سريعة — أو أدخلي أي قيمة مخصصة'
+      : 'Quick rates — or enter any custom value';
+  static String loyaltyProgramPreset(double rate) => _ar
+      ? '${loyaltyRateLabel(rate)} نقطة / ريال'
+      : '${loyaltyRateLabel(rate)} pts / SAR';
+  static String loyaltyRateLabel(double rate) {
+    final text = rate == rate.roundToDouble()
+        ? rate.toStringAsFixed(0)
+        : rate
+              .toStringAsFixed(4)
+              .replaceFirst(RegExp(r'0+$'), '')
+              .replaceFirst(RegExp(r'\.$'), '');
+    return text;
+  }
+
+  static String get loyaltyProgramPreviewAmountLabel =>
+      _ar ? 'جرّبي قيمة طلب مختلفة' : 'Try a different order amount';
+  static String get loyaltyProgramPreviewAmountHint =>
+      _ar ? 'مثال: ١٠٠' : 'e.g. 100';
+  static String loyaltyProgramPreviewReturn(String percent) => _ar
+      ? 'تقدير مرجعي فقط: $percent٪ من الطلب، وليس خصمًا نقديًا مطبقًا'
+      : 'Reference estimate only: $percent% of the order, not an applied cash discount';
+  static String get loyaltyProgramChangeImpact => _ar
+      ? 'تُحسب النقاط على قيمة المنتجات بعد الخصم وقبل الضريبة والتوصيل، وتُقرّب إلى الأسفل. التغيير يطبّق على الطلبات الجديدة فقط؛ لا تتغير الأرصدة والطلبات السابقة.'
+      : 'Points use the discounted merchandise subtotal before tax and delivery, rounded down. Changes affect new orders only; existing balances and past orders are unchanged.';
   static String get loyaltyProgramValueField =>
       _ar ? 'قيمة النقطة (${S.currency})' : 'Point value (${S.currency})';
   static String get loyaltyProgramValueHint =>
       _ar ? 'مثال: ٠٫٠٥' : 'For example 0.05';
   static String get loyaltyProgramValueHelp => _ar
-      ? 'القيمة التي تمثلها النقطة الواحدة عند الاستبدال.'
-      : 'What a single point is worth when it is redeemed.';
+      ? 'قيمة مرجعية للنقطة. لا تُستخدم حاليًا لحساب خصم نقدي؛ الاستبدال الفعلي يستخدم تكلفة نقاط ثابتة لكل مكافأة.'
+      : 'A reference value only. It is not currently used to calculate a cash discount; redemption uses each reward’s fixed points cost.';
+  static String get loyaltyProgramValueTooltip => _ar
+      ? 'تغيير القيمة لا يغيّر استبدال المكافآت الحالي؛ لكل مكافأة تكلفة نقاط ثابتة.'
+      : 'Changing this value does not change current reward redemption; each reward has a fixed points cost.';
   static String get loyaltyProgramPreviewTitle =>
       _ar ? 'معاينة مباشرة' : 'Live preview';
   static String loyaltyProgramPreviewEarn(String amount, String points) => _ar
       ? 'طلب بقيمة $amount يكسب $points نقطة'
       : 'An order of $amount earns $points points';
-  static String loyaltyProgramPreviewWorth(String points, String amount) =>
-      _ar ? '$points نقطة تعادل $amount' : '$points points are worth $amount';
+  static String loyaltyProgramPreviewWorth(String points, String amount) => _ar
+      ? '$points نقطة — قيمة مرجعية $amount، وليست مبلغ استرداد نقدي'
+      : '$points points — reference value $amount, not a cash redemption amount';
   static String get loyaltyProgramPreviewPending => _ar
-      ? 'أدخلي معدل الكسب وقيمة النقطة لعرض المعاينة.'
-      : 'Enter an earning rate and point value to see the preview.';
+      ? 'أدخلي قيمة طلب موجبة لعرض النقاط المكتسبة.'
+      : 'Enter a positive order amount to preview the points earned.';
+  static String get loyaltyProgramInvalidPreviewAmount => _ar
+      ? 'أدخلي قيمة موجبة لا تتجاوز ١٬٠٠٠٬٠٠٠.'
+      : 'Enter a positive amount no greater than 1,000,000.';
   static String get loyaltyProgramActiveTitle =>
       _ar ? 'البرنامج مفعّل' : 'Program is active';
   static String get loyaltyProgramActiveHelp => _ar
@@ -1582,11 +1864,11 @@ class S {
   static String get loyaltyProgramSaved =>
       _ar ? 'تم تحديث برنامج النقاط.' : 'The points program was updated.';
   static String get loyaltyProgramInvalidRate => _ar
-      ? 'أدخلي عدد نقاط أكبر من صفر (بحد أقصى ١٠٠٠).'
-      : 'Enter a points rate greater than zero (maximum 1000).';
+      ? 'أدخلي معدلًا أكبر من صفر وحتى ١٠٠٠، وبحد أقصى ٤ منازل عشرية.'
+      : 'Enter a rate greater than zero and up to 1000, with at most 4 decimal places.';
   static String get loyaltyProgramInvalidValue => _ar
-      ? 'أدخلي قيمة نقطة صحيحة (صفر أو أكثر، بحد أقصى ١٠٠٠).'
-      : 'Enter a valid point value (zero or more, maximum 1000).';
+      ? 'أدخلي قيمة من صفر إلى ١٠٠٠، وبحد أقصى منزلتين عشريتين.'
+      : 'Enter a value from 0 to 1000, with at most 2 decimal places.';
   static String get loyaltyProgramNotFound => _ar
       ? 'لم يعد برنامج النقاط موجودًا. حدّثي الصفحة وحاولي مرة أخرى.'
       : 'The points program no longer exists. Refresh and try again.';
@@ -1739,8 +2021,8 @@ class S {
   static String get loyaltyRewardPointsHint =>
       _ar ? 'مثال: 100' : 'For example 100';
   static String get loyaltyRewardPointsHelp => _ar
-      ? 'عدد النقاط التي تُخصم من العميل عند استبدال المنتج.'
-      : 'The number of points deducted when a customer redeems the product.';
+      ? 'عدد النقاط التي تُخصم من العميل عند استبدال المكافأة. هذه تكلفة ثابتة ولا تُحسب من قيمة النقطة في إعداد البرنامج.'
+      : 'Points deducted when the reward is redeemed. This is a fixed cost, not calculated from the program point value.';
   static String get loyaltyRewardStockLabelOptional =>
       _ar ? 'الكمية المتاحة (اختياري)' : 'Available quantity (optional)';
   static String get loyaltyRewardStockHint => _ar
@@ -1749,6 +2031,12 @@ class S {
   static String get loyaltyRewardStockHelp => _ar
       ? 'حددي عدد مرات الاستبدال المتاحة، أو اتركيه فارغًا بلا حد.'
       : 'Limit how many times the reward can be redeemed, or leave it empty for no limit.';
+  static String get loyaltyRewardPointsTooltip => _ar
+      ? 'تُخصم هذه النقاط عند تأكيد استبدال المكافأة، ولا تعتمد على قيمة النقطة المرجعية.'
+      : 'These points are deducted when the reward is redeemed and do not use the reference point value.';
+  static String get loyaltyRewardStockTooltip => _ar
+      ? 'الكمية اختيارية: اتركيها فارغة لعدم تطبيق حد للمخزون.'
+      : 'Stock is optional: leave it blank for no redemption limit.';
   static String get loyaltyRewardActiveTitle =>
       _ar ? 'المكافأة متاحة للعملاء' : 'Reward is available to customers';
   static String get loyaltyRewardActiveHelp => _ar
@@ -2541,6 +2829,47 @@ class S {
       : 'The notification could not be deleted. Please try again.';
   static String get notificationsDeletedToast =>
       _ar ? 'تم حذف الإشعار.' : 'The notification was deleted.';
+  static String get notificationsSelectRow =>
+      _ar ? 'تحديد الإشعار' : 'Select notification';
+  static String get notificationsSelectPage =>
+      _ar ? 'تحديد الصفحة' : 'Select this page';
+  static String get notificationsSelectAllMatching =>
+      _ar ? 'تحديد الكل المطابق للفلاتر' : 'Select all matching filters';
+  static String get notificationsClearSelection =>
+      _ar ? 'مسح التحديد' : 'Clear selection';
+  static String get notificationsBulkDelete =>
+      _ar ? 'حذف المحدد' : 'Delete selected';
+  static String notificationsBulkSelectedCount(int count) =>
+      _ar ? 'تم تحديد $count إشعار' : '$count selected';
+  static String get notificationsBulkScopePage =>
+      _ar ? 'التحديد على هذه الصفحة فقط' : 'Selection covers this page only';
+  static String get notificationsBulkScopeAllMatching => _ar
+      ? 'التحديد يشمل كل النتائج المطابقة للفلاتر في كل الصفحات'
+      : 'Selection covers all results matching the filters across every page';
+  static String get notificationsBulkDeleteTitle =>
+      _ar ? 'حذف الإشعارات المحددة' : 'Delete selected notifications';
+  static String notificationsBulkDeleteMessage(int count) => _ar
+      ? 'سيُحذف $count إشعار نهائيًا من سجل الإشعارات ومن صندوق وارد العميل، وستُحذف سجلات تسليمها المرتبطة بها. لا يمكن التراجع عن الحذف، ولا يُستدعى أي إشعار وصل بالفعل إلى جهاز العميل أو بريده الإلكتروني. القوالب وسجلات الحملات نفسها لن تُحذف.'
+      : 'This will permanently delete $count notification(s) from the notification history and the customer inbox, along with their delivery logs. This cannot be undone, and it will not recall any push or email already delivered to a device. Templates and campaign records themselves are not deleted.';
+  static String get notificationsBulkDeleteConfirm =>
+      _ar ? 'حذف نهائي' : 'Delete permanently';
+  static String notificationsBulkDeletedToast(int count) =>
+      _ar ? 'تم حذف $count إشعار.' : '$count notification(s) deleted.';
+  static String notificationsBulkPartial(int deleted, int failed) => _ar
+      ? 'تم حذف $deleted إشعار، وبقي $failed محددًا للمحاولة مرة أخرى.'
+      : '$deleted deleted; $failed remain selected so you can retry.';
+  static String get notificationsBulkFailed => _ar
+      ? 'تعذر حذف الإشعارات المحددة. لم يُحذف شيء، وبقي تحديدها. حاول مرة أخرى.'
+      : 'The selected notifications could not be deleted. Nothing was removed and the selection was kept. Please try again.';
+  static String get notificationsBulkTooMany => _ar
+      ? 'عدد النتائج المطابقة كبير جدًا لتحديدها دفعة واحدة (الحد 1000). ضيّق الفلاتر ثم أعد المحاولة.'
+      : 'Too many matching results to select at once (limit 1000). Narrow the filters and try again.';
+  static String get notificationsBulkNoMatching => _ar
+      ? 'لا توجد إشعارات قابلة للحذف مطابقة للفلاتر الحالية.'
+      : 'No deletable notifications match the current filters.';
+  static String get notificationsBulkProtected => _ar
+      ? 'بعض المحددات مرتبطة بحملة ولا يمكن حذفها من هنا، وبقيت محددة.'
+      : 'Some selected rows are linked to a campaign and cannot be deleted here; they remain selected.';
   static String get notificationsNotFound => _ar
       ? 'هذا الإشعار لم يعد موجودًا.'
       : 'This notification no longer exists.';
@@ -2778,8 +3107,6 @@ class S {
       : 'Showing $from–$to of $count roles';
   static String get roleNoPermissions =>
       _ar ? 'لا توجد صلاحيات ممنوحة' : 'No permissions granted';
-  static String get roleManagePermissions =>
-      _ar ? 'إدارة الصلاحيات' : 'Manage permissions';
   static String get roleViewPermissions =>
       _ar ? 'عرض الصلاحيات' : 'View permissions';
   static String rolePermissionsCount(int count) => count == 1
@@ -2809,6 +3136,47 @@ class S {
   static String get permissionSaveFailed => _ar
       ? 'تعذر حفظ الصلاحية. حاولي مرة أخرى.'
       : 'The permission could not be saved. Please try again.';
+  static String get createRole => _ar ? 'إنشاء دور' : 'Create role';
+  static String get editRole => _ar ? 'تعديل الدور' : 'Edit role';
+  static String get roleCreateTitle => _ar ? 'دور جديد' : 'New role';
+  static String get roleEditTitle => _ar ? 'تعديل الدور' : 'Edit role';
+  static String get roleCreateSubtitle => _ar
+      ? 'سمّي الدور واختاري الصلاحيات التي يحتاجها.'
+      : 'Name the role and choose the permissions it needs.';
+  static String get roleEditSubtitle => _ar
+      ? 'حدّثي الاسم والوصف والصلاحيات.'
+      : 'Update the name, description and permissions.';
+  static String get roleNameAr => _ar ? 'الاسم بالعربية' : 'Arabic name';
+  static String get roleNameEn => _ar ? 'الاسم بالإنجليزية' : 'English name';
+  static String get roleNameEnHint =>
+      _ar ? 'اختياري، يُستخدم إن لم يُكتب' : 'Optional, falls back to Arabic';
+  static String get roleDescriptionLabel => _ar ? 'الوصف' : 'Description';
+  static String get roleDescriptionHint => _ar
+      ? 'ماذا يفعل هذا الدور؟ (اختياري)'
+      : 'What does this role do? (optional)';
+  static String get roleNameRequired =>
+      _ar ? 'اسم الدور بالعربية مطلوب.' : 'The Arabic role name is required.';
+  static String get roleSystemIdentityLocked => _ar
+      ? 'اسم دور النظام ووصفه غير قابلين للتعديل، ويمكن تعديل صلاحياته فقط.'
+      : 'A system role\'s name and description are fixed; only its permissions can change.';
+  static String get roleOwnerReadOnly => _ar
+      ? 'دور المالك يملك كل الصلاحيات ضمنيًا ولا يمكن تعديله.'
+      : 'The owner role implicitly holds every permission and cannot be edited.';
+  static String get roleCreated => _ar ? 'تم إنشاء الدور.' : 'Role created.';
+  static String get roleUpdated => _ar ? 'تم تحديث الدور.' : 'Role updated.';
+  static String get roleSaveFailed => _ar
+      ? 'تعذر حفظ الدور. راجعي البيانات وحاولي مرة أخرى.'
+      : 'The role could not be saved. Review the details and try again.';
+  static String permissionsSelectedCount(int count) =>
+      _ar ? 'المحدد: $count' : 'Selected: $count';
+  static String get permissionsSelectAll => _ar ? 'تحديد الكل' : 'Select all';
+  static String get permissionsClearAll => _ar ? 'مسح الكل' : 'Clear all';
+  static String get permissionsOwnerOnly => _ar
+      ? 'هذه الصلاحية يملكها المالك فقط ولا يمكن تعديلها.'
+      : 'Only the owner can change this permission.';
+  static String get permissionsCannotGrant => _ar
+      ? 'لا تملك هذه الصلاحية، فلا يمكنك منحها.'
+      : 'You do not hold this permission, so you cannot grant it.';
   static String get auditLog => _ar ? 'سجل التدقيق' : 'Audit log';
   static String get auditLogDescription => _ar
       ? 'تابع كل عملية مهمة في متجرك: من قام بها، وأين، وما الذي تغيّر.'
@@ -3381,6 +3749,43 @@ class S {
   static String get inventoryNoMovement =>
       _ar ? 'لم تُسجل حركة' : 'No movements yet';
   static String get inventoryNoCategory => _ar ? 'بدون تصنيف' : 'Uncategorised';
+  static String get inventoryCategories =>
+      _ar ? 'تصنيفات المخزون' : 'Inventory Categories';
+  static String get inventoryAllCategories =>
+      _ar ? 'كل التصنيفات' : 'All categories';
+  static String get inventoryCategoryAdd =>
+      _ar ? 'إضافة تصنيف' : 'Add category';
+  static String get inventoryCategoryEdit =>
+      _ar ? 'تعديل التصنيف' : 'Edit category';
+  static String get inventoryCategoryDelete =>
+      _ar ? 'حذف التصنيف' : 'Delete category';
+  static String get inventoryCategoryName =>
+      _ar ? 'اسم التصنيف' : 'Category name';
+  static String get inventoryCategoryNameRequired =>
+      _ar ? 'اكتب اسم التصنيف.' : 'Enter a category name.';
+  static String get inventoryCategoryNameInvalid => _ar
+      ? 'اسم التصنيف يجب أن يكون من 1 إلى 80 حرفًا.'
+      : 'Category name must be between 1 and 80 characters.';
+  static String get inventoryCategoryDuplicate =>
+      _ar ? 'هذا التصنيف موجود بالفعل.' : 'This category already exists.';
+  static String get inventoryCategorySaveFailed => _ar
+      ? 'تعذر حفظ التصنيف. حاول مرة أخرى.'
+      : 'Could not save the category. Try again.';
+  static String get inventoryCategoryPermissionDenied => _ar
+      ? 'ليس لديك صلاحية إدارة تصنيفات المخزون.'
+      : 'You cannot manage inventory categories.';
+  static String get inventoryCategoryDeleteConfirm => _ar
+      ? 'سيتم حذف التصنيف. المواد المرتبطة به ستُنقل إلى التصنيف المحدد أدناه.'
+      : 'This category will be deleted. Its materials will move to the category selected below.';
+  static String get inventoryCategoryReassignTo =>
+      _ar ? 'نقل المواد إلى' : 'Move materials to';
+  static String get inventoryCategoryUncategorised =>
+      _ar ? 'بدون تصنيف' : 'Uncategorised';
+  static String get inventoryCategoryReassignRequired => _ar
+      ? 'اختر تصنيفًا بديلًا أو «بدون تصنيف» لنقل المواد قبل الحذف.'
+      : 'Choose another category or “Uncategorised” to move materials before deleting.';
+  static String inventoryCategoryCount(String count) =>
+      _ar ? 'عدد المواد: $count' : '$count materials';
   static String get materialDeleted =>
       _ar ? 'تم حذف المادة الخام' : 'Raw material deleted';
   static String get materialCreated =>
@@ -3419,6 +3824,8 @@ class S {
       : 'The unit cannot change after movements are recorded for this material.';
   static String get materialNeedsName =>
       _ar ? 'اكتب اسم المادة بالعربية' : 'Enter the Arabic material name';
+  static String get materialNeedsCategory =>
+      _ar ? 'اختر تصنيفًا للمادة الخام' : 'Choose a raw-material category';
   static String get materialSaveDuplicateSku =>
       _ar ? 'كود المادة مستخدم بالفعل' : 'This SKU is already used';
   static String get materialSaveInvalidSku => _ar
@@ -3639,6 +4046,11 @@ class S {
       ? 'ابحث برقم الطلب أو العميل أو الصنف...'
       : 'Search by order, customer or item...';
   static String get kitchenLive => _ar ? 'مباشر' : 'Live';
+  static String get kitchenConnecting => _ar ? 'جارٍ الاتصال' : 'Connecting';
+  static String get kitchenReconnecting =>
+      _ar ? 'إعادة الاتصال' : 'Reconnecting';
+  static String get kitchenRealtimeUnavailable =>
+      _ar ? 'التحديث المباشر غير متاح' : 'Live updates unavailable';
   static String get kitchenReadOnly => _ar
       ? 'لديك صلاحية مشاهدة المطبخ فقط. تواصل مع المالك لبدء التحضير أو تسليم الطلبات.'
       : 'You can view the kitchen only. Ask the owner to start or complete tickets.';
@@ -4209,13 +4621,13 @@ class S {
   static String get posReceiptTitle =>
       _ar ? 'تم تسجيل الطلب' : 'Order recorded';
   static String get posReceiptSubtitle => _ar
-      ? 'أرسل الطلب إلى المطبخ ويمكنك طباعة الفاتورة الضريبية الآن.'
-      : 'The order is in the kitchen. You can print the tax invoice now.';
+      ? 'أُرسل الطلب إلى المطبخ ويمكنك طباعة الإيصال الآن.'
+      : 'The order is in the kitchen. You can print the receipt now.';
   static String get posReceiptPaymentMethod =>
       _ar ? 'طريقة الدفع' : 'Payment method';
   static String get posReceiptTime => _ar ? 'الوقت' : 'Time';
-  static String get posPrintReceipt =>
-      _ar ? 'طباعة الفاتورة الضريبية' : 'Print tax invoice';
+  static String get posPrintReceipt => _ar ? 'طباعة الإيصال' : 'Print receipt';
+  static String get posReceiptDocumentTitle => _ar ? 'إيصال' : 'Receipt';
   static String get posTaxInvoiceTitle =>
       _ar ? 'فاتورة ضريبية مبسطة' : 'Simplified tax invoice';
   static String get posTaxInvoiceTitleAlt =>
@@ -4230,6 +4642,7 @@ class S {
   static String get posSellerAddress => _ar ? 'عنوان البائع' : 'Seller address';
   static String get posSellerVatNumber => _ar ? 'الرقم الضريبي' : 'VAT number';
   static String get posInvoiceNumber => _ar ? 'رقم الفاتورة' : 'Invoice number';
+  static String get posReceiptNumber => _ar ? 'رقم الإيصال' : 'Receipt number';
   static String get posInvoiceDateTime =>
       _ar ? 'تاريخ ووقت الفاتورة' : 'Invoice date and time';
   static String get posTaxableAmount =>

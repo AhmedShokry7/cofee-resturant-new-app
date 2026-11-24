@@ -142,10 +142,10 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
               color: !widget.showFocusTint
                   ? AppColor.transparent
                   : _isFocused
-                      ? AppColor.secondryColor.withValues(
-                          alpha: AppShadows.focusTint,
-                        )
-                      : AppColor.cardSurface,
+                  ? AppColor.secondryColor.withValues(
+                      alpha: AppShadows.focusTint,
+                    )
+                  : AppColor.cardSurface,
               borderRadius: BorderRadius.circular(_fieldRadius),
             ),
             child: Focus(

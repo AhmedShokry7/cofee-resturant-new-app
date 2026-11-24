@@ -108,11 +108,12 @@ void main() {
 
     // المعاينة تفصل الرقم عن كلماته لتحصل كل كمية على علامة الريال.
     expect(find.text('An order of'), findsOneWidget);
-    expect(find.text('100'), findsOneWidget);
+    expect(find.text('100'), findsNWidgets(2));
     expect(find.text('earns 250 points'), findsOneWidget);
-    expect(find.text('100 points are worth'), findsOneWidget);
-    expect(find.text('10'), findsOneWidget);
-    expect(find.byType(CurrencyIcon), findsNWidgets(3));
+    expect(find.textContaining('250 points — reference value'), findsOneWidget);
+    expect(find.textContaining('not a cash redemption amount'), findsOneWidget);
+    expect(find.text('25'), findsOneWidget);
+    expect(find.byType(CurrencyIcon), findsNWidgets(4));
 
     await _tapSave(tester);
 
@@ -123,6 +124,54 @@ void main() {
     expect(draft.pointValue, 0.1);
     expect(draft.isActive, isTrue);
     expect(find.text(S.loyaltyProgramSaved), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('rate presets update the custom rate and live order preview', (
+    tester,
+  ) async {
+    _setViewport(tester);
+    final cubit = _FakeRuleCubit();
+    await _openDialog(tester, cubit, rule: _rule);
+
+    await tester.tap(find.byKey(const Key('loyalty-rate-preset-2.0')));
+    await tester.pump();
+    expect(_fieldText(tester, 'loyalty-rule-rate'), '2');
+    expect(find.text('An order of'), findsOneWidget);
+    expect(find.text('earns 200 points'), findsOneWidget);
+    expect(find.textContaining('200 points — reference value'), findsOneWidget);
+    expect(find.textContaining('Reference estimate only: 10%'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('loyalty-rule-preview-amount')),
+      '50',
+    );
+    await tester.pump();
+    expect(find.text('earns 100 points'), findsOneWidget);
+    expect(find.textContaining('100 points — reference value'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('rate and point value precision matches database columns', (
+    tester,
+  ) async {
+    _setViewport(tester);
+    final cubit = _FakeRuleCubit();
+    await _openDialog(tester, cubit, rule: _rule);
+
+    await tester.enterText(
+      find.byKey(const Key('loyalty-rule-rate')),
+      '1.12345',
+    );
+    await tester.enterText(
+      find.byKey(const Key('loyalty-rule-value')),
+      '0.123',
+    );
+    await _tapSave(tester);
+
+    expect(find.text(S.loyaltyProgramInvalidRate), findsOneWidget);
+    expect(find.text(S.loyaltyProgramInvalidValue), findsOneWidget);
+    expect(cubit.saved, isNull);
     expect(tester.takeException(), isNull);
   });
 
@@ -166,6 +215,7 @@ void main() {
     final cubit = _FakeRuleCubit();
     await _openDialog(tester, cubit, rule: _rule);
 
+    await tester.ensureVisible(find.byKey(const Key('loyalty-rule-active')));
     await tester.tap(find.byKey(const Key('loyalty-rule-active')));
     await tester.pump();
     await _tapSave(tester);

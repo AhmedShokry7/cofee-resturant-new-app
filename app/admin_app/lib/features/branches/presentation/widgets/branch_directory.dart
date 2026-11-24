@@ -14,6 +14,7 @@ import 'package:admin_app/shared/widgets/admin_directory_panel.dart';
 import 'package:admin_app/shared/widgets/admin_directory_toolbar.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_pagination.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
 class BranchDirectory extends StatefulWidget {
@@ -222,11 +223,7 @@ class _BranchDirectoryState extends State<BranchDirectory> {
       action: canClear
           ? TextButton(onPressed: _clearAll, child: Text(S.clearFilters))
           : noData && widget.canManage
-          ? TextButton.icon(
-              onPressed: widget.onAdd,
-              icon: const Icon(AppIcons.add01, size: 16),
-              label: Text(S.addBranch),
-            )
+          ? AdminCreateButton(label: S.addBranch, onPressed: widget.onAdd)
           : null,
     );
   }

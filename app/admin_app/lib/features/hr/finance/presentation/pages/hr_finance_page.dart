@@ -13,6 +13,7 @@ import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/shared/widgets/admin_create_button.dart';
 
 class HrFinancePage extends StatefulWidget {
   const HrFinancePage({
@@ -78,11 +79,10 @@ class _HrFinancePageState extends State<HrFinancePage> {
                   subtitle: HrFinanceStrings.subtitle,
                   actions: [
                     if (widget.canManage && widget.canReadEmployees)
-                      OutlinedButton.icon(
+                      AdminCreateButton(
+                        label: HrFinanceStrings.create,
                         onPressed: () =>
                             _createAdjustment(context, state.employees),
-                        icon: const AppIcon(AppIcons.add01, size: 18),
-                        label: Text(HrFinanceStrings.create),
                       ),
                     IconButton(
                       tooltip: HrFinanceStrings.title,

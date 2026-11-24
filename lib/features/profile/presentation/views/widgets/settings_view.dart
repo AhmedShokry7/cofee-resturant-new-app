@@ -26,6 +26,9 @@ import 'package:new_coffee/features/profile/presentation/views/widgets/settings_
 import 'package:new_coffee/shared/utils/optional_provider.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plans_page.dart';
+import 'package:new_coffee/features/customer_bundles/presentation/views/my_bundles_page.dart';
+import 'package:new_coffee/features/customer_reservations/presentation/views/my_reservations_page.dart';
+import 'package:new_coffee/features/product_subscriptions/presentation/views/my_product_subscriptions_page.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 /// What the Settings tab is made of: the customer's photo and name, the
@@ -142,6 +145,21 @@ class _SettingsEntries extends StatelessWidget {
           icon: AppIcons.star,
           label: S.loyaltyPoints,
           onTap: () => Navigator.of(context).pushNamed(LoyaltyPage.routeName),
+        ),
+        ProfileMenuTile(
+          icon: Icons.inventory_2_outlined,
+          label: S.myBundles,
+          onTap: () => Navigator.of(context).pushNamed(MyBundlesPage.routeName),
+        ),
+        ProfileMenuTile(
+          icon: Icons.autorenew_rounded,
+          label: S.productSubscriptions,
+          onTap: () => Navigator.of(context).pushNamed(MyProductSubscriptionsPage.routeName),
+        ),
+        ProfileMenuTile(
+          icon: Icons.event_available_outlined,
+          label: S.myReservations,
+          onTap: () => Navigator.of(context).pushNamed(MyReservationsPage.routeName),
         ),
         ProfileMenuTile(
           icon: AppIcons.settings,

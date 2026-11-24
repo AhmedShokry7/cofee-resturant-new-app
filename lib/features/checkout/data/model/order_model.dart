@@ -20,6 +20,11 @@ class OrderModel {
     this.discountLines = const [],
     this.productDiscount = 0,
     this.pointsEarned = 0,
+    this.invoiceNumber,
+    this.taxableAmount,
+    this.vatAmount,
+    this.taxRate,
+    this.taxIncluded,
   });
 
   /// The number the customer reads, e.g. `ORD-2026-000123`.
@@ -56,6 +61,40 @@ class OrderModel {
 
   /// Points the server actually credited while placing the order.
   final int pointsEarned;
+
+  /// Present only after the authorized invoice lookup returns an issued
+  /// invoice. The immediate checkout receipt remains valid without these.
+  final String? invoiceNumber;
+  final double? taxableAmount;
+  final double? vatAmount;
+  final double? taxRate;
+  final bool? taxIncluded;
+
+  OrderModel withInvoiceBreakdown({
+    required String invoiceNumber,
+    double? taxableAmount,
+    double? vatAmount,
+    double? taxRate,
+    bool? taxIncluded,
+  }) => OrderModel(
+    id: id,
+    orderId: orderId,
+    date: date,
+    items: items,
+    total: total,
+    fulfillmentType: fulfillmentType,
+    deliveryFee: deliveryFee,
+    deliveryZoneName: deliveryZoneName,
+    deliveryAddress: deliveryAddress,
+    discountLines: discountLines,
+    productDiscount: productDiscount,
+    pointsEarned: pointsEarned,
+    invoiceNumber: invoiceNumber,
+    taxableAmount: taxableAmount,
+    vatAmount: vatAmount,
+    taxRate: taxRate,
+    taxIncluded: taxIncluded,
+  );
 
   bool get isDelivery => fulfillmentType == 'delivery';
 
