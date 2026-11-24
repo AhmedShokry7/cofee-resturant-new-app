@@ -130,6 +130,7 @@ class _InvitationAcceptDialogState extends State<_InvitationAcceptDialog> {
                         hint: S.invitationConfirmationCodeHint,
                         controller: _confirmationCode,
                         bottomPadding: AppSizes.px8,
+                        onChanged: (_) => setState(() {}),
                         onFieldSubmitted: (_) => _confirm(cubit),
                       ),
                     )
@@ -146,6 +147,14 @@ class _InvitationAcceptDialogState extends State<_InvitationAcceptDialog> {
                   const SizedBox(height: AppSpacing.sm),
                   AdminInlineError(message: _error!),
                 ] else if (refused && state.outcome != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  AdminInlineError(
+                    message: invitationAcceptMessage(state.outcome!),
+                  ),
+                ] else if (awaitingConfirmation &&
+                    state.outcome != null &&
+                    state.outcome !=
+                        InvitationAcceptOutcome.emailConfirmationNeeded) ...[
                   const SizedBox(height: AppSpacing.sm),
                   AdminInlineError(
                     message: invitationAcceptMessage(state.outcome!),
@@ -177,7 +186,10 @@ class _InvitationAcceptDialogState extends State<_InvitationAcceptDialog> {
               )
             else if (awaitingConfirmation)
               FilledButton(
-                onPressed: state.isBusy ? null : () => _confirm(cubit),
+                onPressed: state.isBusy ||
+                        _confirmationCode.text.trim().isEmpty
+                    ? null
+                    : () => _confirm(cubit),
                 child: Text(S.invitationConfirmEmailSubmit),
               )
             else

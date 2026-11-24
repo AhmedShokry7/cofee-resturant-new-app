@@ -21,6 +21,7 @@ class StaffTable extends StatelessWidget {
     required this.canManagePermissions,
     required this.onManage,
     required this.onEdit,
+    required this.onRemove,
     this.canReadEmployeeFiles = false,
     this.onEmployeeFile,
   });
@@ -29,11 +30,12 @@ class StaffTable extends StatelessWidget {
   final bool canManagePermissions;
   final ValueChanged<AdminStaffMember> onManage;
   final ValueChanged<AdminStaffMember> onEdit;
+  final ValueChanged<AdminStaffMember> onRemove;
   final bool canReadEmployeeFiles;
   final ValueChanged<AdminStaffMember>? onEmployeeFile;
 
-  static const _baseActionWidth = 76.0;
-  static const _employeeActionWidth = 108.0;
+  static const _baseActionWidth = 108.0;
+  static const _employeeActionWidth = 140.0;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -58,6 +60,7 @@ class StaffTable extends StatelessWidget {
                     canManagePermissions: canManagePermissions,
                     onManage: () => onManage(member),
                     onEdit: () => onEdit(member),
+                    onRemove: () => onRemove(member),
                     canReadEmployeeFiles: canReadEmployeeFiles,
                     actionWidth: actionWidth,
                     onEmployeeFile: onEmployeeFile == null
@@ -123,6 +126,7 @@ class _Row extends StatelessWidget {
     required this.canManagePermissions,
     required this.onManage,
     required this.onEdit,
+    required this.onRemove,
     required this.canReadEmployeeFiles,
     required this.actionWidth,
     this.onEmployeeFile,
@@ -132,6 +136,7 @@ class _Row extends StatelessWidget {
   final bool canManagePermissions;
   final VoidCallback onManage;
   final VoidCallback onEdit;
+  final VoidCallback onRemove;
   final bool canReadEmployeeFiles;
   final double actionWidth;
   final VoidCallback? onEmployeeFile;
@@ -256,6 +261,8 @@ class _Row extends StatelessWidget {
                   children: [
                     if (canManagePermissions)
                       StaffEditAction(onPressed: onEdit),
+                    if (canManagePermissions)
+                      StaffRemoveAction(onPressed: onRemove),
                     if (canReadEmployeeFiles && onEmployeeFile != null)
                       HrEmployeeFileAction(onPressed: onEmployeeFile!),
                     StaffPermissionAction(
@@ -348,4 +355,24 @@ class StaffEditAction extends StatelessWidget {
       icon: AppIcon(AppIcons.edit01, size: 16, color: accent),
     );
   }
+}
+
+class StaffRemoveAction extends StatelessWidget {
+  const StaffRemoveAction({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+    tooltip: S.staffRemove,
+    onPressed: onPressed,
+    style: IconButton.styleFrom(
+      fixedSize: const Size(30, 30),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      padding: EdgeInsets.zero,
+      visualDensity: VisualDensity.compact,
+      foregroundColor: Theme.of(context).colorScheme.error,
+    ),
+    icon: const AppIcon(AppIcons.delete01, size: 16),
+  );
 }

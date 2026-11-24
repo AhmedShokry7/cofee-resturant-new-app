@@ -250,6 +250,26 @@ class AdminStaffRepository implements StaffRepository {
     }
   }
 
+  @override
+  Future<StaffInviteOutcome> deleteInvitation(String invitationId) async {
+    try {
+      final response = await _supabase.rpc(
+        'admin_delete_staff_invitation',
+        params: {'p_invitation_id': invitationId},
+      );
+      if (response is Map && response['ok'] == true) {
+        return StaffInviteOutcome.success;
+      }
+      return _inviteReason('${response is Map ? response['reason'] : ''}');
+    } on PostgrestException catch (error) {
+      return error.code == '42501'
+          ? StaffInviteOutcome.permissionDenied
+          : StaffInviteOutcome.failed;
+    } catch (_) {
+      return StaffInviteOutcome.failed;
+    }
+  }
+
   /// The object path behind whatever the screen holds: the signed link of
   /// `AdminAvatarLinks`, or the stored path when signing failed.
   static String? _pathOf(String? value) {

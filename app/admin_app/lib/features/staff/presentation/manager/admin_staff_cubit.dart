@@ -10,6 +10,7 @@ import 'package:admin_app/features/staff/domain/entities/staff_edit_outcome.dart
 import 'package:admin_app/features/staff/domain/entities/staff_invite_outcome.dart';
 import 'package:admin_app/features/staff/domain/repositories/staff_repository.dart';
 import 'package:admin_app/features/staff/domain/usecases/cancel_invitation.dart';
+import 'package:admin_app/features/staff/domain/usecases/delete_invitation.dart';
 import 'package:admin_app/features/staff/domain/usecases/delete_staff_image_file.dart';
 import 'package:admin_app/features/staff/domain/usecases/invite_staff.dart';
 import 'package:admin_app/features/staff/domain/usecases/load_invitations.dart';
@@ -38,6 +39,7 @@ class AdminStaffCubit extends Cubit<AdminStaffState> {
       _loadInviteOptions = LoadInviteOptionsUseCase(repository),
       _inviteStaff = InviteStaffUseCase(repository),
       _cancelInvitation = CancelInvitationUseCase(repository),
+      _deleteInvitation = DeleteInvitationUseCase(repository),
       super(const AdminStaffState());
 
   final LoadStaffUseCase _loadStaff;
@@ -51,6 +53,7 @@ class AdminStaffCubit extends Cubit<AdminStaffState> {
   final LoadInviteOptionsUseCase _loadInviteOptions;
   final InviteStaffUseCase _inviteStaff;
   final CancelInvitationUseCase _cancelInvitation;
+  final DeleteInvitationUseCase _deleteInvitation;
 
   Future<void> load() async {
     emit(state.copyWith(status: AdminStaffStatus.loading, clearError: true));
@@ -159,6 +162,12 @@ class AdminStaffCubit extends Cubit<AdminStaffState> {
 
   Future<StaffInviteOutcome> cancelInvitation(String invitationId) async {
     final outcome = await _cancelInvitation(invitationId);
+    if (outcome == StaffInviteOutcome.success) await loadInvitations();
+    return outcome;
+  }
+
+  Future<StaffInviteOutcome> deleteInvitation(String invitationId) async {
+    final outcome = await _deleteInvitation(invitationId);
     if (outcome == StaffInviteOutcome.success) await loadInvitations();
     return outcome;
   }

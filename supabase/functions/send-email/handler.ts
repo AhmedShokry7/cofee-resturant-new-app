@@ -644,16 +644,15 @@ export async function handleInvitationRequest(
           ),
           replyTo: env("EMAIL_REPLY_TO") ?? null,
         };
+      // Staff invitations use Brevo whenever its key is configured, matching
+      // the provider used by the app's authentication OTP messages. Resend is
+      // only a fallback for deployments without a Brevo key.
       let provider = brevoKey ? "brevo" : "resend";
       let result = deps.send
         ? await deps.send(brevoKey || resendKey, email)
         : brevoKey
         ? await sendEmail(brevoKey, email, fetcher)
         : await sendWithResend(resendKey, email, fetcher);
-      if (!result.ok && resendKey && brevoKey && !deps.send) {
-        provider = "resend";
-        result = await sendWithResend(resendKey, email, fetcher);
-      }
       emailSent = result.ok;
       if (emailSent) {
         console.log("staff invitation email accepted by provider", {

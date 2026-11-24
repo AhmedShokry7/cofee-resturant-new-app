@@ -32,8 +32,7 @@ class InvitationAcceptState {
 
   bool get isBusy =>
       status == InvitationAcceptStatus.checking ||
-      status == InvitationAcceptStatus.submitting ||
-      status == InvitationAcceptStatus.awaitingConfirmation;
+      status == InvitationAcceptStatus.submitting;
 
   InvitationAcceptState copyWith({
     InvitationAcceptStatus? status,

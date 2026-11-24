@@ -101,7 +101,12 @@ class InvitationAcceptCubit extends Cubit<InvitationAcceptState> {
   }) async {
     final preview = state.preview;
     if (preview == null) return null;
-    emit(state.copyWith(status: InvitationAcceptStatus.submitting));
+    emit(
+      state.copyWith(
+        status: InvitationAcceptStatus.submitting,
+        clearOutcome: true,
+      ),
+    );
     _pendingPassword = password;
     final outcome = await _accept(
       token: state.token ?? token,
@@ -142,7 +147,12 @@ class InvitationAcceptCubit extends Cubit<InvitationAcceptState> {
     final preview = state.preview;
     final password = _pendingPassword;
     if (preview == null || password == null) return null;
-    emit(state.copyWith(status: InvitationAcceptStatus.submitting));
+    emit(
+      state.copyWith(
+        status: InvitationAcceptStatus.submitting,
+        clearOutcome: true,
+      ),
+    );
     final outcome = await _confirmAndAccept(
       token: state.token ?? token,
       email: preview.email,
@@ -152,7 +162,14 @@ class InvitationAcceptCubit extends Cubit<InvitationAcceptState> {
     if (outcome != InvitationAcceptOutcome.accepted) {
       emit(
         state.copyWith(
-          status: InvitationAcceptStatus.refused,
+          status: switch (outcome) {
+            InvitationAcceptOutcome.emailConfirmationCodeInvalid ||
+            InvitationAcceptOutcome.networkFailure ||
+            InvitationAcceptOutcome.serviceFailure ||
+            InvitationAcceptOutcome.failed =>
+              InvitationAcceptStatus.awaitingConfirmation,
+            _ => InvitationAcceptStatus.refused,
+          },
           outcome: outcome,
         ),
       );

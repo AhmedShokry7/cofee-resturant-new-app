@@ -19,6 +19,7 @@ class StaffCards extends StatelessWidget {
     required this.canManagePermissions,
     required this.onManage,
     required this.onEdit,
+    required this.onRemove,
     this.canReadEmployeeFiles = false,
     this.onEmployeeFile,
   });
@@ -27,6 +28,7 @@ class StaffCards extends StatelessWidget {
   final bool canManagePermissions;
   final ValueChanged<AdminStaffMember> onManage;
   final ValueChanged<AdminStaffMember> onEdit;
+  final ValueChanged<AdminStaffMember> onRemove;
   final bool canReadEmployeeFiles;
   final ValueChanged<AdminStaffMember>? onEmployeeFile;
 
@@ -42,6 +44,7 @@ class StaffCards extends StatelessWidget {
         canManagePermissions: canManagePermissions,
         onManage: () => onManage(member),
         onEdit: () => onEdit(member),
+        onRemove: () => onRemove(member),
         canReadEmployeeFiles: canReadEmployeeFiles,
         onEmployeeFile: onEmployeeFile == null
             ? null
@@ -57,6 +60,7 @@ class _StaffCard extends StatelessWidget {
     required this.canManagePermissions,
     required this.onManage,
     required this.onEdit,
+    required this.onRemove,
     required this.canReadEmployeeFiles,
     this.onEmployeeFile,
   });
@@ -65,6 +69,7 @@ class _StaffCard extends StatelessWidget {
   final bool canManagePermissions;
   final VoidCallback onManage;
   final VoidCallback onEdit;
+  final VoidCallback onRemove;
   final bool canReadEmployeeFiles;
   final VoidCallback? onEmployeeFile;
 
@@ -192,6 +197,7 @@ class _StaffCard extends StatelessWidget {
                   ),
                   if (canManagePermissions) ...[
                     StaffEditAction(onPressed: onEdit),
+                    StaffRemoveAction(onPressed: onRemove),
                     const SizedBox(width: AppSizes.px4),
                   ],
                   if (canReadEmployeeFiles && onEmployeeFile != null)

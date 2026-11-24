@@ -56,6 +56,7 @@ class StaffInvitationsDialog extends StatefulWidget {
 
 class _StaffInvitationsDialogState extends State<StaffInvitationsDialog> {
   String? _error;
+  String? _notice;
 
   @override
   void initState() {
@@ -81,6 +82,15 @@ class _StaffInvitationsDialogState extends State<StaffInvitationsDialog> {
             return ListView(
               shrinkWrap: true,
               children: [
+                if (_notice != null) ...[
+                  Text(
+                    _notice!,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
                 if (error != null) ...[
                   AdminInlineError(message: error),
                   const SizedBox(height: AppSpacing.md),
@@ -102,6 +112,7 @@ class _StaffInvitationsDialogState extends State<StaffInvitationsDialog> {
                       invitation: invitation,
                       canManage: widget.canManage,
                       onCancel: () => _cancel(invitation),
+                      onDelete: () => _delete(invitation),
                     ),
                     // المسافات بين الصفوف لا قبل أولها.
                     if (invitation != invitations.last)
@@ -132,6 +143,38 @@ class _StaffInvitationsDialogState extends State<StaffInvitationsDialog> {
     }
     setState(() => _error = staffInviteErrorMessage(outcome));
   }
+
+  Future<void> _delete(AdminStaffInvitation invitation) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(S.staffInvitationDelete),
+        content: Text(S.staffInvitationDeleteConfirm(invitation.fullName)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(S.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(S.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() {
+      _error = null;
+      _notice = null;
+    });
+    final outcome = await widget.cubit.deleteInvitation(invitation.id);
+    if (!mounted) return;
+    if (outcome == StaffInviteOutcome.success) {
+      setState(() => _notice = S.staffInvitationDeleted);
+      return;
+    }
+    setState(() => _error = staffInviteErrorMessage(outcome));
+  }
 }
 
 class _InvitationRow extends StatelessWidget {
@@ -139,11 +182,13 @@ class _InvitationRow extends StatelessWidget {
     required this.invitation,
     required this.canManage,
     required this.onCancel,
+    required this.onDelete,
   });
 
   final AdminStaffInvitation invitation;
   final bool canManage;
   final VoidCallback onCancel;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -211,14 +256,25 @@ class _InvitationRow extends StatelessWidget {
             const SizedBox(height: AppSizes.px8),
             StaffCodeBlock(code: invitation.token!),
           ],
-          if (canManage && invitation.isPending) ...[
+          if (canManage) ...[
             const SizedBox(height: AppSizes.px4),
-            Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: TextButton(
-                onPressed: onCancel,
-                child: Text(S.staffInvitationCancel),
-              ),
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: AppSizes.px4,
+              children: [
+                if (invitation.isPending)
+                  TextButton(
+                    onPressed: onCancel,
+                    child: Text(S.staffInvitationCancel),
+                  ),
+                TextButton(
+                  onPressed: onDelete,
+                  style: TextButton.styleFrom(
+                    foregroundColor: theme.colorScheme.error,
+                  ),
+                  child: Text(S.staffInvitationDelete),
+                ),
+              ],
             ),
           ],
         ],
