@@ -8,17 +8,27 @@
 // is different: it is a link a customer clicks inside a mail client, with no
 // session and no secret header, so it proves itself with a signed token.
 import {
-  handleEmailRequest,
-  handleUnsubscribe,
   createSupabaseStore,
-  unsubscribeTokenFor,
   handleAuthEmailHook,
+  handleEmailRequest,
+  handleInvitationRequest,
+  handleUnsubscribe,
+  invitationCorsHeaders,
+  unsubscribeTokenFor,
 } from "./handler.ts";
 
-Deno.serve((req) => {
+Deno.serve(async (req) => {
   const path = new URL(req.url).pathname.replace(/\/+$/, "");
   if (path.endsWith("/auth-hook")) {
     return handleAuthEmailHook(req, { env: (name) => Deno.env.get(name) });
+  }
+  if (path.endsWith("/send-invitation")) {
+    const result = await handleInvitationRequest(req);
+    const headers = new Headers(result.headers);
+    for (const [key, value] of Object.entries(invitationCorsHeaders())) {
+      headers.set(key, value);
+    }
+    return new Response(result.body, { status: result.status, headers });
   }
   if (!path.endsWith("/unsubscribe")) {
     return handleEmailRequest(req);
@@ -36,3 +46,4 @@ Deno.serve((req) => {
     unsubscribeToken: unsubscribeTokenFor,
   });
 });
+

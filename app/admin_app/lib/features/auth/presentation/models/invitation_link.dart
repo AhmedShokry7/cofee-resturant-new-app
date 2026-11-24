@@ -4,8 +4,11 @@
 /// `token`, `token_hash`, or `type` parameters used by OTP/action links.
 abstract final class InvitationLink {
   static const String queryParameter = 'invite';
+  static const String _defaultApplicationUrl =
+      'https://ahmedshokry7.github.io/cofee-resturant-new-app/admin/';
   static const String configuredApplicationUrl = String.fromEnvironment(
     'ADMIN_APP_URL',
+    defaultValue: _defaultApplicationUrl,
   );
 
   static final RegExp _uuid = RegExp(
