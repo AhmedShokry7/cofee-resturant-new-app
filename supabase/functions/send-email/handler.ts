@@ -537,7 +537,28 @@ export async function handleInvitationRequest(
       return safeInvitationFailure("failed");
     }
 
-    const invitation = await rpcResponse.json() as InvitationRpcResult;
+    let invitation = await rpcResponse.json() as InvitationRpcResult;
+    if (invitation.ok !== true && invitation.reason === "already_invited") {
+      const resendResponse = await fetcher(
+        `${supabaseUrl}/rest/v1/rpc/admin_resend_staff_invitation`,
+        {
+          method: "POST",
+          headers: {
+            apikey: apiKey,
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ p_email: body.email }),
+        },
+      );
+      if (!resendResponse.ok) {
+        if (resendResponse.status === 401 || resendResponse.status === 403) {
+          return safeInvitationFailure("permission_denied");
+        }
+        return safeInvitationFailure("failed");
+      }
+      invitation = await resendResponse.json() as InvitationRpcResult;
+    }
     if (invitation.ok !== true) {
       const reason = typeof invitation.reason === "string" &&
           invitationReasons.has(invitation.reason)
@@ -579,16 +600,23 @@ export async function handleInvitationRequest(
           ),
           replyTo: env("EMAIL_REPLY_TO") ?? null,
         };
+      let provider = brevoKey ? "brevo" : "resend";
       let result = deps.send
-        ? await deps.send(resendKey || brevoKey, email)
-        : resendKey
-        ? await sendWithResend(resendKey, email, fetcher)
-        : await sendEmail(brevoKey, email, fetcher);
+        ? await deps.send(brevoKey || resendKey, email)
+        : brevoKey
+        ? await sendEmail(brevoKey, email, fetcher)
+        : await sendWithResend(resendKey, email, fetcher);
       if (!result.ok && resendKey && brevoKey && !deps.send) {
-        result = await sendEmail(brevoKey, email, fetcher);
+        provider = "resend";
+        result = await sendWithResend(resendKey, email, fetcher);
       }
       emailSent = result.ok;
-      if (!emailSent) {
+      if (emailSent) {
+        console.log("staff invitation email accepted by provider", {
+          provider,
+          messageId: result.id ?? null,
+        });
+      } else {
         const errorClass = result.error?.match(/^(resend|brevo)\s+(\d{3})/i);
         console.error("staff invitation email delivery failed", {
           provider: errorClass?.[1]?.toLowerCase() ?? (resendKey ? "resend" : "brevo"),
