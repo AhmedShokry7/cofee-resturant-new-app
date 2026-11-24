@@ -23,13 +23,18 @@ class InvitationCredentials {
 
 /// يفتح حوار قبول رمز الدعوة من شاشة الدخول.
 Future<InvitationCredentials?> showInvitationAcceptDialog(
-  BuildContext context,
-) {
+  BuildContext context, {
+  String? initialToken,
+  bool invalidLink = false,
+}) {
   return showDialog<InvitationCredentials>(
     context: context,
     builder: (context) => BlocProvider(
       create: (context) => InvitationAcceptCubit(),
-      child: const _InvitationAcceptDialog(),
+      child: _InvitationAcceptDialog(
+        initialToken: initialToken,
+        invalidLink: invalidLink,
+      ),
     ),
   );
 }
@@ -39,7 +44,10 @@ Future<InvitationCredentials?> showInvitationAcceptDialog(
 /// الاسم والدور والفرع لا تُختلق حين لا تصل: `admin_invitation_lookup` هي التي
 /// تعرف الرمز وتعد به، والشاشة تقرأ ما قالته فقط.
 class _InvitationAcceptDialog extends StatefulWidget {
-  const _InvitationAcceptDialog();
+  const _InvitationAcceptDialog({this.initialToken, this.invalidLink = false});
+
+  final String? initialToken;
+  final bool invalidLink;
 
   @override
   State<_InvitationAcceptDialog> createState() =>
@@ -49,7 +57,19 @@ class _InvitationAcceptDialog extends StatefulWidget {
 class _InvitationAcceptDialogState extends State<_InvitationAcceptDialog> {
   final _code = TextEditingController();
   final _password = TextEditingController();
+  final _confirmationCode = TextEditingController();
   bool _obscure = true;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialToken != null) {
+      _code.text = widget.initialToken!;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _check(context.read<InvitationAcceptCubit>());
+      });
+    }
+  }
 
   /// فراغٌ محلي قبل أي سؤال للقاعدة: الرمز القصير أو الغائب لا يُرسل أصلاً.
   String? _error;
@@ -58,6 +78,7 @@ class _InvitationAcceptDialogState extends State<_InvitationAcceptDialog> {
   void dispose() {
     _code.dispose();
     _password.dispose();
+    _confirmationCode.dispose();
     super.dispose();
   }
 
@@ -76,6 +97,8 @@ class _InvitationAcceptDialogState extends State<_InvitationAcceptDialog> {
     return BlocBuilder<InvitationAcceptCubit, InvitationAcceptState>(
       builder: (context, state) {
         final preview = state.preview;
+        final awaitingConfirmation =
+            state.status == InvitationAcceptStatus.awaitingConfirmation;
         final refused = state.status == InvitationAcceptStatus.refused;
         return AlertDialog(
           title: Text(S.invitationAcceptTitle),
@@ -99,13 +122,25 @@ class _InvitationAcceptDialogState extends State<_InvitationAcceptDialog> {
                   const SizedBox(height: AppSpacing.sm),
                   _PreviewCard(preview: preview),
                   const SizedBox(height: AppSpacing.md),
-                  LoginPasswordField(
-                    controller: _password,
-                    obscurePassword: _obscure,
-                    onToggleVisibility: () =>
-                        setState(() => _obscure = !_obscure),
-                    onSubmitted: () => _accept(cubit),
-                  ),
+                  if (awaitingConfirmation)
+                    Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: CustomTextFormField(
+                        label: S.invitationConfirmationCodeLabel,
+                        hint: S.invitationConfirmationCodeHint,
+                        controller: _confirmationCode,
+                        bottomPadding: AppSizes.px8,
+                        onFieldSubmitted: (_) => _confirm(cubit),
+                      ),
+                    )
+                  else
+                    LoginPasswordField(
+                      controller: _password,
+                      obscurePassword: _obscure,
+                      onToggleVisibility: () =>
+                          setState(() => _obscure = !_obscure),
+                      onSubmitted: () => _accept(cubit),
+                    ),
                 ],
                 if (_error != null) ...[
                   const SizedBox(height: AppSpacing.sm),
@@ -115,6 +150,11 @@ class _InvitationAcceptDialogState extends State<_InvitationAcceptDialog> {
                   AdminInlineError(
                     message: invitationAcceptMessage(state.outcome!),
                   ),
+                ] else if (state.status == InvitationAcceptStatus.initial &&
+                    widget.invalidLink &&
+                    widget.initialToken == null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  AdminInlineError(message: S.invitationInvalidLink),
                 ],
               ],
             ),
@@ -134,6 +174,11 @@ class _InvitationAcceptDialogState extends State<_InvitationAcceptDialog> {
                       ? S.invitationChecking
                       : S.invitationCheck,
                 ),
+              )
+            else if (awaitingConfirmation)
+              FilledButton(
+                onPressed: state.isBusy ? null : () => _confirm(cubit),
+                child: Text(S.invitationConfirmEmailSubmit),
               )
             else
               FilledButton(
@@ -161,6 +206,21 @@ class _InvitationAcceptDialogState extends State<_InvitationAcceptDialog> {
     final email = await cubit.accept(
       token: _code.text,
       password: _password.text,
+    );
+    if (!mounted || email == null) return;
+    Navigator.of(context)
+        .pop(InvitationCredentials(email: email, password: _password.text));
+  }
+
+  Future<void> _confirm(InvitationAcceptCubit cubit) async {
+    if (_confirmationCode.text.trim().isEmpty) {
+      setState(() => _error = S.invitationConfirmationCodeRequired);
+      return;
+    }
+    setState(() => _error = null);
+    final email = await cubit.confirmEmail(
+      token: _code.text,
+      confirmationCode: _confirmationCode.text,
     );
     if (!mounted || email == null) return;
     Navigator.of(context)
@@ -227,7 +287,10 @@ class _PreviewCard extends StatelessWidget {
 String invitationAcceptMessage(InvitationAcceptOutcome outcome) =>
     switch (outcome) {
       InvitationAcceptOutcome.accepted => '',
+      InvitationAcceptOutcome.incompleteLink => S.invitationIncompleteLink,
       InvitationAcceptOutcome.unknown => S.invitationUnknown,
+      InvitationAcceptOutcome.networkFailure => S.invitationNetworkFailure,
+      InvitationAcceptOutcome.serviceFailure => S.invitationServiceFailure,
       InvitationAcceptOutcome.alreadyAccepted => S.invitationAlreadyAccepted,
       InvitationAcceptOutcome.cancelled => S.invitationCancelled,
       InvitationAcceptOutcome.expired => S.invitationExpired,
@@ -236,6 +299,8 @@ String invitationAcceptMessage(InvitationAcceptOutcome outcome) =>
       InvitationAcceptOutcome.customerHistory => S.invitationCustomerHistory,
       InvitationAcceptOutcome.emailConfirmationNeeded =>
         S.invitationConfirmationNeeded,
+      InvitationAcceptOutcome.emailConfirmationCodeInvalid =>
+        S.invitationConfirmationCodeInvalid,
       InvitationAcceptOutcome.weakPassword => S.invitationWeakPassword,
       InvitationAcceptOutcome.failed => S.invitationFailed,
     };

@@ -7,6 +7,7 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/admin_product_image.dart';
 import 'package:admin_app/core/services/admin_avatar_links.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
+import 'package:admin_app/features/auth/presentation/models/invitation_link.dart';
 import 'package:admin_app/features/staff/data/models/admin_staff.dart';
 import 'package:admin_app/features/staff/domain/entities/staff_edit_outcome.dart';
 import 'package:admin_app/features/staff/domain/entities/staff_invite_outcome.dart';
@@ -179,37 +180,48 @@ class AdminStaffRepository implements StaffRepository {
     String? branchId,
   }) async {
     try {
-      final response = await _supabase.rpc(
-        'admin_invite_staff',
-        params: {
-          'p_email': email,
-          'p_full_name': fullName,
-          'p_role_code': roleCode,
-          'p_branch_id': branchId,
+      final response = await _supabase.functions.invoke(
+        'send-email/send-invitation',
+        body: {
+          'email': email,
+          'full_name': fullName,
+          'role_code': roleCode,
+          'branch_id': branchId,
+          'application_url': InvitationLink.applicationBaseUri(Uri.base)
+              ?.toString(),
         },
       );
-      if (response is! Map) {
+      if (response.data is! Map) {
         return const StaffInviteResult.refused(StaffInviteOutcome.failed);
       }
-      if (response['ok'] == true) {
-        // الرمز لا يصل إلا هنا، ومن القاعدة إلى هذه الشاشة مرة واحدة:
-        // القائمة تخبئه عن كل من لم يكتب الدعوة.
+      final data = Map<String, dynamic>.from(response.data as Map);
+      if (data['ok'] == true && data['invitation'] is Map) {
+        // الرمز يعود إلى صاحب الطلب فقط لعرضه احتياطيًا، بعد أن أنشأته الدالة
+        // بالـ RPC الموثّق ثم حاولت إرسال البريد من جهة الخادم.
+        final invitation = Map<String, dynamic>.from(data['invitation'] as Map);
         return StaffInviteResult(
           outcome: StaffInviteOutcome.success,
-          invitationId: '${response['invitation_id'] ?? ''}',
-          code: '${response['token'] ?? ''}',
-          email: '${response['email'] ?? ''}',
+          invitationId: '${invitation['invitation_id'] ?? ''}',
+          code: '${invitation['token'] ?? ''}',
+          email: '${invitation['email'] ?? ''}',
+          emailSent: data['email_sent'] == true,
+          acceptanceUrl: data['acceptance_url']?.toString(),
         );
       }
       return StaffInviteResult(
-        outcome: _inviteReason('${response['reason']}'),
-        invitationId: response['invitation_id'] == null
+        outcome: _inviteReason('${data['reason']}'),
+        invitationId: data['invitation_id'] == null
             ? null
-            : '${response['invitation_id']}',
+            : '${data['invitation_id']}',
       );
-    } on PostgrestException catch (error) {
+    } on FunctionException catch (error) {
+      final details = error.details;
+      final payload = details is Map ? details : const <String, dynamic>{};
+      final reason = payload['reason']?.toString();
       return StaffInviteResult.refused(
-        error.code == '42501'
+        reason == 'permission_denied' ||
+                error.status == 401 ||
+                error.status == 403
             ? StaffInviteOutcome.permissionDenied
             : StaffInviteOutcome.failed,
       );
@@ -289,6 +301,7 @@ class AdminStaffRepository implements StaffRepository {
     'unknown_branch' => StaffInviteOutcome.unknownBranch,
     'already_invited' => StaffInviteOutcome.alreadyInvited,
     'already_staff' => StaffInviteOutcome.alreadyStaff,
+    'permission_denied' => StaffInviteOutcome.permissionDenied,
     'not_found' => StaffInviteOutcome.notFound,
     'not_pending' => StaffInviteOutcome.notPending,
     _ => StaffInviteOutcome.failed,

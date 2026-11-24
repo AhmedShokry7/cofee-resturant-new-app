@@ -7,8 +7,17 @@ enum InvitationAcceptOutcome {
   /// الحساب أُنشئ وصار موظفًا نشطًا، فيُكمل الدخول بالمسار المجرب.
   accepted,
 
+  /// الرابط ناقص أو رمز الدعوة مشوّه.
+  incompleteLink,
+
   /// الرمز غير معروف، أو فراغ.
   unknown,
+
+  /// تعذر الاتصال بخدمة التحقق.
+  networkFailure,
+
+  /// خطأ خدمة غير متوقع — لا تُكشف تفاصيله للمستخدم.
+  serviceFailure,
 
   /// الرمز استُخدم من قبل.
   alreadyAccepted,
@@ -27,8 +36,13 @@ enum InvitationAcceptOutcome {
   /// القاعدة تطلب تأكيد البريد قبل أي كتابة، فلا جلسة تُنشأ هنا.
   emailConfirmationNeeded,
 
+  /// كود تأكيد البريد الذي وصل بالبريد لا يطابق كودًا حيًّا.
+  emailConfirmationCodeInvalid,
+
   /// كلمة مرور أضعف مما تطلبه Supabase.
   weakPassword,
+
+  /// أي رفض لا اسم له عند القاعدة، أو عطل شبكة.
   failed,
 }
 

@@ -27,4 +27,14 @@ abstract interface class AuthRepository {
     required String email,
     required String password,
   });
+
+  /// يتحقق من كود تأكيد البريد الذي أرسلته المصادقة عند التسجيل، ثم يسلم
+  /// الرمز للقاعدة. هذا هو المسار الذي يجعل القبول يعمل من داخل التطبيق
+  /// حين تكون المصادقة تطلب تأكيد البريد قبل إعطاء جلسة.
+  Future<InvitationAcceptOutcome> confirmEmailAndAccept({
+    required String token,
+    required String email,
+    required String password,
+    required String confirmationCode,
+  });
 }

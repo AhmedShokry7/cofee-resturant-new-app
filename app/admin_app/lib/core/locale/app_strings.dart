@@ -446,8 +446,22 @@ class S {
       _ar ? 'اختر كلمة مرور لحسابك' : 'Choose a password for your account';
   static String get invitationAcceptSubmit =>
       _ar ? 'قبول الدعوة' : 'Accept invitation';
+  static String get invitationIncompleteLink => _ar
+      ? 'رابط الدعوة غير مكتمل. افتح الرابط كاملاً أو أدخل رمز القبول.'
+      : 'This invitation link is incomplete. Open the full link or enter its acceptance code.';
   static String get invitationUnknown =>
       _ar ? 'هذا الرمز غير معروف.' : 'That code is not known.';
+  static String get invitationNetworkFailure => _ar
+      ? 'تعذر الاتصال بخدمة التحقق. تحقق من الإنترنت وحاول مجدداً.'
+      : 'Could not connect to invitation verification. Check your connection and try again.';
+  static String get invitationServiceFailure => _ar
+      ? 'تعذر التحقق من الدعوة الآن. حاول مجدداً لاحقاً.'
+      : 'Invitation verification is temporarily unavailable. Please try again later.';
+  static String get invitationInvalidLink => _ar
+      ? 'رابط الدعوة غير صالح. تحقق من الرابط الكامل.'
+      : 'This invitation link is invalid. Check that you have the complete link.';
+  static String get invitationLinkCopied =>
+      _ar ? 'تم نسخ رابط الدعوة' : 'Invitation link copied';
   static String get invitationAlreadyAccepted =>
       _ar ? 'استُخدم هذا الرمز من قبل.' : 'This code has already been used.';
   static String get invitationCancelled =>
@@ -464,8 +478,21 @@ class S {
       ? 'هذا الحساب عليه طلبات عميل، فلا يقلبه النظام إلى موظف.'
       : 'This account has customer orders, so it cannot become staff.';
   static String get invitationConfirmationNeeded => _ar
-      ? 'لا يقبل النظام دعوة قبل تأكيد البريد أولًا.'
-      : 'The system will not accept an invitation before the email is confirmed.';
+      ? 'أرسلنا كود تأكيد إلى بريدك. اكتبه هنا لإكمال القبول.'
+      : 'We sent a confirmation code to your email. Enter it here to finish accepting.';
+  static String get invitationConfirmationCodeLabel =>
+      _ar ? 'كود تأكيد البريد' : 'Email confirmation code';
+  static String get invitationConfirmationCodeHint => _ar
+      ? 'الكود المكوّن من 8 أرقام الذي وصل إلى بريدك.'
+      : 'The 8-digit code sent to your email.';
+  static String get invitationConfirmEmailSubmit =>
+      _ar ? 'تأكيد البريد وقبول الدعوة' : 'Confirm email and accept';
+  static String get invitationConfirmationCodeInvalid => _ar
+      ? 'كود التأكيد غير صحيح أو انتهت صلاحيته. تحقق من البريد وحاول مجددًا.'
+      : 'The confirmation code is wrong or expired. Check your email and try again.';
+  static String get invitationConfirmationCodeRequired => _ar
+      ? 'اكتب كود تأكيد البريد أولًا.'
+      : 'Enter the email confirmation code first.';
   static String get invitationWeakPassword => _ar
       ? 'كلمة المرور أضعف مما يطلبه النظام.'
       : 'That password is weaker than the system requires.';
@@ -813,8 +840,8 @@ class S {
   static String get staffInviteTitle =>
       _ar ? 'دعوة موظف جديد' : 'Invite a new staff member';
   static String get staffInviteDescription => _ar
-      ? 'تُنشأ الدعوة باسم وبريد ودور، ويحصل الموظف على رمز يقبله بنفسه من شاشة الدخول.'
-      : 'The invitation holds a name, an email and a role. The invitee uses its code themselves on the sign-in screen.';
+      ? 'تُنشأ الدعوة باسم وبريد ودور، ويُرسل رابط قبول آمن إلى بريد الموظف.'
+      : 'Create an invitation with a name, email and role; a secure acceptance link is sent to the employee.';
   static String get staffInviteName => _ar ? 'اسم الموظف' : 'Staff name';
   static String get staffInviteEmail => _ar ? 'بريد الموظف' : 'Staff email';
   static String get staffInviteRole => _ar ? 'الدور' : 'Role';
@@ -832,6 +859,19 @@ class S {
   static String get staffInviteCodeCopy => _ar ? 'نسخ الرمز' : 'Copy code';
   static String get staffInviteCodeCopied =>
       _ar ? 'تم نسخ الرمز' : 'The code was copied';
+  static String get staffInviteLinkCopy =>
+      _ar ? 'نسخ رابط الدعوة' : 'Copy invitation link';
+  static String get staffInviteLinkCopied =>
+      _ar ? 'تم نسخ رابط الدعوة' : 'Invitation link copied';
+  static String get staffInviteEmailSent => _ar
+      ? 'أُرسلت رسالة الدعوة إلى بريد الموظف.'
+      : 'The invitation email was sent to the employee.';
+  static String get staffInviteEmailDeliveryFailed => _ar
+      ? 'تعذّر إرسال البريد. استخدم زر نسخ الرابط لإرساله للموظف يدويًا.'
+      : 'Email could not be sent. Use Copy invitation link to share it manually.';
+  static String get staffInviteLinkUnavailable => _ar
+      ? 'رابط التطبيق غير مُعدّ؛ لا يمكن إنشاء رابط الدعوة.'
+      : 'The app link is not configured, so an invitation link cannot be created.';
   static String get staffNoInvitations =>
       _ar ? 'لا دعوات مُرسلة بعد.' : 'No invitations have been sent yet.';
   static String get staffInvitationPending =>

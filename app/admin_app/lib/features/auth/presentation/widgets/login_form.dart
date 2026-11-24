@@ -90,6 +90,7 @@ class LoginForm extends StatelessWidget {
               Align(
                 alignment: AlignmentDirectional.center,
                 child: TextButton(
+                  key: const Key('invitation-entry'),
                   onPressed: () => _acceptInvitation(context),
                   child: Text(S.invitationEntry),
                 ),
