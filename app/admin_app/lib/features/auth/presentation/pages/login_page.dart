@@ -62,8 +62,20 @@ class _LoginPageState extends State<LoginPage> {
       if (credentials == null) return;
       _emailController.text = credentials.email;
       _passwordController.text = credentials.password;
-      _submit();
+      _finishInvitation();
     });
+  }
+
+  /// Signup and email OTP verification already leave a valid Supabase
+  /// session. Reuse it after the invitation RPC instead of signing in a
+  /// second time and risking an incorrect-credentials error.
+  void _finishInvitation() {
+    if (SupabaseService.isReady &&
+        SupabaseService.client.auth.currentSession != null) {
+      context.read<AuthBloc>().add(const AuthSessionCheckRequested());
+      return;
+    }
+    _submit();
   }
 
   void _submit() {

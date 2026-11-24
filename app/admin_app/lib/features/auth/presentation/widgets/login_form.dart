@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/error/failure.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:admin_app/features/auth/presentation/bloc/auth_event.dart';
@@ -109,6 +110,11 @@ class LoginForm extends StatelessWidget {
     if (credentials == null || !context.mounted) return;
     emailController.text = credentials.email;
     passwordController.text = credentials.password;
+    if (SupabaseService.isReady &&
+        SupabaseService.client.auth.currentSession != null) {
+      context.read<AuthBloc>().add(const AuthSessionCheckRequested());
+      return;
+    }
     onSubmit();
   }
 }
