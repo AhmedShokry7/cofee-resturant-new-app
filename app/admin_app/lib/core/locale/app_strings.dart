@@ -884,6 +884,18 @@ class S {
       _ar ? 'سحب الدعوة' : 'Withdraw invite';
   static String get staffInvitationCancelledDone =>
       _ar ? 'تم سحب الدعوة' : 'The invitation was withdrawn';
+  static String get staffInvitationDelete => _ar ? 'حذف الدعوة' : 'Delete invite';
+  static String staffInvitationDeleteConfirm(String name) => _ar
+      ? 'سيُحذف سجل دعوة $name نهائيًا. إذا كانت مقبولة فلن يتأثر حساب الموظف.'
+      : 'The invitation record for $name will be deleted permanently. If accepted, the staff account will remain.';
+  static String get staffInvitationDeleted =>
+      _ar ? 'تم حذف سجل الدعوة.' : 'The invitation record was deleted.';
+  static String get staffRemove => _ar ? 'حذف الموظف' : 'Remove staff';
+  static String staffRemoveConfirm(String name) => _ar
+      ? 'سيُوقَف دخول $name إلى لوحة التحكم، مع الاحتفاظ بسجلاته التشغيلية والمالية.'
+      : 'This removes $name’s dashboard access while keeping their operational and payroll history.';
+  static String get staffRemoved =>
+      _ar ? 'تم إيقاف دخول الموظف.' : 'Staff access was removed.';
   static String get staffInvitationExpiresOn => _ar ? 'تنتهي في' : 'Expires';
   static String get staffInviteLoadingOptions =>
       _ar ? 'جارٍ تحميل الأدوار والفروع…' : 'Loading roles and branches…';

@@ -67,4 +67,7 @@ abstract interface class StaffRepository {
 
   /// يسحب دعوة لم تُقبل بعد؛ ترفضها القاعدة إن كانت خارج نطاق كاتبها.
   Future<StaffInviteOutcome> cancelInvitation(String invitationId);
+
+  /// يحذف سجل دعوة بعد التحقق من صلاحية الإدارة ونطاق الفرع في القاعدة.
+  Future<StaffInviteOutcome> deleteInvitation(String invitationId);
 }

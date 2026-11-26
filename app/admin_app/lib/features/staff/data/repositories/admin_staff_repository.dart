@@ -187,7 +187,8 @@ class AdminStaffRepository implements StaffRepository {
           'full_name': fullName,
           'role_code': roleCode,
           'branch_id': branchId,
-          'application_url': InvitationLink.applicationBaseUri(Uri.base)?.toString(),
+          'application_url': InvitationLink.applicationBaseUri(Uri.base)
+              ?.toString(),
         },
       );
       if (response.data is! Map) {
@@ -234,6 +235,26 @@ class AdminStaffRepository implements StaffRepository {
     try {
       final response = await _supabase.rpc(
         'admin_cancel_invitation',
+        params: {'p_invitation_id': invitationId},
+      );
+      if (response is Map && response['ok'] == true) {
+        return StaffInviteOutcome.success;
+      }
+      return _inviteReason('${response is Map ? response['reason'] : ''}');
+    } on PostgrestException catch (error) {
+      return error.code == '42501'
+          ? StaffInviteOutcome.permissionDenied
+          : StaffInviteOutcome.failed;
+    } catch (_) {
+      return StaffInviteOutcome.failed;
+    }
+  }
+
+  @override
+  Future<StaffInviteOutcome> deleteInvitation(String invitationId) async {
+    try {
+      final response = await _supabase.rpc(
+        'admin_delete_staff_invitation',
         params: {'p_invitation_id': invitationId},
       );
       if (response is Map && response['ok'] == true) {

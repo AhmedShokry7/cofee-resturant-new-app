@@ -23,6 +23,7 @@ class StaffPageBody extends StatelessWidget {
     required this.canManagePermissions,
     required this.onManage,
     required this.onEdit,
+    required this.onRemove,
     this.canReadEmployeeFiles = false,
     this.onEmployeeFile,
     required this.onInvite,
@@ -37,6 +38,7 @@ class StaffPageBody extends StatelessWidget {
   final bool canManagePermissions;
   final ValueChanged<AdminStaffMember> onManage;
   final ValueChanged<AdminStaffMember> onEdit;
+  final ValueChanged<AdminStaffMember> onRemove;
   final bool canReadEmployeeFiles;
   final ValueChanged<AdminStaffMember>? onEmployeeFile;
   final VoidCallback onInvite;
@@ -58,11 +60,10 @@ class StaffPageBody extends StatelessWidget {
                 text: S.staffInvitations,
                 onPressed: onShowInvitations,
                 leadingIcon: const Icon(AppIcons.email, size: 18),
-                variant: BtnVariant.outlined,
                 height: 42,
                 borderRadius: AppRadius.pill,
                 backgroundColor: AppColor.primaryColor,
-                textColor: AppColor.primaryColor,
+                textColor: AppColor.whiteColor,
               ),
               if (canManagePermissions)
                 AdminCreateButton(
@@ -84,6 +85,7 @@ class StaffPageBody extends StatelessWidget {
               onSearchChanged: onSearchChanged,
               canManagePermissions: canManagePermissions,
               canReadEmployeeFiles: canReadEmployeeFiles,
+              onRemove: onRemove,
               onManage: onManage,
               onEdit: onEdit,
               onEmployeeFile: onEmployeeFile,

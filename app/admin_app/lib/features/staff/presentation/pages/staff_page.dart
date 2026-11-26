@@ -4,11 +4,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/features/staff/data/models/admin_staff.dart';
+import 'package:admin_app/features/staff/domain/entities/staff_edit_outcome.dart';
 import 'package:admin_app/features/staff/presentation/manager/admin_staff_cubit.dart';
 import 'package:admin_app/features/staff/presentation/manager/admin_staff_state.dart';
 import 'package:admin_app/features/staff/presentation/widgets/staff_edit_dialog.dart';
 import 'package:admin_app/features/staff/presentation/widgets/staff_invite_dialog.dart';
 import 'package:admin_app/features/staff/presentation/widgets/staff_invitations_dialog.dart';
+import 'package:admin_app/features/staff/presentation/widgets/staff_messages.dart';
 import 'package:admin_app/features/staff/presentation/widgets/staff_permissions_dialog.dart';
 import 'package:admin_app/features/staff/presentation/widgets/staff_page_body.dart';
 import 'package:admin_app/features/hr/presentation/strings/hr_employee_strings.dart';
@@ -124,6 +126,41 @@ class _StaffPageState extends State<StaffPage> {
         .showSnackBar(SnackBar(content: Text(HrEmployeeStrings.saved)));
   }
 
+  Future<void> _removeStaff(AdminStaffMember member) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(S.staffRemove),
+        content: Text(S.staffRemoveConfirm(member.displayName())),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(S.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(S.staffRemove),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final outcome = await _cubit.updateStaff(
+      staffId: member.id,
+      status: 'suspended',
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          outcome == StaffEditOutcome.success
+              ? S.staffRemoved
+              : staffEditErrorMessage(outcome),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider<AdminStaffCubit>.value(
@@ -152,6 +189,7 @@ class _StaffPageState extends State<StaffPage> {
               canManage: widget.canManagePermissions,
             ),
             onEdit: (member) => _editMember(context, member),
+            onRemove: _removeStaff,
             onEmployeeFile: (member) => _openEmployeeFile(context, member),
             onInvite: _invite,
             onShowInvitations: _showInvitations,

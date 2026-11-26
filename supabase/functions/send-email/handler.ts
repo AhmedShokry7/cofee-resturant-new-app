@@ -124,6 +124,10 @@ const defaultEmailDesign: EmailDesign = {
   signupBodyAr:
     "\u{623}\u{62f}\u{62e}\u{644}\u{20}\u{631}\u{645}\u{632}\u{20}\u{627}\u{644}\u{62a}\u{62d}\u{642}\u{642}\u{20}\u{627}\u{644}\u{62a}\u{627}\u{644}\u{64a}\u{20}\u{641}\u{64a}\u{20}\u{627}\u{644}\u{62a}\u{637}\u{628}\u{64a}\u{642}\u{20}\u{644}\u{625}\u{643}\u{645}\u{627}\u{644}\u{20}\u{625}\u{646}\u{634}\u{627}\u{621}\u{20}\u{62d}\u{633}\u{627}\u{628}\u{643}\u{2e}",
   signupBodyEn: "Enter the code below to finish creating your account.",
+  signupSubjectEn: "New Coffee | Confirm your email",
+  signupTitleEn: "Confirm your email",
+  otpLabelAr: "\u{631}\u{645}\u{632}\u{20}\u{627}\u{644}\u{62a}\u{62d}\u{642}\u{642}",
+  otpLabelEn: "Verification code",
 };
 
 async function readEmailDesign(
@@ -314,7 +318,9 @@ export async function handleAuthEmailHook(
     title: replaceTemplate(template.title, variables),
     text: replaceTemplate(template.text, variables),
   };
-  const otpLabel = arabic ? design.otpLabelAr : design.otpLabelEn;
+  const otpLabel = arabic
+    ? design.otpLabelAr ?? "\u{631}\u{645}\u{632}\u{20}\u{627}\u{644}\u{62a}\u{62d}\u{642}\u{642}"
+    : design.otpLabelEn ?? "Verification code";
   const redirect = payload.email_data?.redirect_to ||
     payload.email_data?.site_url || "";
   const link = action !== "signup" && redirect
@@ -387,6 +393,50 @@ const invitationReasons = new Set([
 const invitationTokenPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+async function brevoDeliveryEvent(
+  apiKey: string,
+  messageId: string,
+  fetcher: typeof fetch,
+): Promise<{ event: string; reason: string | null } | null> {
+  const url = new URL("https://api.brevo.com/v3/smtp/statistics/events");
+  url.searchParams.set("messageId", messageId);
+  url.searchParams.set("days", "1");
+  url.searchParams.set("limit", "10");
+  const response = await fetcher(url, { headers: { "api-key": apiKey } });
+  if (!response.ok) return null;
+  const payload = await response.json();
+  if (!Array.isArray(payload?.events)) return null;
+  const matching = payload.events.find(
+    (event: any) => event?.messageId === messageId && typeof event?.event === "string",
+  );
+  if (!matching) return null;
+  const reason = typeof matching.reason === "string"
+    ? matching.reason
+        .split(/\s+/)
+        .map((part: string) => part.includes("@") ? "[address]" : part)
+        .join(" ")
+        .slice(0, 180)
+    : null;
+  return { event: matching.event, reason };
+}
+
+async function waitForBrevoDeliveryEvent(
+  apiKey: string,
+  messageId: string,
+  fetcher: typeof fetch,
+): Promise<{ event: string; reason: string | null } | null> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const result = await brevoDeliveryEvent(apiKey, messageId, fetcher);
+      if (result) return result;
+    } catch {
+      // The message send has already succeeded; delivery diagnostics are best effort.
+    }
+    if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 1500));
+  }
+  return null;
+}
+
 function invitationPublishableKey(
   env: (name: string) => string | undefined,
 ): string {
@@ -400,6 +450,7 @@ function invitationPublishableKey(
   }
 }
 
+const canonicalAdminAppUrl = "https://ahmedshokry7.github.io/cofee-resturant-new-app/admin/";
 function invitationBaseUrl(value: string | undefined): URL | null {
   if (!value) return null;
   try {
@@ -482,7 +533,8 @@ export async function handleInvitationRequest(
     : null;
   const appUrl = invitationBaseUrl(env("ADMIN_APP_URL")) ??
     sameOriginAppUrl ??
-    invitationBaseUrl(req.headers.get("referer") ?? undefined) ?? originUrl;
+    invitationBaseUrl(req.headers.get("referer") ?? undefined) ?? originUrl ??
+    invitationBaseUrl(canonicalAdminAppUrl);
   if (!appUrl) return safeInvitationFailure("email_not_configured");
 
   const fetcher = deps.fetch ?? fetch;
@@ -528,7 +580,28 @@ export async function handleInvitationRequest(
       return safeInvitationFailure("failed");
     }
 
-    const invitation = await rpcResponse.json() as InvitationRpcResult;
+    let invitation = await rpcResponse.json() as InvitationRpcResult;
+    if (invitation.ok !== true && invitation.reason === "already_invited") {
+      const resendResponse = await fetcher(
+        `${supabaseUrl}/rest/v1/rpc/admin_resend_staff_invitation`,
+        {
+          method: "POST",
+          headers: {
+            apikey: apiKey,
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ p_email: body.email }),
+        },
+      );
+      if (!resendResponse.ok) {
+        if (resendResponse.status === 401 || resendResponse.status === 403) {
+          return safeInvitationFailure("permission_denied");
+        }
+        return safeInvitationFailure("failed");
+      }
+      invitation = await resendResponse.json() as InvitationRpcResult;
+    }
     if (invitation.ok !== true) {
       const reason = typeof invitation.reason === "string" &&
           invitationReasons.has(invitation.reason)
@@ -570,12 +643,43 @@ export async function handleInvitationRequest(
           ),
           replyTo: env("EMAIL_REPLY_TO") ?? null,
         };
-      const result = deps.send
-        ? await deps.send(resendKey || brevoKey, email)
-        : resendKey
-        ? await sendWithResend(resendKey, email, fetcher)
-        : await sendEmail(brevoKey, email, fetcher);
+      // Staff invitations use Brevo whenever its key is configured, matching
+      // the provider used by the app's authentication OTP messages. Resend is
+      // only a fallback for deployments without a Brevo key.
+      let provider = brevoKey ? "brevo" : "resend";
+      let result = deps.send
+        ? await deps.send(brevoKey || resendKey, email)
+        : brevoKey
+        ? await sendEmail(brevoKey, email, fetcher)
+        : await sendWithResend(resendKey, email, fetcher);
+      if (!result.ok && !deps.send && brevoKey && resendKey) {
+        provider = "resend";
+        result = await sendWithResend(resendKey, email, fetcher);
+      }
       emailSent = result.ok;
+      if (emailSent) {
+        console.log("staff invitation email accepted by provider", {
+          provider,
+          messageId: result.id ?? null,
+        });
+        if (provider === "brevo" && result.id) {
+          const delivery = await waitForBrevoDeliveryEvent(
+            brevoKey,
+            result.id,
+            fetcher,
+          );
+          console.log("staff invitation delivery event", {
+            event: delivery?.event ?? "not_visible_yet",
+            reason: delivery?.reason ?? null,
+          });
+        }
+      } else {
+        const errorClass = result.error?.match(/^(resend|brevo)\s+(\d{3})/i);
+        console.error("staff invitation email delivery failed", {
+          provider: errorClass?.[1]?.toLowerCase() ?? (resendKey ? "resend" : "brevo"),
+          status: errorClass?.[2] ?? "network_or_provider_error",
+        });
+      }
     } catch {
       emailSent = false;
     }
@@ -1308,3 +1412,4 @@ export async function handleEmailRequest(
     return jsonResponse({ sent: 0, failed: 0, skipped: true, reason: message });
   }
 }
+

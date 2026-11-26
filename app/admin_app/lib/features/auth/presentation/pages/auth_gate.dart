@@ -19,11 +19,17 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   final _linkDispatcher = InvitationLinkDispatcher.instance;
+  bool _signOutRequestedForInvitation = false;
 
   @override
   void initState() {
     super.initState();
     _linkDispatcher.events.addListener(_handleInvitationLink);
+    // A link may have arrived before AuthGate was built. Check it once after
+    // the first frame, then also react when the initial session check finishes.
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _handleInvitationLink(),
+    );
   }
 
   @override
@@ -33,21 +39,31 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   void _handleInvitationLink() {
-    if (_linkDispatcher.events.value == null) return;
+    if (_linkDispatcher.events.value == null) {
+      _signOutRequestedForInvitation = false;
+      return;
+    }
+    if (_signOutRequestedForInvitation) return;
     final auth = context.read<AuthBloc>();
     if (auth.state is AuthSignedIn) {
+      _signOutRequestedForInvitation = true;
       auth.add(const AuthSignOutRequested());
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, AuthState>(
-      builder: (context, state) => switch (state) {
-        AuthChecking() => const StartupPage(),
-        AuthSignedIn(:final session) => AdminShell(session: session),
-        AuthSignedOut() => const LoginPage(),
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is AuthSignedIn) _handleInvitationLink();
       },
+      child: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, state) => switch (state) {
+          AuthChecking() => const StartupPage(),
+          AuthSignedIn(:final session) => AdminShell(session: session),
+          AuthSignedOut() => const LoginPage(),
+        },
+      ),
     );
   }
 }

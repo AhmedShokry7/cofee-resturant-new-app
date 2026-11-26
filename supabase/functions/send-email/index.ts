@@ -46,3 +46,4 @@ Deno.serve(async (req) => {
     unsubscribeToken: unsubscribeTokenFor,
   });
 });
+

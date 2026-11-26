@@ -21,6 +21,7 @@ class FakeStaffRepository implements StaffRepository {
     this.inviteCode,
     this.inviteEmailSent = true,
     this.cancelOutcome = StaffInviteOutcome.failed,
+    this.deleteInvitationOutcome = StaffInviteOutcome.failed,
   });
 
   List<AdminStaffMember> members;
@@ -39,6 +40,7 @@ class FakeStaffRepository implements StaffRepository {
   bool inviteEmailSent;
 
   StaffInviteOutcome cancelOutcome;
+  StaffInviteOutcome deleteInvitationOutcome;
 
   /// حين تُضبط تعيد قراءة القائمة هذا الاستثناء بدل الصفوف: جدار صلاحية أو
   /// انقطاع، والشاشة تفرّق بين «لا دعوات» و«لم تصل الدعوات».
@@ -52,6 +54,7 @@ class FakeStaffRepository implements StaffRepository {
 
   /// كل دعوة سُحبت، بمعرّفها لا بصفحتها.
   final List<String> cancellations = <String>[];
+  final List<String> invitationDeletions = <String>[];
 
   /// كم مرة أعيدت قراءة القائمة: النجاح وحده يستدعي إعادة القراءة.
   int invitationsReads = 0;
@@ -186,5 +189,11 @@ class FakeStaffRepository implements StaffRepository {
   Future<StaffInviteOutcome> cancelInvitation(String invitationId) async {
     cancellations.add(invitationId);
     return cancelOutcome;
+  }
+
+  @override
+  Future<StaffInviteOutcome> deleteInvitation(String invitationId) async {
+    invitationDeletions.add(invitationId);
+    return deleteInvitationOutcome;
   }
 }
