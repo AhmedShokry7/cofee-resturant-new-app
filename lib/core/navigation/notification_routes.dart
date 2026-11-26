@@ -13,6 +13,8 @@ import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 import 'package:new_coffee/features/profile/presentation/views/edit_profile_page.dart';
 import 'package:new_coffee/features/search/presentation/views/search_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
+import 'package:new_coffee/features/product_subscriptions/presentation/views/my_product_subscriptions_page.dart';
+import 'package:new_coffee/features/customer_reservations/presentation/views/my_reservations_page.dart';
 
 /// The screen a notification opens, or null when it owns no page.
 ///
@@ -51,9 +53,12 @@ String? routeForNotification({
     'orders' => OrdersPage.routeName,
     'loyalty' => LoyaltyPage.routeName,
     'subscription' => SubscriptionDetailsPage.routeName,
+    'product_subscriptions' => MyProductSubscriptionsPage.routeName,
     'notifications' => NotificationsPage.routeName,
+    'my_reservations' => MyReservationsPage.routeName,
     _ => switch (relatedEntityType) {
       'order' => OrdersPage.routeName,
+      'event_request' => MyReservationsPage.routeName,
       'loyalty' => LoyaltyPage.routeName,
       'subscription' => SubscriptionDetailsPage.routeName,
       _ => switch (type) {

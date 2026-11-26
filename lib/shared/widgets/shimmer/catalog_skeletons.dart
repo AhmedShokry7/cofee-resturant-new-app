@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_card.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/category_circle_item.dart';
@@ -162,7 +162,9 @@ class ProductsCarouselSkeleton extends StatelessWidget {
         ),
         if (showSubtitle) ...[
           SizedBox(height: AppSpacing.xs),
-          const Shimmer(child: ShimmerLine(widthFactor: 0.5, height: 11)),
+          const Shimmer(
+            child: ShimmerLine(widthFactor: 0.5, height: AppSizes.px11),
+          ),
         ],
         SizedBox(height: AppSpacing.md),
         SizedBox(
@@ -204,9 +206,9 @@ class BundleCardSkeleton extends StatelessWidget {
               ),
             ),
             SizedBox(height: AppSpacing.sm),
-            const ShimmerLine(widthFactor: 0.9, height: 13),
+            const ShimmerLine(widthFactor: 0.9, height: AppSizes.px13),
             SizedBox(height: AppSpacing.xs),
-            const ShimmerLine(widthFactor: 0.6, height: 11),
+            const ShimmerLine(widthFactor: 0.6, height: AppSizes.px11),
             SizedBox(height: AppSpacing.xs),
             Row(
               children: [
@@ -217,7 +219,7 @@ class BundleCardSkeleton extends StatelessWidget {
                 ),
                 SizedBox(width: AppSpacing.xs),
                 const Expanded(
-                  child: ShimmerLine(widthFactor: 0.7, height: 11),
+                  child: ShimmerLine(widthFactor: 0.7, height: AppSizes.px11),
                 ),
               ],
             ),
@@ -288,9 +290,9 @@ class BundleListTileSkeleton extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ShimmerLine(widthFactor: 0.85, height: 15),
+                  ShimmerLine(widthFactor: 0.85, height: AppSizes.px15),
                   SizedBox(height: AppSpacing.xs),
-                  ShimmerLine(widthFactor: 0.6, height: 11),
+                  ShimmerLine(widthFactor: 0.6, height: AppSizes.px11),
                   SizedBox(height: AppSpacing.xs),
                   ShimmerLine(
                     width: AppDimensions.skeletonLineShort,

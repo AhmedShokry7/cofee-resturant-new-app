@@ -1,5 +1,6 @@
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/design_text.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -15,6 +16,7 @@ import 'package:new_coffee/features/loyalty/presentation/views/widgets/reward_ca
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 class LoyaltyPage extends StatefulWidget {
   const LoyaltyPage({super.key});
@@ -93,7 +95,14 @@ class _LoyaltyPageState extends State<LoyaltyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: DesignText(S.loyaltyPoints, page: 'loyalty', label: 'loyaltyPoints')),
+      appBar: AppBar(
+        leading: const AppBackButton(),
+        title: DesignText(
+          S.loyaltyPoints,
+          page: 'loyalty',
+          label: 'loyaltyPoints',
+        ),
+      ),
       body: BlocListener<LoyaltyCubit, LoyaltyState>(
         // The rewards are public reference rows; when they arrived but the
         // wallet did not, the page has something to show and only the balance
@@ -104,8 +113,15 @@ class _LoyaltyPageState extends State<LoyaltyPage> {
           if (state.rewards.isEmpty) return;
           // What the server said stays out of the sentence — the customer needs
           // to know the points on screen may be old, not which table refused.
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: DesignText(S.couldNotRefreshWallet, page: 'loyalty', label: 'couldNotRefreshWallet')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: DesignText(
+                S.couldNotRefreshWallet,
+                page: 'loyalty',
+                label: 'couldNotRefreshWallet',
+              ),
+            ),
+          );
         },
         child: BlocBuilder<LoyaltyCubit, LoyaltyState>(
           builder: (context, state) {
@@ -154,9 +170,13 @@ class _LoyaltyPageState extends State<LoyaltyPage> {
                   ),
                   action: state.rewards.isEmpty
                       ? null
-                      : TextButton(
+                      : CustomTextButton(
                           onPressed: () => _openRewards(context, state.rewards),
-                          child: DesignText(S.loyaltyShowAll, page: 'loyalty', label: 'loyaltyShowAll'),
+                          child: DesignText(
+                            S.loyaltyShowAll,
+                            page: 'loyalty',
+                            label: 'loyaltyShowAll',
+                          ),
                         ),
                 ),
                 SizedBox(height: AppSpacing.md),
@@ -184,9 +204,13 @@ class _LoyaltyPageState extends State<LoyaltyPage> {
                     subtitle: S.loyaltyProductRewardsCount(
                       locked.where((reward) => reward.isProduct).length,
                     ),
-                    action: TextButton(
+                    action: CustomTextButton(
                       onPressed: () => _openRewards(context, state.rewards),
-                      child: DesignText(S.loyaltyShowAll, page: 'loyalty', label: 'loyaltyShowAll'),
+                      child: DesignText(
+                        S.loyaltyShowAll,
+                        page: 'loyalty',
+                        label: 'loyaltyShowAll',
+                      ),
                     ),
                   ),
                   SizedBox(height: AppSpacing.md),
@@ -198,13 +222,17 @@ class _LoyaltyPageState extends State<LoyaltyPage> {
                   _SectionHeading(
                     title: S.history,
                     subtitle: S.loyaltyHistoryCount(state.transactions.length),
-                    action: TextButton(
+                    action: CustomTextButton(
                       onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
                           builder: (_) => const LoyaltyHistoryPage(),
                         ),
                       ),
-                      child: DesignText(S.loyaltyShowAll, page: 'loyalty', label: 'loyaltyShowAll'),
+                      child: DesignText(
+                        S.loyaltyShowAll,
+                        page: 'loyalty',
+                        label: 'loyaltyShowAll',
+                      ),
                     ),
                   ),
                   SizedBox(height: AppSpacing.md),

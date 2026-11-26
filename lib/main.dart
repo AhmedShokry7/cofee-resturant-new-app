@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 
 import 'package:new_coffee/app.dart';
@@ -5,9 +7,8 @@ import 'package:new_coffee/core/startup/app_bootstrap.dart';
 
 /// The entry point.
 ///
-/// Only two things happen here: the binding is taken, then [bootstrapApp]
-/// brings up the services the app runs on and says where to resume. A step
-/// that fails is logged there and never stops the first frame.
+/// Load the local session and the Supabase client, render the app, then bring
+/// up Firebase and push delivery in the background.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -18,4 +19,5 @@ Future<void> main() async {
       onboardingDone: startup.onboardingDone,
     ),
   );
+  unawaited(startBackgroundServices());
 }

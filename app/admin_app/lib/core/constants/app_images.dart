@@ -5,4 +5,5 @@ class AppImages {
   static const String moon = 'assets/images/moon.png';
   static const String sun = 'assets/images/sun.png';
   static const String welcomeImage = 'assets/images/welcome_page.png';
+  static const String aiBot = 'assets/images/ai_bot.png';
 }

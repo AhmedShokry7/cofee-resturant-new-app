@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/presentation/manager/email_auth/email_auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/email_otp_page_body.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 /// The second half of the e-mail code door: the customer types what the mail
 /// carried.
@@ -22,7 +23,7 @@ class EmailOtpPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(leading: const AppBackButton()),
       body: BlocProvider(
         create: (context) => EmailAuthCubit(context.read<AuthRepository>()),
         child: EmailOtpPageBody(

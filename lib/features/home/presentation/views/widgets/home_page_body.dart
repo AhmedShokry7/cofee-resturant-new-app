@@ -1,11 +1,18 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/design/data/model/published_design.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
+import 'package:new_coffee/features/customer_bundles/presentation/views/home_personal_bundles_section.dart';
+import 'package:new_coffee/features/customer_reservations/data/model/customer_event_request.dart';
+import 'package:new_coffee/features/customer_reservations/presentation/views/event_reminder_home_section.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
+import 'package:new_coffee/features/home/data/model/banner_model.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_banner_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_bundles_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_categories_section.dart';
@@ -16,24 +23,33 @@ import 'package:new_coffee/features/home/presentation/views/widgets/home_popular
 import 'package:new_coffee/features/home/presentation/views/widgets/home_recommendations_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_search_bar.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_section.dart';
-import 'package:new_coffee/features/home/presentation/views/widgets/home_single_banner_section.dart';
-import 'package:new_coffee/features/weather/presentation/manager/weather/weather_cubit.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
-class HomePageBody extends StatelessWidget {
+class HomePageBody extends StatefulWidget {
   const HomePageBody({super.key});
 
-  /// Pull-to-refresh reload the catalogue snapshot and the weather rule behind
-  /// the recommendations in one gesture, like other food apps.
-  ///
-  /// It forces the read past the cache: a refresh gesture that answered from the
-  /// cache it had just read would refresh nothing.
-  Future<void> _refresh(BuildContext context) => Future.wait([
-    context.read<HomeCubit>().load(forceRefresh: true),
-    context.read<WeatherCubit>().load(),
-  ]);
+  @override
+  State<HomePageBody> createState() => _HomePageBodyState();
+}
+
+class _HomePageBodyState extends State<HomePageBody> {
+  Timer? _reminderExpiryTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _reminderExpiryTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _reminderExpiryTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,9 +59,8 @@ class HomePageBody extends StatelessWidget {
           // First load: every section is empty, so show skeletons that mirror
           // the real sections instead of a blank page with one spinner.
           if (state.isFirstLoad) {
-            return RefreshIndicator(
-              onRefresh: () => _refresh(context),
-              child: const HomeLoadingView(),
+            return HomeLoadingView(
+              showPersonalBundles: SupabaseService.isSignedIn,
             );
           }
           // Total failure: nothing to show and no silent blank page. The
@@ -73,15 +88,16 @@ class HomePageBody extends StatelessWidget {
               ),
             );
           }
-          return RefreshIndicator(
-            onRefresh: () => _refresh(context),
-            child: ListView(
-              // Pull-to-refresh must work even when the content is short.
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: HomeSection.bodyPadding,
-              children: _homeChildren(
-                context.watch<DesignCubit>().state.homeSections,
-              ),
+          return ListView(
+            padding: HomeSection.bodyPadding,
+            children: _homeChildren(
+              context.watch<DesignCubit>().state.homeSections,
+              state.eventReminders
+                  .where(
+                    (event) => (event.quotedStartAt ?? event.preferredStartAt)
+                        .isAfter(DateTime.now()),
+                  )
+                  .toList(growable: false),
             ),
           );
         },
@@ -94,15 +110,62 @@ class HomePageBody extends StatelessWidget {
 ///
 /// الفراغ بين قسمين هو الحشو نفسه في الحالتين، فيبقى التبديل بين المنشور
 /// والافتراضي تبديل ترتيب لا تبديل مسافات.
-List<Widget> _homeChildren(List<PublishedSection> document) {
+List<Widget> _homeChildren(
+  List<PublishedSection> document,
+  List<CustomerEventRequest> reminders,
+) {
   final sections = buildHomeDocumentSections(document);
-  final children = sections.isEmpty ? _defaultHomeSections : sections;
+  final pageSections = sections.isEmpty ? _defaultHomeSections : sections;
+  final reminderIndex = _reminderIndex(
+    document,
+    pageSections,
+    sections.isEmpty,
+  );
+  final children = <Widget>[
+    ...pageSections.take(reminderIndex),
+    if (reminders.isNotEmpty)
+      HomeSection(child: EventReminderHomeSection(reminders: reminders)),
+    ...pageSections.skip(reminderIndex),
+    const HomeSection(child: HomePersonalBundlesSection()),
+  ];
   return <Widget>[
     for (var index = 0; index < children.length; index++) ...<Widget>[
       if (index > 0) SizedBox(height: AppSpacing.lg),
       children[index],
     ],
   ];
+}
+
+int _reminderIndex(
+  List<PublishedSection> document,
+  List<Widget> renderedSections,
+  bool isDefault,
+) {
+  if (isDefault) {
+    final index = renderedSections.indexWhere(
+      (section) =>
+          section is HomeBannerSection &&
+          section.placement == BannerPlacement.hero,
+    );
+    return index < 0 ? 0 : index + 1;
+  }
+  var sourceIndex = document.indexWhere(
+    (section) =>
+        section.visible &&
+        section.type == DesignWidgetTypes.bannerCarousel &&
+        BannerPlacement.fromStorage(section.property('displayLocation')) ==
+            BannerPlacement.hero,
+  );
+  if (sourceIndex < 0) {
+    sourceIndex = document.indexWhere(
+      (section) =>
+          section.visible && section.type == DesignWidgetTypes.bannerCarousel,
+    );
+  }
+  if (sourceIndex < 0) return 0;
+  return buildHomeDocumentSections(
+    document.take(sourceIndex + 1).toList(growable: false),
+  ).length;
 }
 
 /// ترتيب الصفحة كما كان قبل الاستوديو، مكتوبًا في مصدره.
@@ -118,7 +181,7 @@ const List<Widget> _defaultHomeSections = <Widget>[
   HomeBannerSection(),
   HomeSection(child: HomeCategoriesSection()),
   HomeSection(child: HomePopularSection()),
-  HomeSection(child: HomeSingleBannerSection()),
+  HomeSection(child: HomeBannerSection(placement: BannerPlacement.inline)),
   HomeSection(child: HomeRecommendationsSection()),
   HomeSection(child: HomeBundlesSection()),
 ];

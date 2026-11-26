@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_icons.dart';
@@ -96,11 +97,11 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
         ),
       ),
       actions: [
-        TextButton(
+        CustomTextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(S.cancel),
         ),
-        TextButton(onPressed: _submit, child: Text(S.save)),
+        CustomTextButton(onPressed: _submit, child: Text(S.save)),
       ],
     );
   }

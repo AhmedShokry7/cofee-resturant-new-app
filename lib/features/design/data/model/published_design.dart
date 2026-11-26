@@ -93,8 +93,9 @@ class PublishedTheme {
 
   static String _hex(Color color) {
     final value = color.toARGB32();
-    final rgb = value & 0xFFFFFF;
-    return '#${rgb.toRadixString(16).padLeft(6, '0').toUpperCase()}';
+    final hasAlpha = (value >> 24) != 0xFF;
+    final encoded = hasAlpha ? value : value & 0xFFFFFF;
+    return '#${encoded.toRadixString(16).padLeft(hasAlpha ? 8 : 6, '0').toUpperCase()}';
   }
 
   /// الاسم كما هو في [_textFactors]؛ غير موجود يعني طبقة من مصدر آخر —
@@ -121,7 +122,9 @@ class PublishedTheme {
   @override
   int get hashCode => Object.hash(
     textFactor,
-    Object.hashAll(colors.entries),
+    Object.hashAllUnordered(
+      colors.entries.map((e) => Object.hash(e.key, e.value)),
+    ),
     appNameAr,
     appNameEn,
     logoUrl,

@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/preview/preview_bridge.dart';
 import 'package:new_coffee/features/design/data/model/published_design.dart';
@@ -101,7 +103,10 @@ class _PreviewSectionTapState extends State<PreviewSectionTap> {
                   child: IgnorePointer(
                     child: Container(
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.blue, width: 2),
+                        border: Border.all(
+                          color: AppColor.primaryColor,
+                          width: AppSizes.px2,
+                        ),
                       ),
                     ),
                   ),

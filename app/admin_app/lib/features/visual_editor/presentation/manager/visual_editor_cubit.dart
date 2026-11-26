@@ -39,6 +39,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   OutboundMessage? _pendingMessage;
   final _outbound = <OutboundMessage>[];
   int _messageSequence = 0;
+
   /// Current preview page ID getter
   String _previewPageId = 'home';
   String get previewPageId => _previewPageId;
@@ -60,7 +61,6 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     _previewPageId = pageId;
     emit(state.copyWith(previewPageId: pageId));
   }
-
 
   /// هل توجد تعديلات غير محفوظة على الصفحة المفتوحة.
   bool get currentPageHasUnsavedEdits => _dirtyPages.contains(_previewPageId);
@@ -1193,8 +1193,9 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   /// يكتب نسخة المحرّر ويهمل ما كتبته الجلسة الأخرى على هذه الصفحات.
   Future<void> forceSaveConflicted() async {
     await saveDraft(force: true);
-    if (!isClosed && _conflictedPages.isEmpty)
+    if (!isClosed && _conflictedPages.isEmpty) {
       emit(state.copyWith(clearConflict: true));
+    }
   }
 
   /// نشر التصميم.

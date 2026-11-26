@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:js_interop';
 import 'dart:ui_web' as ui_web;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:web/web.dart' as web;
 
 import 'package:new_coffee/core/theme/app_color.dart';
@@ -81,7 +81,10 @@ class DbNetworkImageImpl extends DbNetworkImage {
       img.onerror = ((JSObject? _) {
         img.style.display = 'none';
       }).toJS;
-      ui_web.platformViewRegistry.registerViewFactory(type, (int viewId) => img);
+      ui_web.platformViewRegistry.registerViewFactory(
+        type,
+        (int viewId) => img,
+      );
       _registered[type] = type;
     }
     return SizedBox(

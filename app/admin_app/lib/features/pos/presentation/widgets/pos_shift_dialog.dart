@@ -23,6 +23,7 @@ import 'package:admin_app/shared/widgets/admin_stat_tile.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
+import 'package:admin_app/shared/widgets/currency_input_row.dart';
 
 /// Opens the cashier shift panel: the live drawer, cash movements, the drawer
 /// count and the shift history.
@@ -1045,24 +1046,31 @@ class _OpenShiftFormState extends State<_OpenShiftForm> {
             ),
           ],
           const SizedBox(height: AppSpacing.lg),
-          TextField(
-            key: const Key('pos-shift-open-float'),
-            controller: _float,
-            autofocus: true,
-            enabled: !widget.opening,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [_moneyInputFormatter],
-            style: TextStyle(
-              color: adminBodyColor(theme),
-              fontSize: AppFontSizes.size12,
-              height: AppTextHeights.line1_5,
+          CurrencyInputRow(
+            child: TextField(
+              key: const Key('pos-shift-open-float'),
+              controller: _float,
+              autofocus: true,
+              enabled: !widget.opening,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [_moneyInputFormatter],
+              style: TextStyle(
+                color: adminBodyColor(theme),
+                fontSize: AppFontSizes.size12,
+                height: AppTextHeights.line1_5,
+              ),
+              decoration:
+                  adminDialogFieldDecoration(
+                    context,
+                    label: S.posShiftOpeningFloat,
+                    hint: S.posShiftOpeningFloatHint,
+                    required: true,
+                  ).copyWith(
+                    constraints: const BoxConstraints(minHeight: AppSizes.px48),
+                  ),
             ),
-            decoration: adminDialogFieldDecoration(
-              context,
-              label: S.posShiftOpeningFloat,
-              hint: S.posShiftOpeningFloatHint,
-              required: true,
-            ).copyWith(suffixIcon: const CurrencyIcon(size: 10)),
           ),
           const SizedBox(height: AppSpacing.md),
           _CashierPicker(
@@ -1310,26 +1318,33 @@ class _MovementDialogState extends State<_MovementDialog> {
                           AdminErrorBanner(message: failure),
                           const SizedBox(height: AppSpacing.md),
                         ],
-                        TextField(
-                          key: const Key('pos-shift-movement-amount'),
-                          controller: _amount,
-                          autofocus: true,
-                          enabled: !state.isSavingMovement,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
+                        CurrencyInputRow(
+                          child: TextField(
+                            key: const Key('pos-shift-movement-amount'),
+                            controller: _amount,
+                            autofocus: true,
+                            enabled: !state.isSavingMovement,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            inputFormatters: [_moneyInputFormatter],
+                            style: TextStyle(
+                              color: adminBodyColor(theme),
+                              fontSize: AppFontSizes.size12,
+                              height: AppTextHeights.line1_5,
+                            ),
+                            decoration:
+                                adminDialogFieldDecoration(
+                                  context,
+                                  label: S.posShiftMovementAmount,
+                                  hint: S.posShiftOpeningFloatHint,
+                                  required: true,
+                                ).copyWith(
+                                  constraints: const BoxConstraints(
+                                    minHeight: AppSizes.px48,
+                                  ),
+                                ),
                           ),
-                          inputFormatters: [_moneyInputFormatter],
-                          style: TextStyle(
-                            color: adminBodyColor(theme),
-                            fontSize: AppFontSizes.size12,
-                            height: AppTextHeights.line1_5,
-                          ),
-                          decoration: adminDialogFieldDecoration(
-                            context,
-                            label: S.posShiftMovementAmount,
-                            hint: S.posShiftOpeningFloatHint,
-                            required: true,
-                          ).copyWith(suffixIcon: const CurrencyIcon(size: 10)),
                         ),
                         const SizedBox(height: AppSpacing.md),
                         TextField(
@@ -1463,27 +1478,34 @@ class _CloseShiftDialogState extends State<_CloseShiftDialog> {
                         ],
                         _DrawerSummary(shift: shift),
                         const SizedBox(height: AppSpacing.lg),
-                        TextField(
-                          key: const Key('pos-shift-counted'),
-                          controller: _counted,
-                          autofocus: true,
-                          enabled: !state.isClosingShift,
-                          onChanged: (_) => setState(() {}),
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
+                        CurrencyInputRow(
+                          child: TextField(
+                            key: const Key('pos-shift-counted'),
+                            controller: _counted,
+                            autofocus: true,
+                            enabled: !state.isClosingShift,
+                            onChanged: (_) => setState(() {}),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            inputFormatters: [_moneyInputFormatter],
+                            style: TextStyle(
+                              color: adminBodyColor(theme),
+                              fontSize: AppFontSizes.size12,
+                              height: AppTextHeights.line1_5,
+                            ),
+                            decoration:
+                                adminDialogFieldDecoration(
+                                  context,
+                                  label: S.posShiftCountPrompt,
+                                  hint: S.posShiftCountHint,
+                                  required: true,
+                                ).copyWith(
+                                  constraints: const BoxConstraints(
+                                    minHeight: AppSizes.px48,
+                                  ),
+                                ),
                           ),
-                          inputFormatters: [_moneyInputFormatter],
-                          style: TextStyle(
-                            color: adminBodyColor(theme),
-                            fontSize: AppFontSizes.size12,
-                            height: AppTextHeights.line1_5,
-                          ),
-                          decoration: adminDialogFieldDecoration(
-                            context,
-                            label: S.posShiftCountPrompt,
-                            hint: S.posShiftCountHint,
-                            required: true,
-                          ).copyWith(suffixIcon: const CurrencyIcon(size: 10)),
                         ),
                         const SizedBox(height: AppSpacing.md),
                         _VarianceStrip(variance: variance),

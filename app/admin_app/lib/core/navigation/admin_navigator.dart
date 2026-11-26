@@ -10,18 +10,35 @@ class AdminNavigator extends InheritedWidget {
   const AdminNavigator({
     super.key,
     required this.onSelect,
+    this.onOpenOrder,
+    this.onOpenProduct,
     required super.child,
   });
 
   /// يختار قسمًا بمعرّف `AdminDestination` نفسه الذي تستعمله القائمة.
   final void Function(String id) onSelect;
 
+  /// يفتح طلبًا من ملخص اللوحة، إن كان الحساب يملك شاشة الطلبات.
+  final ValueChanged<String>? onOpenOrder;
+
+  /// يفتح قائمة المنتجات ببحث الاسم الذي ظهر في ملخص المبيعات.
+  final ValueChanged<String>? onOpenProduct;
+
   /// اليد إن كانت تحت قشرة؛ و`null` خارجها — في اختبار صفحة مفردة أو في
   /// نافذة تُبنى بلا قشرة. من يسمع `null` يخفي رابطه بدل أن يدّعي فعلًا.
   static void Function(String id)? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<AdminNavigator>()?.onSelect;
 
+  static ValueChanged<String>? maybeOpenOrder(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<AdminNavigator>()?.onOpenOrder;
+
+  static ValueChanged<String>? maybeOpenProduct(BuildContext context) => context
+      .dependOnInheritedWidgetOfExactType<AdminNavigator>()
+      ?.onOpenProduct;
+
   @override
   bool updateShouldNotify(AdminNavigator oldWidget) =>
-      oldWidget.onSelect != onSelect;
+      oldWidget.onSelect != onSelect ||
+      oldWidget.onOpenOrder != onOpenOrder ||
+      oldWidget.onOpenProduct != onOpenProduct;
 }

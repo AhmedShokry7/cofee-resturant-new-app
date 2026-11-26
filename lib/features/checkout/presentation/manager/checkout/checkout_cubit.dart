@@ -67,6 +67,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   String? _pendingOrderIdempotencyKey;
   String? _loadedAttemptUserId;
   bool _orderSubmissionInProgress = false;
+  String? _subscriptionRunId;
   int _quoteGeneration = 0;
   String? _requestedQuoteSignature;
 
@@ -314,6 +315,51 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     // about the previous branch and must not be carried over.
     emit(state.copyWith(addressOutOfZone: false, isResolvingZone: false));
     resolveZoneForSelectedAddress();
+  }
+
+  /// Prepares the regular checkout screens for one due subscription run.
+  /// The run is linked to the order only when the normal checkout RPC succeeds.
+  Future<void> prepareSubscriptionOrder({
+    required String runId,
+    required String targetBranchId,
+    required String fulfillmentType,
+    String? addressId,
+  }) async {
+    if (state.isLoading) await load();
+    if (isClosed) return;
+
+    final targetBranch = targetBranchId.trim();
+    if (targetBranch.isEmpty) throw StateError('Subscription branch missing');
+    if (branchId != targetBranch) {
+      setBranch(targetBranch);
+      await _loadDeliveryZones();
+    }
+
+    final requestedFulfillment = fulfillmentType == 'delivery'
+        ? FulfillmentType.delivery
+        : FulfillmentType.pickup;
+    if (requestedFulfillment.isDelivery) {
+      if (state.deliveryZones.isEmpty) {
+        await _loadDeliveryZones();
+      }
+      if (!setFulfillment(FulfillmentType.delivery)) {
+        throw StateError('Subscription delivery is unavailable');
+      }
+      final address = state.addresses.where((item) => item.id == addressId);
+      if (address.isEmpty) throw StateError('Subscription address unavailable');
+      selectAddress(address.first);
+      await resolveZoneForSelectedAddress();
+      if (state.addressOutOfZone || state.selectedDeliveryZone == null) {
+        throw StateError('Subscription address is outside delivery zones');
+      }
+    } else {
+      setFulfillment(FulfillmentType.pickup);
+    }
+    _subscriptionRunId = runId;
+  }
+
+  void clearSubscriptionOrder() {
+    _subscriptionRunId = null;
   }
 
   /// Switches between pickup and delivery. Delivery is refused when the branch
@@ -850,6 +896,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       addressId: isDelivery ? state.selectedAddress!.id : null,
       savedCardId: state.selectedSavedCard?.id,
       couponCode: state.appliedCoupon?.coupon.code,
+      subscriptionRunId: _subscriptionRunId,
     );
     _orderSubmissionInProgress = true;
     emit(
@@ -882,6 +929,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
               deliveryZoneId: orderArgs.deliveryZoneId,
               addressId: orderArgs.addressId,
               couponCode: orderArgs.couponCode,
+              subscriptionRunId: _subscriptionRunId,
             )
           : await _orders.placeOrder(
               branchId: orderArgs.branchId,
@@ -919,6 +967,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
           ),
         ),
       );
+      _subscriptionRunId = null;
       // The server has the last word on the discount. If it granted less than
       // the approval the customer saw (the coupon expired, ran out of uses or
       // no longer fits the cart), the coupon is dropped and the difference is
@@ -1046,6 +1095,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     required String? addressId,
     required String? savedCardId,
     required String? couponCode,
+    String? subscriptionRunId,
   }) {
     final canonical = jsonEncode([
       branchId,
@@ -1054,6 +1104,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       addressId,
       savedCardId,
       couponCode?.trim().toUpperCase(),
+      subscriptionRunId,
       for (final item in items)
         [
           item.product.id,

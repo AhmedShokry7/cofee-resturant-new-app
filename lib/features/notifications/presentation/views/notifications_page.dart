@@ -1,5 +1,6 @@
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/design_text.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'dart:async';
@@ -10,6 +11,7 @@ import 'package:new_coffee/features/notifications/data/model/notification_model.
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/notifications/presentation/views/widgets/notifications_page_body.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 /// The customer's own messages, and the switches that decide what is allowed to
 /// reach the phone.
@@ -71,14 +73,22 @@ class _NotificationsPageState extends State<NotificationsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: DesignText(S.notificationDeleteAll, page: 'notifications', label: 'notificationDeleteAll'),
-        content: DesignText(S.notificationDeleteAllConfirm, page: 'notifications', label: 'notificationDeleteAllConfirm'),
+        title: DesignText(
+          S.notificationDeleteAll,
+          page: 'notifications',
+          label: 'notificationDeleteAll',
+        ),
+        content: DesignText(
+          S.notificationDeleteAllConfirm,
+          page: 'notifications',
+          label: 'notificationDeleteAllConfirm',
+        ),
         actions: [
-          TextButton(
+          CustomTextButton(
             onPressed: () => Navigator.pop(context, false),
             child: DesignText(S.cancel, page: 'notifications', label: 'cancel'),
           ),
-          TextButton(
+          CustomTextButton(
             onPressed: () => Navigator.pop(context, true),
             child: DesignText(S.delete, page: 'notifications', label: 'delete'),
           ),
@@ -123,6 +133,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         }
         return Scaffold(
           appBar: AppBar(
+            leading: const AppBackButton(),
             title: Text(
               state.selectedIds.isEmpty
                   ? S.notifications
@@ -130,12 +141,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
             ),
             actions: [
               if (state.selectedIds.isNotEmpty) ...[
-                IconButton(
+                CustomIconButton(
                   tooltip: S.notificationDeleteSelected,
                   icon: const Icon(AppIcons.delete),
                   onPressed: _deleteSelected,
                 ),
-                IconButton(
+                CustomIconButton(
                   tooltip: S.notificationCancelSelection,
                   icon: const Icon(AppIcons.close),
                   onPressed: () =>
@@ -143,7 +154,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 ),
               ] else ...[
                 if (state.unreadCount > 0)
-                  IconButton(
+                  CustomIconButton(
                     key: const ValueKey('notification-mark-all'),
                     tooltip: S.notificationMarkAllRead,
                     icon: const Icon(AppIcons.checkmark),
@@ -151,7 +162,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         context.read<NotificationsCubit>().markAllRead(),
                   ),
                 if (state.notifications.isNotEmpty)
-                  IconButton(
+                  CustomIconButton(
                     tooltip: S.notificationSelectAll,
                     icon: const Icon(AppIcons.checkmarkCircle),
                     onPressed: () => _selectAll(state.notifications),
@@ -164,7 +175,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     itemBuilder: (context) => [
                       PopupMenuItem(
                         value: 'delete_all',
-                        child: DesignText(S.notificationDeleteAll, page: 'notifications', label: 'notificationDeleteAll'),
+                        child: DesignText(
+                          S.notificationDeleteAll,
+                          page: 'notifications',
+                          label: 'notificationDeleteAll',
+                        ),
                       ),
                     ],
                   ),

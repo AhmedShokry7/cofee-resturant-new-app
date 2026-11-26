@@ -8,6 +8,7 @@ import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
+import 'package:admin_app/core/navigation/admin_navigator.dart';
 import 'package:admin_app/features/dashboard/domain/entities/admin_dashboard_recent_order.dart';
 import 'package:admin_app/features/dashboard/presentation/utils/dashboard_display.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
@@ -20,9 +21,10 @@ import 'package:admin_app/shared/widgets/currency_icon.dart';
 /// صورة مصغّرة لا مصدر ثانٍ للحقيقة. ورقم الطلب يبقى لاتينيًا لأنه مُعرَّف
 /// يُفتَّش به لا مقدار يُقرأ، والحالة شارة بلونها واسمها لأن اللون وحده لا يُقال.
 class DashboardOrderRow extends StatelessWidget {
-  const DashboardOrderRow({super.key, required this.order});
+  const DashboardOrderRow({super.key, required this.order, this.onOpen});
 
   final AdminDashboardRecentOrder order;
+  final ValueChanged<String>? onOpen;
 
   String get _customer {
     final name = (order.customerName ?? '').trim();
@@ -32,6 +34,7 @@ class DashboardOrderRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final openOrder = onOpen ?? AdminNavigator.maybeOpenOrder(context);
     final status = OrderStatusView.of(order.status);
     final cells = <Widget>[
       _cellText(
@@ -48,21 +51,31 @@ class DashboardOrderRow extends StatelessWidget {
       _cellMoney(order.grandTotal, adminAmountColor(theme)),
       AdminStatusBadge(label: status.label, color: status.color),
     ];
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSizes.px8,
-        vertical: AppSizes.px10,
-      ),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: adminRowBorderColor(theme))),
-      ),
-      child: Row(
-        children: [
-          for (final (index, cell) in cells.indexed) ...[
-            Expanded(flex: dashboardOrderColumnFlexes[index], child: cell),
-            if (index < cells.length - 1) const SizedBox(width: AppSizes.px6),
-          ],
-        ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: Key('dashboard-order-${order.id}'),
+        onTap: openOrder == null ? null : () => openOrder(order.orderNumber),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.px8,
+            vertical: AppSizes.px10,
+          ),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: adminRowBorderColor(theme)),
+            ),
+          ),
+          child: Row(
+            children: [
+              for (final (index, cell) in cells.indexed) ...[
+                Expanded(flex: dashboardOrderColumnFlexes[index], child: cell),
+                if (index < cells.length - 1)
+                  const SizedBox(width: AppSizes.px6),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

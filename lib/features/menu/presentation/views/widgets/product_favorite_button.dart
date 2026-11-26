@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/theme/tokens.dart';
@@ -32,11 +32,10 @@ class ProductFavoriteButton extends StatelessWidget {
           color: AppColor.whiteColor.withValues(alpha: 0.7),
           shape: BoxShape.circle,
         ),
-        // Inactive: outlined heart in grey. Active: the heart itself is the
-        // colour — a filled red heart, not a red circle around it. hugeicons
-        // ships no filled heart, hence the Material filled icon.
+        // Inactive: outlined heart in grey. Active: a solid red heart, not a
+        // red outline or a red circle around it.
         child: Icon(
-          isFavorite ? Icons.favorite : AppIcons.favourite,
+          isFavorite ? AppIcons.favouriteFilled : AppIcons.favourite,
           size: (size * 0.55),
           color: isFavorite ? AppColor.errorColor : AppColor.greyColor,
         ),

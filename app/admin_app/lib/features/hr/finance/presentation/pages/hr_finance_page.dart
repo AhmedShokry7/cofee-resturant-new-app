@@ -269,24 +269,6 @@ class _HrFinancePageState extends State<HrFinancePage> {
   Widget _advanceCard(BuildContext context, HrAdvance advance) => _RecordCard(
     title: advance.staffName,
     status: advance.status,
-    children: [
-      _value(HrFinanceStrings.amount, _money(advance.amount, advance.currency)),
-      _value(
-        HrFinanceStrings.installment,
-        _money(advance.installmentAmount, advance.currency),
-      ),
-      _value(
-        HrFinanceStrings.settledAmount,
-        _money(advance.settledAmount, advance.currency),
-      ),
-      _value(
-        HrFinanceStrings.outstanding,
-        _money(advance.outstanding, advance.currency),
-      ),
-      _value(HrFinanceStrings.reason, advance.reason),
-      if (advance.reviewNote != null)
-        _value(HrFinanceStrings.note, advance.reviewNote!),
-    ],
     actions: [
       if (widget.canManage && advance.status == 'pending') ...[
         _action(
@@ -314,28 +296,30 @@ class _HrFinancePageState extends State<HrFinancePage> {
           outline: true,
         ),
     ],
+    children: [
+      _value(HrFinanceStrings.amount, _money(advance.amount, advance.currency)),
+      _value(
+        HrFinanceStrings.installment,
+        _money(advance.installmentAmount, advance.currency),
+      ),
+      _value(
+        HrFinanceStrings.settledAmount,
+        _money(advance.settledAmount, advance.currency),
+      ),
+      _value(
+        HrFinanceStrings.outstanding,
+        _money(advance.outstanding, advance.currency),
+      ),
+      _value(HrFinanceStrings.reason, advance.reason),
+      if (advance.reviewNote != null)
+        _value(HrFinanceStrings.note, advance.reviewNote!),
+    ],
   );
 
   Widget _adjustmentCard(BuildContext context, HrAdjustment adjustment) =>
       _RecordCard(
         title: adjustment.staffName,
         status: adjustment.status,
-        children: [
-          _value(
-            HrFinanceStrings.kind,
-            HrFinanceStrings.kindName(adjustment.kind),
-          ),
-          _value(
-            HrFinanceStrings.amount,
-            _money(adjustment.amount, HrFinanceStrings.currency),
-          ),
-          _value(HrFinanceStrings.effectiveDate, adjustment.effectiveDate),
-          _value(HrFinanceStrings.reason, adjustment.reason),
-          if (adjustment.claimed)
-            _value(HrFinanceStrings.status, HrFinanceStrings.claimed),
-          if (adjustment.reviewNote != null)
-            _value(HrFinanceStrings.note, adjustment.reviewNote!),
-        ],
         actions: [
           if (widget.canManage && adjustment.status == 'pending') ...[
             _action(
@@ -356,6 +340,22 @@ class _HrFinancePageState extends State<HrFinancePage> {
               () => _reverseAdjustment(context, adjustment),
               outline: true,
             ),
+        ],
+        children: [
+          _value(
+            HrFinanceStrings.kind,
+            HrFinanceStrings.kindName(adjustment.kind),
+          ),
+          _value(
+            HrFinanceStrings.amount,
+            _money(adjustment.amount, HrFinanceStrings.currency),
+          ),
+          _value(HrFinanceStrings.effectiveDate, adjustment.effectiveDate),
+          _value(HrFinanceStrings.reason, adjustment.reason),
+          if (adjustment.claimed)
+            _value(HrFinanceStrings.status, HrFinanceStrings.claimed),
+          if (adjustment.reviewNote != null)
+            _value(HrFinanceStrings.note, adjustment.reviewNote!),
         ],
       );
 
@@ -456,6 +456,7 @@ class _HrFinancePageState extends State<HrFinancePage> {
     return _RecordCard(
       title: '${_branchName(d)} · ${d.drawerCashierName}',
       status: d.status,
+      actions: actions,
       children: [
         _value(
           HrFinanceStrings.signedVariance,
@@ -469,7 +470,6 @@ class _HrFinancePageState extends State<HrFinancePage> {
         if (d.reviewNote.isNotEmpty)
           _value(HrFinanceStrings.note, d.reviewNote),
       ],
-      actions: actions,
     );
   }
 

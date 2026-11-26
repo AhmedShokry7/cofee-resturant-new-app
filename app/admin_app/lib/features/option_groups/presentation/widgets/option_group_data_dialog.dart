@@ -19,7 +19,7 @@ import 'package:admin_app/shared/widgets/admin_pickable_list.dart';
 import 'package:admin_app/shared/widgets/admin_segmented_control.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/admin_create_button.dart';
-import 'package:admin_app/shared/widgets/currency_icon.dart';
+import 'package:admin_app/shared/widgets/currency_input_row.dart';
 
 /// يفتح حوار إنشاء مجموعة أحجام أو إضافات جديدة.
 Future<void> showOptionGroupCreateDialog({
@@ -699,7 +699,7 @@ class _OptionGroupDataDialogState extends State<OptionGroupDataDialog> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  suffix: const CurrencyIcon(size: 10),
+                  currency: true,
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -768,13 +768,13 @@ class _OptionGroupDataDialogState extends State<OptionGroupDataDialog> {
     bool required = false,
     bool rtl = false,
     TextInputType? keyboardType,
-    Widget? suffix,
+    bool currency = false,
 
     /// سطر تحت الحقل حين يكون ما يُحفظ غير ما كُتب فيه، حتى لا تكذب اللوحة
     /// على رقمٍ تشتقّه القاعدة.
     String? helper,
   }) {
-    return TextField(
+    final field = TextField(
       key: key,
       controller: controller,
       textDirection: rtl ? TextDirection.rtl : null,
@@ -787,8 +787,6 @@ class _OptionGroupDataDialogState extends State<OptionGroupDataDialog> {
             hint: hint,
             required: required,
           ).copyWith(
-            suffixIcon: suffix,
-            suffixIconConstraints: const BoxConstraints(minWidth: 34),
             helperText: helper,
             helperStyle: TextStyle(
               color: adminMutedColor(Theme.of(context)),
@@ -799,6 +797,7 @@ class _OptionGroupDataDialogState extends State<OptionGroupDataDialog> {
         if (_error != null) setState(() => _error = null);
       },
     );
+    return currency ? CurrencyInputRow(child: field) : field;
   }
 
   Widget _section(String title, List<Widget> children) {

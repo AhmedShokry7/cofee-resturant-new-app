@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,7 +10,9 @@ import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.da
 import 'package:new_coffee/features/auth/presentation/views/sign_up_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_social_login.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/login_page_body.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 
+import 'support/fake_design_repository.dart';
 import 'support/pump_harness.dart';
 
 /// The screens are looked at and one link is followed; nothing is submitted, so
@@ -42,30 +44,33 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      MaterialApp(
-        locale: const Locale('ar'),
-        builder: (context, child) => Directionality(
-          textDirection: direction,
-          child: child ?? const SizedBox.shrink(),
-        ),
-        routes: {
-          '/asked': (context) => BlocProvider<AuthCubit>(
-            create: (context) => AuthCubit(_UnusedAuthRepository()),
-            child: const Scaffold(body: LoginPageBody()),
+      BlocProvider<DesignCubit>(
+        create: (context) => DesignCubit(repository: FakeDesignRepository()),
+        child: MaterialApp(
+          locale: const Locale('ar'),
+          builder: (context, child) => Directionality(
+            textDirection: direction,
+            child: child ?? const SizedBox.shrink(),
           ),
-          SignUpPage.routeName: (context) {
-            _received = ModalRoute.of(context)?.settings.arguments;
-            return const Scaffold(body: Center(child: Text('sign up here')));
+          routes: {
+            '/asked': (context) => BlocProvider<AuthCubit>(
+              create: (context) => AuthCubit(_UnusedAuthRepository()),
+              child: const Scaffold(body: LoginPageBody()),
+            ),
+            SignUpPage.routeName: (context) {
+              _received = ModalRoute.of(context)?.settings.arguments;
+              return const Scaffold(body: Center(child: Text('sign up here')));
+            },
           },
-        },
-        home: Builder(
-          builder: (context) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.of(context)
-                  .pushNamed('/asked', arguments: 'checkoutRoute');
-            });
-            return const SizedBox.shrink();
-          },
+          home: Builder(
+            builder: (context) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Navigator.of(context)
+                    .pushNamed('/asked', arguments: 'checkoutRoute');
+              });
+              return const SizedBox.shrink();
+            },
+          ),
         ),
       ),
     );
@@ -124,21 +129,22 @@ void main() {
     });
   });
 
-  group('the provider buttons', () {
-    testWidgets('each one says out loud which account it uses', (tester) async {
+  group('the sign-in choices', () {
+    testWidgets('Google and phone are the two choices, on one line', (
+      tester,
+    ) async {
       await pumpLogin(tester);
 
       expect(
         semanticsLabels(tester),
-        containsAll(<String>[
-          S.continueWithGoogle,
-          S.continueWithFacebook,
-          S.continueWithApple,
-        ]),
-        reason:
-            'a circle with a logo in it is an unnamed image to a screen '
-            'reader',
+        containsAll(<String>[S.continueWithGoogle, S.continueWithPhone]),
       );
+      expect(semanticsLabels(tester), isNot(contains(S.continueWithFacebook)));
+      expect(semanticsLabels(tester), isNot(contains(S.continueWithApple)));
+
+      final google = tester.getRect(find.text(S.continueWithGoogle));
+      final phone = tester.getRect(find.text(S.continueWithPhone));
+      expect(google.center.dy, closeTo(phone.center.dy, 1));
     });
 
     testWidgets('each one is a real button, with ink and a shape', (
@@ -146,7 +152,7 @@ void main() {
     ) async {
       await pumpLogin(tester);
 
-      for (final icon in [AppIcons.google, AppIcons.facebook, AppIcons.apple]) {
+      for (final icon in [AppIcons.google, AppIcons.smartphone]) {
         expect(
           find.descendant(
             of: find.byType(AuthSocialLogin),

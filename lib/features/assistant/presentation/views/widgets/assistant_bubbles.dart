@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
+import 'package:new_coffee/core/constant/app_images.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -39,7 +41,7 @@ class AssistantTypingBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     return const _AssistantBubbleShell(
       isUser: false,
-      child: Text('…', style: TextStyle(height: 1.4)),
+      child: Text('…', style: TextStyle(height: AppTextHeights.compact)),
     );
   }
 }
@@ -55,22 +57,38 @@ class _AssistantBubbleShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        constraints: BoxConstraints(
-          maxWidth: AppDimensions.assistantPanelMaxWidth,
-        ),
-        margin: EdgeInsets.only(bottom: AppSpacing.xs),
-        padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-        decoration: BoxDecoration(
-          color: isUser ? AppColor.primaryColor : AppColor.cardSurface,
-          borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
-          border: isUser ? null : Border.all(color: AppColor.borderColor),
-        ),
-        child: child,
-      ),
+      child: isUser
+          ? _bubble(context)
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Image.asset(
+                  AppImages.aiBot,
+                  width: AppSizes.px32,
+                  height: AppSizes.px32,
+                  fit: BoxFit.contain,
+                  semanticLabel: S.assistantTitle,
+                ),
+                SizedBox(width: AppSpacing.sm),
+                Flexible(child: _bubble(context)),
+              ],
+            ),
     );
   }
+
+  Widget _bubble(BuildContext context) => Container(
+    constraints: BoxConstraints(maxWidth: AppDimensions.assistantPanelMaxWidth),
+    margin: EdgeInsets.only(bottom: AppSpacing.xs),
+    padding: EdgeInsets.symmetric(
+      horizontal: AppSpacing.md,
+      vertical: AppSpacing.sm,
+    ),
+    decoration: BoxDecoration(
+      color: isUser ? AppColor.primaryColor : AppColor.cardSurface,
+      borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
+      border: isUser ? null : Border.all(color: AppColor.borderColor),
+    ),
+    child: child,
+  );
 }

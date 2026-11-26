@@ -465,6 +465,13 @@ class DesignDocumentCodec {
       'cancel': ('إلغاء', 'Cancel'),
       'delete': ('حذف', 'Delete'),
     },
+    'my_bundles': {'myBundles': ('باقاتي الشخصية', 'My bundles')},
+    'customer_bundle_editor': {'title': ('إنشاء باقة', 'Create bundle'), 'editTitle': ('تعديل الباقة', 'Edit bundle')},
+    'my_reservations': {'myReservations': ('حجوزاتي', 'My reservations')},
+    'reservation_form': {'title': ('حجز جديد', 'New reservation')},
+    'event_request_form': {'title': ('طلب مناسبة خاصة', 'Private event request')},
+    'my_product_subscriptions': {'title': ('اشتراكات المنتجات', 'Product subscriptions')},
+    'product_subscription_form': {'title': ('اشتراك منتج جديد', 'New product subscription')},
     'assistant_memory': {
       'assistantMemoryTitle': ('ذاكرة المساعد', 'Assistant memory'),
       'assistantMemoryDeleteAll': ('حذف كل ذاكرتي', 'Delete all my memory'),
@@ -571,7 +578,7 @@ class DesignDocumentCodec {
     final ids = nodes.map((node) => node.componentId).toSet();
     return [
       ...nodes,
-      if (bodyPages.contains(pageId) && !ids.contains('${pageId}_body'))
+      if ((bodyPages.contains(pageId) || nativeLabels.containsKey(pageId)) && !ids.contains('${pageId}_body'))
         _defaultComponent(('nativeBody', null), nodes.length + labels.length, pageId: pageId)
           .copyWith(componentId: '${pageId}_body'),
       for (final (index, entry) in labels.entries.indexed)

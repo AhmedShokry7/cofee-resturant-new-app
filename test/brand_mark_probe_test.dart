@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
-import 'package:new_coffee/features/design/presentation/manager/design/design_state.dart';
 import 'package:new_coffee/features/design/data/model/published_design.dart';
 import 'package:new_coffee/features/splash/presentation/views/widgets/splash_brand_mark.dart';
 import 'package:new_coffee/shared/widgets/db_image.dart';
+
 import 'support/fake_design_repository.dart';
 
 void main() {
@@ -21,7 +21,8 @@ void main() {
         home: MultiBlocProvider(
           providers: [
             BlocProvider<DesignCubit>(
-              create: (_) => DesignCubit(repository: FakeDesignRepository(design)),
+              create: (_) =>
+                  DesignCubit(repository: FakeDesignRepository(design)),
             ),
           ],
           child: const Scaffold(body: Center(child: SplashBrandMark())),
@@ -40,7 +41,8 @@ void main() {
         home: MultiBlocProvider(
           providers: [
             BlocProvider<DesignCubit>(
-              create: (_) => DesignCubit(repository: FakeDesignRepository(null)),
+              create: (_) =>
+                  DesignCubit(repository: FakeDesignRepository(null)),
             ),
           ],
           child: const Scaffold(body: Center(child: SplashBrandMark())),

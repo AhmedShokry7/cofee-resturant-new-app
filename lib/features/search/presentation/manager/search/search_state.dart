@@ -11,6 +11,8 @@ class SearchState {
     this.minPrice,
     this.maxPrice,
     this.isLoading = false,
+    this.isLoadingMore = false,
+    this.hasMore = false,
     this.error,
     this.hasSearched = false,
   });
@@ -36,6 +38,12 @@ class SearchState {
   /// True while a query is in flight. The previous page showed stale results
   /// with no indication anything was happening.
   final bool isLoading;
+
+  /// True while the next server page is being appended.
+  final bool isLoadingMore;
+
+  /// The server may have more matches than the page currently displayed.
+  final bool hasMore;
 
   /// Non-null when the search failed. The message is shown instead of an empty
   /// list, so an outage never looks like "no results".

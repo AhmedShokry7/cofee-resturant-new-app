@@ -165,6 +165,17 @@ class _TablesPageState extends State<TablesPage> {
     }
   }
 
+  Future<void> _moveTableOnPlan(
+    DiningTable table,
+    double x,
+    double y,
+  ) async {
+    if (!widget.canManage) return;
+    final outcome = await _cubit.setTableLayoutPosition(table.id, x, y);
+    if (!mounted || outcome == DiningTableMutationOutcome.success) return;
+    _showMessage(diningTableMutationErrorMessage(outcome), error: true);
+  }
+
   Future<void> _setReservationStatus(
     DiningReservation reservation,
     DiningReservationStatus status,
@@ -262,6 +273,7 @@ class _TablesPageState extends State<TablesPage> {
             onOpenReservation: _openReservation,
             onToggleTable: _toggleTable,
             onDeleteTable: _deleteTable,
+            onMoveTable: _moveTableOnPlan,
             onEditReservation: _editReservation,
             onSeatReservation: (reservation) => _setReservationStatus(
               reservation,

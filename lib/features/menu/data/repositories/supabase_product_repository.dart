@@ -18,7 +18,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// rows. Nothing here needs a privileged key, and the service_role key is never
 /// referenced.
 class SupabaseProductRepository
-    implements CatalogRepository, BatchProductRepository, BannerLinkRepository {
+    implements
+        CatalogRepository,
+        BatchProductRepository,
+        ProductAvailabilityRepository,
+        BannerLinkRepository {
   SupabaseProductRepository([SupabaseClient? client])
     : _client = client ?? SupabaseReadService.read;
 
@@ -93,6 +97,45 @@ class SupabaseProductRepository
           useGeneralDiscount: r['use_general_discount'] != false,
         ),
     };
+  }
+
+  /// Reads published review rows for a page in one request, then attaches the
+  /// summary to each product. Keeping this batched avoids an N+1 request per card.
+  Future<List<ProductModel>> _withReviewSummaries(
+    List<ProductModel> products,
+  ) async {
+    if (products.isEmpty) return products;
+    try {
+      final rows = await _client
+          .from('product_reviews')
+          .select('product_id, rating')
+          .inFilter(
+            'product_id',
+            products.map((product) => product.id).toList(),
+          )
+          .eq('is_published', true);
+      final totals = <String, (int count, int sum)>{};
+      for (final row in rows) {
+        final id = row['product_id']?.toString();
+        if (id == null) continue;
+        final previous = totals[id] ?? (0, 0);
+        totals[id] = (previous.$1 + 1, previous.$2 + Db.asInt(row['rating']));
+      }
+      return products
+          .map((product) {
+            final summary = totals[product.id];
+            if (summary == null) return product;
+            return product.copyWith(
+              reviewCount: summary.$1,
+              averageRating: summary.$2 / summary.$1,
+            );
+          })
+          .toList(growable: false);
+    } catch (_) {
+      // Reviews are optional decoration; a review read outage must not hide
+      // otherwise valid catalogue results.
+      return products;
+    }
   }
 
   /// The price the server stores is rounded to two decimals
@@ -271,7 +314,7 @@ class SupabaseProductRepository
           .add(ProductImage.fromJson(Map<String, dynamic>.from(row)));
     }
 
-    return rows
+    final products = rows
         .map((r) {
           final product = ProductModel.fromJson(r);
           final images = imageMap[r['id'].toString()] ?? [];
@@ -292,6 +335,7 @@ class SupabaseProductRepository
         .toList()
         .map((product) => _withBranch(product, prices))
         .toList();
+    return _withReviewSummaries(products);
   }
 
   @override
@@ -404,6 +448,24 @@ class SupabaseProductRepository
           );
         })
         .toList(growable: false);
+  }
+
+  @override
+  Future<Set<String>> unavailableProductIds(
+    List<String> ids, {
+    required String branchId,
+  }) async {
+    final uniqueIds = ids.toSet().toList(growable: false);
+    if (uniqueIds.isEmpty) return const <String>{};
+    final rows = await _client
+        .from('branch_product_pricing')
+        .select('product_id,is_available')
+        .eq('branch_id', branchId)
+        .inFilter('product_id', uniqueIds);
+    return {
+      for (final row in rows)
+        if (row['is_available'] == false) row['product_id'].toString(),
+    };
   }
 
   @override
@@ -570,8 +632,7 @@ class SupabaseProductRepository
       if (wanted != null && !wanted.contains(productId)) continue;
       final group = groupsById[link['group_id'].toString()];
       if (group == null) continue;
-      final overrides =
-          pricingByProduct[productId] ?? const <String, double>{};
+      final overrides = pricingByProduct[productId] ?? const <String, double>{};
       final defaults = valuesByGroup[group.id] ?? const <OptionValue>[];
       final values = overrides.isEmpty
           ? defaults
@@ -664,10 +725,10 @@ class SupabaseProductRepository
     for (final r in rows) {
       final delta = Db.asDoubleOrNull(r['price_delta']);
       if (delta == null) continue;
-      byProduct
-          .putIfAbsent(r['product_id'].toString(), () => <String, double>{})[
-        r['value_id'].toString()
-      ] = delta;
+      byProduct.putIfAbsent(
+        r['product_id'].toString(),
+        () => <String, double>{},
+      )[r['value_id'].toString()] = delta;
     }
     return byProduct;
   }
@@ -732,6 +793,8 @@ class SupabaseProductRepository
     String query, {
     String? branchId,
     String? categoryId,
+    double? minPrice,
+    double? maxPrice,
     String sort = 'relevance',
     int limit = CatalogLimits.search,
     int offset = 0,
@@ -744,14 +807,17 @@ class SupabaseProductRepository
         // omitting it is correct and lets the server fall back to base prices.
         'p_branch_id': ?branchId,
         'p_category_id': ?categoryId,
+        'p_min_price': ?minPrice,
+        'p_max_price': ?maxPrice,
         'p_sort': sort,
         'p_page': (offset ~/ limit) + 1,
         'p_page_size': limit,
       },
     );
-    return (rows as List)
+    final products = (rows as List)
         .map((r) => _fromRpcRow(r as Map<String, dynamic>))
         .toList();
+    return _withReviewSummaries(products);
   }
 
   @override

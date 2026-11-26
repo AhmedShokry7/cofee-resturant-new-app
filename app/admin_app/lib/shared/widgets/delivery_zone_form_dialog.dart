@@ -7,7 +7,7 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/admin_delivery_zone.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/shared/widgets/currency_icon.dart';
+import 'package:admin_app/shared/widgets/currency_input_row.dart';
 
 /// The form of a delivery zone: its names, its fees and its centre.
 class DeliveryZoneFormDialog extends StatefulWidget {
@@ -237,17 +237,13 @@ class _DeliveryZoneFormDialogState extends State<DeliveryZoneFormDialog> {
     bool money = false,
     ValueChanged<String>? onChanged,
   }) {
-    return Expanded(
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          suffixIcon: money ? const CurrencyIcon(size: 10) : null,
-        ),
-        keyboardType: TextInputType.numberWithOptions(decimal: decimal),
-        onChanged: onChanged,
-      ),
+    final field = TextField(
+      controller: controller,
+      decoration: InputDecoration(labelText: label),
+      keyboardType: TextInputType.numberWithOptions(decimal: decimal),
+      onChanged: onChanged,
     );
+    return Expanded(child: money ? CurrencyInputRow(child: field) : field);
   }
 
   @override

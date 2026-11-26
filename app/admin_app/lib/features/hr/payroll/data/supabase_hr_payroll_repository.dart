@@ -5,7 +5,7 @@ import '../domain/hr_payroll_models.dart';
 import '../domain/hr_payroll_repository.dart';
 
 class SupabaseHrPayrollRepository implements HrPayrollRepository {
-  SupabaseHrPayrollRepository({SupabaseClient? client}) : _client = client;
+  SupabaseHrPayrollRepository({this._client});
   final SupabaseClient? _client;
   SupabaseClient get client => _client ?? SupabaseService.client;
 

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 
@@ -9,7 +9,6 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/data/model/auth_form_rules.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/forget_password_page.dart';
-import 'package:new_coffee/features/auth/presentation/views/phone_auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/sign_up_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_design.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_spacings.dart';
@@ -61,10 +60,8 @@ class _LoginPageBodyState extends State<LoginPageBody> {
     // Preview starts on a synthetic splash route. Returning to it would strand
     // the customer there, so a successful preview login opens the real store.
     if (SupabaseService.isPreviewMode) {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        MainPage.routeName,
-        (route) => false,
-      );
+      Navigator.of(context)
+          .pushNamedAndRemoveUntil(MainPage.routeName, (route) => false);
     } else if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     } else {
@@ -163,7 +160,7 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                       ),
                       Align(
                         alignment: AlignmentDirectional.centerEnd,
-                        child: TextButton(
+                        child: CustomTextButton(
                           onPressed: () =>
                               Navigator.of(context)
                                   .pushNamed(ForgetPasswordPage.routeName),
@@ -187,12 +184,6 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                         AuthSocialLogin(isLoading: isLoading),
                         SizedBox(height: AuthSpacings.sectionGap),
                       ],
-                      _CodeDoorButton(
-                        icon: AppIcons.smartphone,
-                        label: S.continueWithPhone,
-                        route: PhoneAuthPage.routeName,
-                      ),
-                      SizedBox(height: AuthSpacings.fieldsGap),
                       // A mailbox is the other credential the customer always
                       // carries. It opens on its own, so a number that cannot
                       // be reached — or a Google account that is not on the
@@ -205,10 +196,13 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                           // customer who picks "create an account" instead of
                           // signing in still ends up back at checkout rather than
                           // dumped on the store home.
-                          onTap: () => Navigator.of(context).pushReplacementNamed(
-                            SignUpPage.routeName,
-                            arguments: ModalRoute.of(context)?.settings.arguments,
-                          ),
+                          onTap: () => Navigator.of(context)
+                              .pushReplacementNamed(
+                                SignUpPage.routeName,
+                                arguments: ModalRoute.of(context)
+                                    ?.settings
+                                    .arguments,
+                              ),
                         ),
                       SizedBox(height: AuthSpacings.bottom),
                     ],
@@ -222,68 +216,6 @@ class _LoginPageBodyState extends State<LoginPageBody> {
           // a way out.
           SkipBtn(onTap: () => context.read<AuthCubit>().skipAuthentication()),
         ],
-      ),
-    );
-  }
-}
-
-/// The outlined pill that opens a code door — a phone number, or a mailbox.
-///
-/// Both read the same way and go to the same kind of screen, so they share one
-/// control: a customer comparing two ways in should not have to wonder whether
-/// the second one is a lesser path.
-class _CodeDoorButton extends StatelessWidget {
-  const _CodeDoorButton({
-    required this.icon,
-    required this.label,
-    required this.route,
-  });
-
-  final IconData icon;
-  final String label;
-  final String route;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: Material(
-          color: AppColor.cardSurface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-            side: BorderSide(color: AppColor.primaryColor),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () => Navigator.of(context).pushNamed(route),
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg,
-                vertical: AppSizes.px14,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, size: AppSizes.px20, color: AppColor.primaryColor),
-                  SizedBox(width: AppSpacing.sm),
-                  Flexible(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: AppFonts.regular14(context).copyWith(
-                        color: AppColor.primaryColor,
-                        fontWeight: AppFontWeights.medium,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/preview/preview_section.dart';
 import 'package:new_coffee/features/categories/presentation/views/widgets/category_body.dart';

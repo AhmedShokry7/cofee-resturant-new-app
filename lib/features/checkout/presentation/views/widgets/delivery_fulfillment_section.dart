@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -130,7 +130,7 @@ class DeliveryFulfillmentSection extends StatelessWidget {
           shrinkWrap: true,
           padding: EdgeInsets.fromLTRB(
             AppSpacing.lg,
-            0,
+            AppSpacing.none,
             AppSpacing.lg,
             AppSpacing.lg,
           ),
@@ -167,9 +167,9 @@ class _ZoneResolvingRow extends StatelessWidget {
     return Row(
       children: [
         const SizedBox(
-          height: 16,
-          width: 16,
-          child: CircularProgressIndicator(strokeWidth: 2),
+          height: AppSizes.px16,
+          width: AppSizes.px16,
+          child: CircularProgressIndicator(strokeWidth: AppSizes.px2),
         ),
         SizedBox(width: AppSpacing.sm),
         Expanded(
@@ -258,7 +258,11 @@ class _DeliveryZoneField extends StatelessWidget {
                 DropdownMenuItem<DeliveryZone>(
                   value: zone,
                   child: Text(
-                    '${zone.name}  •  ${zone.deliveryFee.toStringAsFixed(2)}',
+                    '${zone.name}  ·  ${switch (zone.feeMethod) {
+                      DeliveryFeeMethod.free => S.deliveryAlwaysFree,
+                      DeliveryFeeMethod.perKm => '${S.deliveryPerKm} (${Formatters.price(zone.feePerKm ?? 0)} / كم)',
+                      DeliveryFeeMethod.fixed => '${S.deliveryFee}: ${Formatters.price(zone.deliveryFee)}',
+                    }}',
                     style: AppFonts.regular14(context),
                   ),
                 ),

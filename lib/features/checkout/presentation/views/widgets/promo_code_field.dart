@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -92,7 +93,7 @@ class _PromoCodeFieldState extends State<PromoCodeField> {
                   ),
                   suffixIcon: widget.controller.text.isEmpty
                       ? null
-                      : IconButton(
+                      : CustomIconButton(
                           onPressed: _clear,
                           tooltip: S.clearPromoCode,
                           icon: Icon(

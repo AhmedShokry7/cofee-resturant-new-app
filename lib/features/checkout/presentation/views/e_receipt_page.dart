@@ -1,5 +1,5 @@
 import 'package:new_coffee/shared/widgets/design_text.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -15,6 +15,7 @@ import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 class EReceiptPage extends StatelessWidget {
   const EReceiptPage({super.key});
@@ -32,6 +33,7 @@ class EReceiptPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: const AppBackButton(),
         title: DesignText(S.eReceipt, page: 'e_receipt', label: 'eReceipt'),
       ),
       body: order == null

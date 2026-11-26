@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
 import 'app_color.dart';
@@ -75,6 +75,14 @@ class ThemeClass {
         color: AppColor.greyColor,
         size: AppIconSize.xl,
       ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          foregroundColor: AppColor.greyColor,
+          minimumSize: Size.square(AppDimensions.tapTargetMin),
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          shape: RoundedRectangleBorder(borderRadius: controlShape.borderRadius),
+        ),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColor.primaryColor,
@@ -82,6 +90,18 @@ class ThemeClass {
           disabledBackgroundColor: AppColor.lightGreyColor,
           disabledForegroundColor: AppColor.greyColor,
           elevation: AppElevation.flat,
+          minimumSize: const Size(0, AppDimensions.buttonHeight),
+          padding: controlPadding,
+          textStyle: textTheme.labelLarge,
+          shape: controlShape,
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColor.primaryColor,
+          foregroundColor: AppColor.whiteColor,
+          disabledBackgroundColor: AppColor.lightGreyColor,
+          disabledForegroundColor: AppColor.greyColor,
           minimumSize: const Size(0, AppDimensions.buttonHeight),
           padding: controlPadding,
           textStyle: textTheme.labelLarge,
@@ -306,6 +326,14 @@ class ThemeClass {
         color: AppColor.darkTextSecondary,
         size: AppIconSize.xl,
       ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          foregroundColor: AppColor.darkTextSecondary,
+          minimumSize: Size.square(AppDimensions.tapTargetMin),
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          shape: RoundedRectangleBorder(borderRadius: controlShape.borderRadius),
+        ),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColor.primaryColor,
@@ -313,6 +341,18 @@ class ThemeClass {
           disabledBackgroundColor: AppColor.darkCard,
           disabledForegroundColor: AppColor.darkTextSecondary,
           elevation: AppElevation.flat,
+          minimumSize: const Size(0, AppDimensions.buttonHeight),
+          padding: controlPadding,
+          textStyle: textTheme.labelLarge,
+          shape: controlShape,
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColor.primaryColor,
+          foregroundColor: AppColor.whiteColor,
+          disabledBackgroundColor: AppColor.darkCard,
+          disabledForegroundColor: AppColor.darkTextSecondary,
           minimumSize: const Size(0, AppDimensions.buttonHeight),
           padding: controlPadding,
           textStyle: textTheme.labelLarge,

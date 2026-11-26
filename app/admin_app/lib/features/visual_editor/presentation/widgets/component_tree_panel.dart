@@ -891,9 +891,7 @@ class _ComponentRow extends StatelessWidget {
     required this.onToggleVisibility,
     required this.allowReorder,
     required this.dark,
-    this.labelOverride,
-    this.subtitleOverride,
-  });
+  }) : labelOverride = null : subtitleOverride;
 
   final EditableComponent component;
   final int index;

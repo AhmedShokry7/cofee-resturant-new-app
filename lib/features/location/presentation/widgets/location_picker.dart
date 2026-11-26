@@ -1,6 +1,8 @@
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -492,7 +494,7 @@ class _LocationPickerState extends State<LocationPicker> {
               ),
             ),
           ),
-        const Divider(height: 1),
+        const Divider(height: AppSizes.px1),
         SizedBox(height: AppSpacing.sm),
         Expanded(child: _mapSlot()),
       ],
@@ -504,14 +506,14 @@ class _LocationPickerState extends State<LocationPicker> {
       return const Padding(
         padding: EdgeInsets.all(AppSizes.px14),
         child: SizedBox(
-          height: 20,
-          width: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
+          height: AppSizes.px20,
+          width: AppSizes.px20,
+          child: CircularProgressIndicator(strokeWidth: AppSizes.px2),
         ),
       );
     }
     if (_searchController.text.isEmpty) return null;
-    return IconButton(
+    return CustomIconButton(
       onPressed: _clearSearch,
       icon: Icon(
         AppIcons.close,
@@ -546,9 +548,9 @@ class _LocationPickerState extends State<LocationPicker> {
           // the row showed nothing at all and looked dead.
           if (_isLocating || _isResolving)
             const SizedBox(
-              height: 16,
-              width: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
+              height: AppSizes.px16,
+              width: AppSizes.px16,
+              child: CircularProgressIndicator(strokeWidth: AppSizes.px2),
             ),
         ],
       ),
@@ -581,8 +583,8 @@ class _LocationPickerState extends State<LocationPicker> {
                 markers: [
                   Marker(
                     point: _point!,
-                    width: 40,
-                    height: 40,
+                    width: AppSizes.px40,
+                    height: AppSizes.px40,
                     child: Icon(
                       AppIcons.location,
                       size: AppSizes.px36,
@@ -613,7 +615,7 @@ class _LocationPickerState extends State<LocationPicker> {
       padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
       itemCount: _suggestions.length,
       separatorBuilder: (_, _) => Divider(
-        height: 1,
+        height: AppSizes.px1,
         indent: AppSizes.px52,
         color: AppColor.borderColor,
       ),

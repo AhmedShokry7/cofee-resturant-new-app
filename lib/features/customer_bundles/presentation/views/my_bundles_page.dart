@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -8,9 +10,11 @@ import 'package:new_coffee/features/customer_bundles/data/repositories/customer_
 import 'package:new_coffee/features/customer_bundles/presentation/manager/customer_bundles_cubit.dart';
 import 'package:new_coffee/features/customer_bundles/presentation/manager/customer_bundles_state.dart';
 import 'package:new_coffee/features/customer_bundles/presentation/views/customer_bundle_editor_page.dart';
+import 'package:new_coffee/features/customer_bundles/presentation/views/bundle_product_image_strip.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/shared/widgets/design_text.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 class MyBundlesPage extends StatelessWidget {
   const MyBundlesPage({super.key});
@@ -31,10 +35,8 @@ class _MyBundlesView extends StatelessWidget {
   const _MyBundlesView();
 
   Future<void> _openEditor(BuildContext context, {Object? arguments}) async {
-    await Navigator.of(context).pushNamed(
-      CustomerBundleEditorPage.routeName,
-      arguments: arguments,
-    );
+    await Navigator.of(context)
+        .pushNamed(CustomerBundleEditorPage.routeName, arguments: arguments);
     if (context.mounted) context.read<CustomerBundlesCubit>().load();
   }
 
@@ -44,13 +46,16 @@ class _MyBundlesView extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: Text(S.deleteBundleConfirm),
         actions: [
-          TextButton(
+          CustomTextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: Text(S.cancel),
           ),
-          TextButton(
+          CustomTextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(S.delete, style: const TextStyle(color: Colors.red)),
+            child: Text(
+              S.delete,
+              style: const TextStyle(color: AppColor.errorColor),
+            ),
           ),
         ],
       ),
@@ -64,6 +69,7 @@ class _MyBundlesView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: const AppBackButton(),
         title: DesignText(S.myBundles, page: 'my_bundles', label: 'myBundles'),
       ),
       body: BlocConsumer<CustomerBundlesCubit, CustomerBundlesState>(
@@ -99,15 +105,36 @@ class _MyBundlesView extends StatelessWidget {
             onRefresh: () => context.read<CustomerBundlesCubit>().load(),
             child: ListView.separated(
               padding: AppLayout.pageBody,
-              itemCount: state.bundles.length,
+              itemCount: state.bundles.length + 1,
               separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
               itemBuilder: (_, i) {
-                final b = state.bundles[i];
+                if (i == 0) {
+                  return Card(
+                    child: ListTile(
+                      leading: const Icon(AppIcons.information),
+                      title: Text(S.personalBundlesAreSavedLists),
+                      subtitle: Text(S.personalBundleCurrentPriceNote),
+                    ),
+                  );
+                }
+                final b = state.bundles[i - 1];
                 return Card(
                   child: ListTile(
-                    leading: Icon(
-                      b.isFavorite ? Icons.favorite : AppIcons.bundle,
-                      color: b.isFavorite ? Colors.red : null,
+                    leading: SizedBox(
+                      width: AppSizes.px48,
+                      child: b.items.isEmpty
+                          ? Icon(
+                              b.isFavorite
+                                  ? AppIcons.favourite
+                                  : AppIcons.bundle,
+                              color: b.isFavorite ? AppColor.errorColor : null,
+                            )
+                          : BundleProductImageStrip(
+                              items: b.items,
+                              imageSize: 48,
+                              maxImages: 1,
+                              showMoreCount: false,
+                            ),
                     ),
                     title: Text(
                       b.name.trim().isNotEmpty ? b.name : S.createBundle,
@@ -123,7 +150,9 @@ class _MyBundlesView extends StatelessWidget {
                         } else if (v == 'dup') {
                           context.read<CustomerBundlesCubit>().duplicate(b.id);
                         } else if (v == 'fav') {
-                          context.read<CustomerBundlesCubit>().toggleFavorite(b);
+                          context.read<CustomerBundlesCubit>().toggleFavorite(
+                            b,
+                          );
                         } else if (v == 'del') {
                           _confirmDelete(context, b.id);
                         }
@@ -137,7 +166,10 @@ class _MyBundlesView extends StatelessWidget {
                         ),
                         PopupMenuItem(
                           value: 'del',
-                          child: Text(S.delete, style: const TextStyle(color: Colors.red)),
+                          child: Text(
+                            S.delete,
+                            style: const TextStyle(color: AppColor.errorColor),
+                          ),
                         ),
                       ],
                     ),
@@ -150,7 +182,7 @@ class _MyBundlesView extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _openEditor(context),
-        child: const Icon(Icons.add),
+        child: const Icon(AppIcons.add),
       ),
     );
   }

@@ -288,9 +288,7 @@ class NativeDesignPreview extends StatelessWidget {
                                     visible[i - 1].componentType ==
                                         'welcomeTitle')
                                   SizedBox(height: gap),
-                                if (_render(visible[i], byParent)
-                                    case final widget?)
-                                  widget,
+                                ?_render(visible[i], byParent),
                               ],
                             ],
                           ),
@@ -593,25 +591,7 @@ class NativeDesignPreview extends StatelessWidget {
     );
   }
 
-  Widget _promoBanner(EditableComponent c) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-    child: Container(
-      height: 72,
-      decoration: BoxDecoration(
-        color: _roleColor(DesignColorRole.secondary) ?? _accent,
-        borderRadius: BorderRadius.circular(_radius(c.property('radius'))),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        'إعلان ترويجي',
-        style: TextStyle(
-          fontSize: AppFontSizes.size13 * _textFactor,
-          fontWeight: AppFontWeights.semiBold,
-          color: Colors.white,
-        ),
-      ),
-    ),
-  );
+  Widget _promoBanner(EditableComponent c) => _bannerCarousel(c);
 
   Widget _sectionTitle(String? raw, {required bool show}) {
     if (!show || raw == null || raw.isEmpty) return const SizedBox.shrink();

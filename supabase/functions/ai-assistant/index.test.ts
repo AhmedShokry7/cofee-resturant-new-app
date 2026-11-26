@@ -42,6 +42,8 @@ type Overrides = {
   recall?: AssistantDeps["recall"];
   remember?: AssistantDeps["remember"];
   searchWeb?: AssistantDeps["searchWeb"];
+  recordKnowledgeGap?: AssistantDeps["recordKnowledgeGap"];
+  loadRuntimeConfig?: AssistantDeps["loadRuntimeConfig"];
 };
 
 function deps(overrides: Overrides = {}) {
@@ -65,6 +67,8 @@ function deps(overrides: Overrides = {}) {
     rpc: overrides.rpc ??
       (async () => ({ data: [{ allowed: true, remaining: 14 }] })),
     recall: overrides.recall ?? (async () => null),
+    recordKnowledgeGap: overrides.recordKnowledgeGap,
+    loadRuntimeConfig: overrides.loadRuntimeConfig,
     remember: overrides.remember ??
       (async (input) => {
         remembered.push({
@@ -405,6 +409,98 @@ Deno.test("a token that is present but not valid is refused", async () => {
   );
   assertEquals(response.status, 401);
   assertEquals(providerCalls(), 0);
+});
+
+Deno.test("admin chat mode requires an authenticated session", async () => {
+  const { deps: d, providerCalls } = deps();
+  const response = await handleRequest(
+    postRequest({
+      assistantMode: "admin_chat",
+      messages: [{ role: "user", content: "hello" }],
+    }),
+    d,
+  );
+  assertEquals(response.status, 401);
+  assertEquals(providerCalls(), 0);
+});
+
+Deno.test("admin chat uses the shared provider without customer context or learning", async () => {
+  let recallCalls = 0;
+  let rememberCalls = 0;
+  let searchCalls = 0;
+  let gapCalls = 0;
+  let modelMessages: Array<{ role: string; content: string }> = [];
+  const { deps: d } = deps({
+    resolveUser: async () => ({ id: "staff-123" }),
+    loadRuntimeConfig: async () => ({
+      enabled: true,
+      provider: "groq",
+      model: "shared-model",
+      base_url: "",
+      system_prompt: "customer-only settings prompt",
+      tone: "friendly",
+      max_reply_chars: 32,
+      fallback_reply: "customer-only fallback",
+      api_key: "server-only-key",
+    }),
+    recall: async () => {
+      recallCalls++;
+      return null;
+    },
+    remember: async () => {
+      rememberCalls++;
+    },
+    searchWeb: async () => {
+      searchCalls++;
+      return { error: "not configured", notConfigured: true };
+    },
+    recordKnowledgeGap: async () => {
+      gapCalls++;
+    },
+    askProvider: async (_provider, messages) => {
+      modelMessages = messages;
+      return { text: "admin chat answer" };
+    },
+  });
+
+  const response = await handleRequest(
+    postRequest(
+      {
+        assistantMode: "admin_chat",
+        messages: [
+          { role: "system", content: "admin chat prompt" },
+          { role: "user", content: "write a product description" },
+        ],
+        questionKey: "customer-memory-key",
+        learn: true,
+        personal: false,
+        webSearch: true,
+        captureKnowledgeGap: true,
+      },
+      { authorization: "Bearer a.b.c" },
+    ),
+    d,
+  );
+
+  assertEquals(response.status, 200);
+  assertEquals(recallCalls, 0);
+  assertEquals(rememberCalls, 0);
+  assertEquals(searchCalls, 0);
+  assertEquals(gapCalls, 0);
+  assertEquals(modelMessages.length, 2);
+  assertEquals(modelMessages[0].content, "admin chat prompt");
+  assertEquals(
+    modelMessages.some((message) =>
+      message.content.includes("customer-only settings prompt")
+    ),
+    false,
+  );
+  assertEquals(
+    modelMessages.some((message) =>
+      message.content.includes("customer-only fallback")
+    ),
+    false,
+  );
 });
 
 // ---------------------------------------------------------------------------

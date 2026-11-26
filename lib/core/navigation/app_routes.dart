@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/features/addresses/presentation/views/address_form_page.dart';
@@ -34,6 +34,7 @@ import 'package:new_coffee/features/customer_bundles/presentation/views/my_bundl
 import 'package:new_coffee/features/customer_bundles/presentation/views/customer_bundle_editor_page.dart';
 import 'package:new_coffee/features/customer_reservations/presentation/views/my_reservations_page.dart';
 import 'package:new_coffee/features/customer_reservations/presentation/views/reservation_form_page.dart';
+import 'package:new_coffee/features/customer_reservations/presentation/views/event_request_form_page.dart';
 import 'package:new_coffee/features/product_subscriptions/presentation/views/my_product_subscriptions_page.dart';
 import 'package:new_coffee/features/product_subscriptions/presentation/views/product_subscription_form_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
@@ -108,10 +109,16 @@ class AppRoutes {
         _designable('my_reservations', const MyReservationsPage()),
     ReservationFormPage.routeName: (context) =>
         _designable('reservation_form', const ReservationFormPage()),
-    MyProductSubscriptionsPage.routeName: (context) =>
-        _designable('my_product_subscriptions', const MyProductSubscriptionsPage()),
-    ProductSubscriptionFormPage.routeName: (context) =>
-        _designable('product_subscription_form', const ProductSubscriptionFormPage()),
+    EventRequestFormPage.routeName: (context) =>
+        _designable('event_request_form', const EventRequestFormPage()),
+    MyProductSubscriptionsPage.routeName: (context) => _designable(
+      'my_product_subscriptions',
+      const MyProductSubscriptionsPage(),
+    ),
+    ProductSubscriptionFormPage.routeName: (context) => _designable(
+      'product_subscription_form',
+      const ProductSubscriptionFormPage(),
+    ),
     SubscriptionDetailsPage.routeName: (context) =>
         _designable('subscription_details', const SubscriptionDetailsPage()),
     CashierSubscriptionConsumePage.routeName: (context) => _designable(

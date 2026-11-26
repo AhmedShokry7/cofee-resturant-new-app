@@ -44,6 +44,8 @@ class _SlowCatalog implements CatalogRepository {
   Future<List<ProductModel>> getProducts({
     String? branchId,
     String? categoryId,
+    double? minPrice,
+    double? maxPrice,
     int limit = 100,
     int offset = 0,
   }) async {
@@ -75,6 +77,8 @@ class _SlowCatalog implements CatalogRepository {
     String query, {
     String? branchId,
     String? categoryId,
+    double? minPrice,
+    double? maxPrice,
     String sort = 'relevance',
     int limit = 20,
     int offset = 0,
@@ -82,6 +86,8 @@ class _SlowCatalog implements CatalogRepository {
     query,
     branchId: branchId,
     categoryId: categoryId,
+    minPrice: minPrice,
+    maxPrice: maxPrice,
     sort: sort,
     limit: limit,
     offset: offset,
@@ -366,7 +372,10 @@ void main() {
       // "امسح" is also the cancel-order word. The customer named their memory,
       // not an order, so memory has to outrank it.
       expect(detectIntent('امسح ذاكرتي'), AssistantIntent.memory);
-      expect(detectIntent('what do you remember about me'), AssistantIntent.memory);
+      expect(
+        detectIntent('what do you remember about me'),
+        AssistantIntent.memory,
+      );
       expect(detectIntent('ذاكرتك'), AssistantIntent.memory);
     });
   });

@@ -311,6 +311,7 @@ abstract interface class CheckoutQuoteRepository {
     String? addressId,
     String? couponCode,
     String? note,
+    String? subscriptionRunId,
   });
 }
 

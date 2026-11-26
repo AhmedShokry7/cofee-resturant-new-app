@@ -1,5 +1,5 @@
 import 'package:new_coffee/shared/widgets/design_text.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
 import 'package:new_coffee/features/orders/presentation/manager/orders/orders_cubit.dart';
 import 'package:new_coffee/features/orders/presentation/views/widgets/orders_page_body.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 class OrdersPage extends StatelessWidget {
   const OrdersPage({super.key});
@@ -16,7 +17,10 @@ class OrdersPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: DesignText(S.myOrders, page: 'orders', label: 'myOrders')),
+      appBar: AppBar(
+        leading: const AppBackButton(),
+        title: DesignText(S.myOrders, page: 'orders', label: 'myOrders'),
+      ),
       body: BlocProvider(
         create: (context) =>
             OrdersCubit(repository: context.read<OrdersRepository>()),

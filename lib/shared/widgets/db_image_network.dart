@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 export 'db_image_network_cached.dart'
     if (dart.library.js_interop) 'db_image_network_dom.dart';

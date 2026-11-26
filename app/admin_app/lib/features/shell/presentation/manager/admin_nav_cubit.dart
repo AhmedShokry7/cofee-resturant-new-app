@@ -8,9 +8,8 @@ import 'package:admin_app/features/shell/di/shell_dependencies.dart';
 import 'package:admin_app/features/shell/domain/repositories/nav_repository.dart';
 import 'package:admin_app/features/shell/domain/usecases/load_counts.dart';
 
-/// Builds the live feed of the counters, or null when there is nothing to
-/// watch. The tables depend on the pages the staff may open, so the caller of
-/// [AdminNavCubit.start] decides what the feed subscribes to.
+/// Builds the live feed of the realtime-backed counters, or null when there is
+/// nothing to watch. Event requests use the existing refresh timer.
 typedef NavLiveFeedFactory = PostgresChangesFeed? Function({
   required bool watchOrders,
   required bool watchKitchen,
@@ -58,20 +57,24 @@ class AdminNavCubit extends Cubit<AdminNavCounts> {
     required bool watchOrders,
     required bool watchKitchen,
     bool watchNotifications = false,
+    bool watchEventRequests = false,
   }) {
     _timer?.cancel();
     _watchNotifications = watchNotifications;
-    _isWatching = watchOrders || watchKitchen || watchNotifications;
+    _isWatching =
+        watchOrders || watchKitchen || watchNotifications || watchEventRequests;
     if (!_isWatching) {
       unawaited(_closeFeed());
       if (state != AdminNavCounts.empty) emit(AdminNavCounts.empty);
       return;
     }
-    _watchLive(
-      watchOrders: watchOrders,
-      watchKitchen: watchKitchen,
-      watchNotifications: watchNotifications,
-    );
+    if (watchOrders || watchKitchen || watchNotifications) {
+      _watchLive(
+        watchOrders: watchOrders,
+        watchKitchen: watchKitchen,
+        watchNotifications: watchNotifications,
+      );
+    }
     unawaited(refresh());
     _timer = Timer.periodic(refreshInterval, (_) => refresh());
   }

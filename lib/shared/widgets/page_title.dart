@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:new_coffee/shared/widgets/design_text.dart';
 
 import 'package:new_coffee/core/theme/typography.dart';
@@ -21,12 +21,18 @@ class PageTitle extends StatelessWidget {
         AppSpacing.md,
       ),
       child: page != null && label != null
-          ? DesignText(title, page: page!, label: label!, textAlign: TextAlign.center, style: AppFonts.semiBold20(context))
+          ? DesignText(
+              title,
+              page: page!,
+              label: label!,
+              textAlign: TextAlign.center,
+              style: AppFonts.semiBold20(context),
+            )
           : Text(
-        title,
-        textAlign: TextAlign.center,
-        style: AppFonts.semiBold20(context),
-      ),
+              title,
+              textAlign: TextAlign.center,
+              style: AppFonts.semiBold20(context),
+            ),
     );
   }
 }

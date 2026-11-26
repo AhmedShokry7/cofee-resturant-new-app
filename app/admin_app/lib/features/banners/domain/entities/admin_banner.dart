@@ -20,6 +20,8 @@ class AdminBanner {
     this.startsAt,
     this.endsAt,
     this.isPublished = true,
+    this.linkedProductIds = const <String>[],
+    this.linkedCategoryIds = const <String>[],
   });
 
   final String id;
@@ -40,6 +42,8 @@ class AdminBanner {
   final DateTime? startsAt;
   final DateTime? endsAt;
   final bool isPublished;
+  final List<String> linkedProductIds;
+  final List<String> linkedCategoryIds;
 
   String titleFor(AppLanguage language) =>
       language.isArabic ? titleAr : titleEn;
@@ -95,6 +99,8 @@ class AdminBanner {
     DateTime? endsAt,
     bool clearEndsAt = false,
     bool? isPublished,
+    List<String>? linkedProductIds,
+    List<String>? linkedCategoryIds,
   }) {
     return AdminBanner(
       id: id,
@@ -119,6 +125,8 @@ class AdminBanner {
       startsAt: clearStartsAt ? null : (startsAt ?? this.startsAt),
       endsAt: clearEndsAt ? null : (endsAt ?? this.endsAt),
       isPublished: isPublished ?? this.isPublished,
+      linkedProductIds: linkedProductIds ?? this.linkedProductIds,
+      linkedCategoryIds: linkedCategoryIds ?? this.linkedCategoryIds,
     );
   }
 

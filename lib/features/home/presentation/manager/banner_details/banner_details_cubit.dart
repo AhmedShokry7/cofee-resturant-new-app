@@ -57,20 +57,19 @@ class BannerDetailsCubit extends Cubit<BannerDetailsState> {
   Future<void> resolve() async {
     final banner = state.banner;
     final id = banner.targetId;
-    // Every target that can be looked up is looked up by id, so a banner
-    // without one has nowhere to read from.
-    if (id == null) return;
-    final own = await _readTarget(banner, id);
-    if (isClosed) return;
-    if (own != null) {
-      emit(state.copyWith(banner: own.banner, related: own.rows));
+    if (id != null) {
+      final own = await _readTarget(banner, id);
+      if (isClosed) return;
+      if (own != null) {
+        emit(state.copyWith(banner: own.banner, related: own.rows));
+      }
     }
 
-    // The link tables carry everything else the admin chose for this banner.
-    // `target_id` holds one row, so a banner picked for three products and a
-    // category could only ever show the one that was saved last.
+    // Link rows are keyed by the banner's own id, independently of its single
+    // navigation target. This also lets a target-less banner open a curated
+    // collection of selected products and categories.
     final links =
-        (await _read(() => readBannerLinks(repository, id))) ??
+        (await _read(() => readBannerLinks(repository, banner.id))) ??
         BannerLinks.none;
     if (isClosed || links.isEmpty) return;
     final extra = await _read(() => _linkedProducts(links));

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -13,6 +15,14 @@ import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/batch_product_repository.dart';
 import 'package:new_coffee/features/weather/data/model/weather_model.dart';
+import 'package:new_coffee/core/services/supabase_service.dart';
+import 'package:new_coffee/features/customer_bundles/data/model/customer_bundle.dart';
+import 'package:new_coffee/features/customer_bundles/data/repositories/customer_bundle_repository.dart';
+import 'package:new_coffee/features/customer_reservations/data/model/customer_event_request.dart';
+import 'package:new_coffee/features/customer_reservations/data/repositories/customer_reservation_repository.dart';
+import 'package:new_coffee/features/menu/data/repositories/supabase_product_repository.dart';
+import 'package:new_coffee/features/orders/data/model/order_status.dart';
+import 'package:new_coffee/features/orders/data/repositories/supabase_order_repository.dart';
 import 'package:new_coffee/shared/utils/cache_manager.dart';
 
 part 'home_state.dart';
@@ -40,6 +50,12 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   final CatalogRepository _repository;
+  late final CustomerBundleRepository _customerBundleRepository =
+      CustomerBundleRepository();
+  late final CustomerReservationRepository _customerReservationRepository =
+      CustomerReservationRepository();
+  late final SupabaseProductRepository _customerBundleProductRepository =
+      SupabaseProductRepository();
   final BranchCubitBinding _branchBinding = BranchCubitBinding();
 
   /// Branch whose prices and availability apply. Null until the customer picks.
@@ -48,17 +64,31 @@ class HomeCubit extends Cubit<HomeState> {
   /// setBranch reloaded with the old value and silently did nothing.
   String? branchId;
   int _loadGeneration = 0;
+  int _personalBundleGeneration = 0;
+  Future<void>? _personalBundleInFlight;
+  String? _loadedPersonalBundleUserId;
+  String? _loadedPersonalBundleBranchId;
+  String? _loadingPersonalBundleUserId;
+  String? _loadingPersonalBundleBranchId;
 
   /// Candidate rows behind the recommendations strip.
   ///
   /// The strip itself shows [HomeState.maxRecommendations]; the pool is wider so
   /// the weather rule and the favourites have something to promote, and narrow
   /// enough that home never pulls the whole menu.
-  static const int recommendationPoolSize = 10;
+  static const int recommendationPoolSize = 30;
 
   Future<void> load({bool forceRefresh = false}) async {
     final generation = ++_loadGeneration;
     emit(state.copyWith(isLoading: true, degradedSections: const []));
+    // Customer bundles start with the rest of home, instead of waiting for the
+    // personalized section to appear below the initial loading screen.
+    // Keep this section in the same load cycle, but don't make the entire home
+    // page wait for its independent bundle and product queries to finish.
+    unawaited(loadPersonalBundles(forceRefresh: forceRefresh));
+    final remindersFuture = SupabaseService.isSignedIn
+        ? _customerReservationRepository.listMyUpcomingEventReminders()
+        : Future.value(const <CustomerEventRequest>[]);
 
     // Each section loads independently so one failing source does not blank the
     // whole page. A section that fails keeps its previous value and the page
@@ -139,6 +169,53 @@ class HomeCubit extends Cubit<HomeState> {
       () => _repository.getBundles(branchId: branchId),
       state.bundles,
     );
+    final userId = SupabaseService.isReady && SupabaseService.isSignedIn
+        ? SupabaseService.client.auth.currentUser?.id
+        : null;
+    final purchaseSignalsFuture = section<Map<String, int>>(
+      'purchase_signals',
+      'home_purchase_signals_${userId ?? 'guest'}_$cacheBranch',
+      () async {
+        if (userId == null) return const <String, int>{};
+        final purchases = await SupabaseOrdersRepository().listOrders(
+          status: OrderStatus.completed,
+          limit: 100,
+        );
+        final purchasedIds = purchases
+            .map((line) => line.product.id)
+            .where((id) => id.isNotEmpty && !id.startsWith('removed-product-'))
+            .toSet()
+            .toList(growable: false);
+        if (purchasedIds.isEmpty) return const <String, int>{};
+        final purchaseFrequency = <String, int>{};
+        for (final line in purchases) {
+          purchaseFrequency.update(
+            line.product.id,
+            (count) => count + line.quantity,
+            ifAbsent: () => line.quantity,
+          );
+        }
+        final purchasedProducts = await getProductsByIds(
+          _repository,
+          purchasedIds,
+          branchId: branchId,
+        );
+        final counts = <String, int>{};
+        for (final product in purchasedProducts) {
+          final category = product.categorySlug.trim();
+          if (category.isNotEmpty) {
+            final frequency = purchaseFrequency[product.id] ?? 1;
+            counts.update(
+              category,
+              (count) => count + frequency,
+              ifAbsent: () => frequency,
+            );
+          }
+        }
+        return counts;
+      },
+      state.purchaseCategoryCounts,
+    );
 
     // Start every section before waiting. Sequential awaits on cache misses
     // turned independent requests into a network waterfall.
@@ -148,19 +225,35 @@ class HomeCubit extends Cubit<HomeState> {
     final categories = await categoriesFuture;
     if (isClosed || generation != _loadGeneration) return;
 
-    // Render the sections that are ready while the bundle list and its member
-    // products finish loading. A slow bundle request should not hold the whole
-    // home page behind a full-screen skeleton.
+    // Show the core catalog as soon as it is ready; personal bundles and
+    // reminders continue loading alongside the page.
     emit(
       state.copyWith(
         banners: banners,
         categories: categories,
         popular: _toProducts(featured),
         recommendationPool: products,
+        // Purchase history is only used to refine recommendations. Keep it out
+        // of the critical path so a slow order-history query cannot hold home
+        // content behind the loading state.
+        purchaseCategoryCounts: state.purchaseCategoryCounts,
+        hasLoadedOnce: true,
+        isLoading:
+            banners.isEmpty &&
+            categories.isEmpty &&
+            featured.isEmpty &&
+            products.isEmpty &&
+            state.personalBundles.isEmpty,
         // A copy: the list is still being filled by the bundle reads below, and
         // a state must not change after it was emitted.
         degradedSections: List.of(failures),
       ),
+    );
+
+    final reminders = await guard(
+      'event_reminders',
+      () => remindersFuture,
+      state.eventReminders,
     );
 
     final bundles = await bundlesFuture;
@@ -205,6 +298,11 @@ class HomeCubit extends Cubit<HomeState> {
       if (product != null) bundleProducts[id] = product;
     }
 
+    // Resolve ranking signals after the page content is already visible. The
+    // result is cached for the session TTL and updates recommendations once it
+    // arrives.
+    final purchaseCategoryCounts = await purchaseSignalsFuture;
+
     if (isClosed || generation != _loadGeneration) return;
     emit(
       state.copyWith(
@@ -213,11 +311,121 @@ class HomeCubit extends Cubit<HomeState> {
         categories: categories,
         popular: _toProducts(featured),
         recommendationPool: products,
+        purchaseCategoryCounts: purchaseCategoryCounts,
         bundleProducts: bundleProducts,
+        eventReminders: reminders,
         isLoading: false,
+        hasLoadedOnce: true,
         degradedSections: List.of(failures),
       ),
     );
+  }
+
+  /// Loads the signed-in customer's bundles and their branch-priced products.
+  /// The home section calls this again after authentication or bundle edits.
+  Future<void> loadPersonalBundles({bool forceRefresh = false}) {
+    if (!SupabaseService.isReady || !SupabaseService.isSignedIn) {
+      if (!forceRefresh &&
+          !state.isPersonalBundlesLoading &&
+          _loadedPersonalBundleUserId == null &&
+          _loadedPersonalBundleBranchId == branchId) {
+        return Future<void>.value();
+      }
+      ++_personalBundleGeneration;
+      _personalBundleInFlight = null;
+      _loadedPersonalBundleUserId = null;
+      _loadedPersonalBundleBranchId = branchId;
+      emit(
+        state.copyWith(
+          personalBundles: const [],
+          personalBundleProducts: const {},
+          isPersonalBundlesLoading: false,
+          personalBundlesFailed: false,
+        ),
+      );
+      return Future<void>.value();
+    }
+    final userId = SupabaseService.client.auth.currentUser?.id;
+    if (userId == null) return Future<void>.value();
+    if (state.isPersonalBundlesLoading &&
+        _loadingPersonalBundleUserId == userId &&
+        _loadingPersonalBundleBranchId == branchId &&
+        _personalBundleInFlight != null) {
+      return _personalBundleInFlight!;
+    }
+    if (!forceRefresh &&
+        _loadedPersonalBundleUserId == userId &&
+        _loadedPersonalBundleBranchId == branchId) {
+      return Future<void>.value();
+    }
+    final generation = ++_personalBundleGeneration;
+    final bundleBranchId = branchId;
+    _loadingPersonalBundleUserId = userId;
+    _loadingPersonalBundleBranchId = bundleBranchId;
+    emit(
+      state.copyWith(
+        isPersonalBundlesLoading: true,
+        personalBundlesFailed: false,
+      ),
+    );
+    final request = _fetchPersonalBundles(
+      generation: generation,
+      userId: userId,
+      branchId: bundleBranchId,
+    );
+    _personalBundleInFlight = request;
+    return request;
+  }
+
+  Future<void> _fetchPersonalBundles({
+    required int generation,
+    required String userId,
+    required String? branchId,
+  }) async {
+    try {
+      final bundles = (await _customerBundleRepository.listMyBundles())
+          .where((bundle) => bundle.isActive)
+          .toList(growable: false);
+      final ids = bundles
+          .expand((bundle) => bundle.items.map((item) => item.productId))
+          .toSet()
+          .toList(growable: false);
+      final products = ids.isEmpty
+          ? const <ProductModel>[]
+          : await _customerBundleProductRepository.getByIds(
+              ids,
+              branchId: branchId,
+            );
+      if (isClosed || generation != _personalBundleGeneration) return;
+      _loadedPersonalBundleUserId = userId;
+      _loadedPersonalBundleBranchId = branchId;
+      emit(
+        state.copyWith(
+          personalBundles: bundles,
+          personalBundleProducts: {
+            for (final product in products) product.id: product,
+          },
+          isPersonalBundlesLoading: false,
+          personalBundlesFailed: false,
+        ),
+      );
+    } catch (_) {
+      if (isClosed || generation != _personalBundleGeneration) return;
+      _loadedPersonalBundleUserId = null;
+      _loadedPersonalBundleBranchId = null;
+      emit(
+        state.copyWith(
+          personalBundles: const [],
+          personalBundleProducts: const {},
+          isPersonalBundlesLoading: false,
+          personalBundlesFailed: true,
+        ),
+      );
+    } finally {
+      if (generation == _personalBundleGeneration) {
+        _personalBundleInFlight = null;
+      }
+    }
   }
 
   /// Products contained by the loaded bundles.

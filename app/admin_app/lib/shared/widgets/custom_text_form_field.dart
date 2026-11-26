@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 class CustomTextFormField extends StatefulWidget {
   final String hint;
@@ -23,6 +24,7 @@ class CustomTextFormField extends StatefulWidget {
   final void Function(String)? onFieldSubmitted;
   final Widget? prefixIcon;
   final Widget? suffixIcon;
+  final bool currencyIconOutside;
   final double? padding;
   final List<TextInputFormatter>? inputFormatters;
   final int maxLines;
@@ -47,6 +49,7 @@ class CustomTextFormField extends StatefulWidget {
     this.onFieldSubmitted,
     this.prefixIcon,
     this.suffixIcon,
+    this.currencyIconOutside = false,
     this.padding,
     this.inputFormatters,
     this.maxLines = 1,
@@ -76,12 +79,22 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
         ? focusColor
         : onSurface.withValues(alpha: 0.24);
 
+    final input = AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(AppDimensions.fieldRadius),
+      ),
+      child: _buildInput(context, focusColor, borderColor),
+    );
+
     return Padding(
       padding: EdgeInsets.only(bottom: widget.bottomPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (widget.label != null) ...[
+          if (widget.label != null)
             Padding(
               padding: EdgeInsets.only(
                 bottom: AppDimensions.fieldLabelBottom,
@@ -101,91 +114,103 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                 ],
               ),
             ),
-          ],
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(AppDimensions.fieldRadius),
-            ),
-            child: Focus(
-              onFocusChange: (focused) {
-                if (_isFocused != focused) {
-                  setState(() => _isFocused = focused);
-                }
-              },
-              child: TextFormField(
-                controller: widget.controller,
-                focusNode: widget.focusNode,
-                obscureText: widget.obscureText,
-                keyboardType: widget.keyboardType,
-                textInputAction: widget.textInputAction,
-                inputFormatters: widget.inputFormatters,
-                maxLines: widget.maxLines,
-                autovalidateMode: widget.autovalidateMode,
-                validator: widget.validator,
-                onSaved: widget.onSaved,
-                onChanged: widget.onChanged,
-                onFieldSubmitted: widget.onFieldSubmitted,
-                cursorColor: focusColor,
-                textAlignVertical: TextAlignVertical.center,
-                style: AppFonts.semiBold16(context).copyWith(color: onSurface),
-                decoration: InputDecoration(
-                  hintText: widget.hint,
-                  hintStyle: AppFonts.semiBold14(context)
-                      .copyWith(color: onSurface.withValues(alpha: 0.55)),
-                  prefixIcon: widget.prefixIcon == null
-                      ? null
-                      : Padding(
-                          padding: const EdgeInsetsDirectional.only(
-                            start: AppDimensions.fieldIconStart,
-                            end: AppDimensions.fieldIconEnd,
-                          ),
-                          child: IconTheme(
-                            data: IconThemeData(
-                              color: _isFocused
-                                  ? focusColor
-                                  : onSurface.withValues(alpha: 0.6),
-                              size: AppDimensions.fieldIconSize,
-                            ),
-                            child: widget.prefixIcon!,
-                          ),
-                        ),
-                  prefixIconConstraints: const BoxConstraints(
-                    minWidth: AppDimensions.fieldIconBox,
-                    minHeight: AppDimensions.fieldIconMinHeight,
-                  ),
-                  suffixIcon: widget.suffixIcon,
-                  suffixIconConstraints: const BoxConstraints(
-                    minWidth: AppDimensions.fieldIconBox,
-                    minHeight: AppDimensions.fieldIconMinHeight,
-                  ),
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: AppDimensions.fieldPadding,
-                    vertical:
-                        widget.padding ?? AppDimensions.fieldVerticalPadding,
-                  ),
-                  filled: false,
-                  isDense: false,
-                  border: _buildBorder(),
-                  enabledBorder: _buildBorder(color: borderColor),
-                  focusedBorder: _buildBorder(
-                    color: focusColor,
-                    width: AppDimensions.fieldFocusBorderWidth,
-                  ),
-                  errorBorder: _buildBorder(color: colorScheme.error),
-                  focusedErrorBorder: _buildBorder(
-                    color: colorScheme.error,
-                    width: AppDimensions.fieldFocusBorderWidth,
-                  ),
-                  errorStyle: AppFonts.semiBold12(context)
-                      .copyWith(color: colorScheme.error),
-                ),
-              ),
-            ),
-          ),
+          if (widget.currencyIconOutside)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(child: input),
+                const SizedBox(width: AppSpacing.sm),
+                const CurrencyIcon(size: 14),
+              ],
+            )
+          else
+            input,
         ],
+      ),
+    );
+  }
+
+  Widget _buildInput(
+    BuildContext context,
+    Color focusColor,
+    Color borderColor,
+  ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final onSurface = colorScheme.onSurface;
+    return Focus(
+      onFocusChange: (focused) {
+        if (_isFocused != focused) {
+          setState(() => _isFocused = focused);
+        }
+      },
+      child: TextFormField(
+        controller: widget.controller,
+        focusNode: widget.focusNode,
+        obscureText: widget.obscureText,
+        keyboardType: widget.keyboardType,
+        textInputAction: widget.textInputAction,
+        inputFormatters: widget.inputFormatters,
+        maxLines: widget.maxLines,
+        autovalidateMode: widget.autovalidateMode,
+        validator: widget.validator,
+        onSaved: widget.onSaved,
+        onChanged: widget.onChanged,
+        onFieldSubmitted: widget.onFieldSubmitted,
+        cursorColor: focusColor,
+        textAlignVertical: TextAlignVertical.center,
+        style: AppFonts.semiBold16(context).copyWith(color: onSurface),
+        decoration: InputDecoration(
+          hintText: widget.hint,
+          hintStyle: AppFonts.semiBold14(context)
+              .copyWith(color: onSurface.withValues(alpha: 0.55)),
+          prefixIcon: widget.prefixIcon == null
+              ? null
+              : Padding(
+                  padding: const EdgeInsetsDirectional.only(
+                    start: AppDimensions.fieldIconStart,
+                    end: AppDimensions.fieldIconEnd,
+                  ),
+                  child: IconTheme(
+                    data: IconThemeData(
+                      color: _isFocused
+                          ? focusColor
+                          : onSurface.withValues(alpha: 0.6),
+                      size: AppDimensions.fieldIconSize,
+                    ),
+                    child: widget.prefixIcon!,
+                  ),
+                ),
+          prefixIconConstraints: const BoxConstraints(
+            minWidth: AppDimensions.fieldIconBox,
+            minHeight: AppDimensions.fieldIconMinHeight,
+          ),
+          suffixIcon: widget.currencyIconOutside ? null : widget.suffixIcon,
+          suffixIconConstraints: const BoxConstraints(
+            minWidth: AppDimensions.fieldIconBox,
+            minHeight: AppDimensions.fieldIconMinHeight,
+          ),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: AppDimensions.fieldPadding,
+            vertical: widget.padding ?? AppDimensions.fieldVerticalPadding,
+          ),
+          constraints: const BoxConstraints(minHeight: AppSizes.px48),
+          filled: false,
+          isDense: false,
+          border: _buildBorder(),
+          enabledBorder: _buildBorder(color: borderColor),
+          focusedBorder: _buildBorder(
+            color: focusColor,
+            width: AppDimensions.fieldFocusBorderWidth,
+          ),
+          errorBorder: _buildBorder(color: colorScheme.error),
+          focusedErrorBorder: _buildBorder(
+            color: colorScheme.error,
+            width: AppDimensions.fieldFocusBorderWidth,
+          ),
+          errorStyle: AppFonts.semiBold12(context)
+              .copyWith(color: colorScheme.error),
+        ),
       ),
     );
   }

@@ -163,6 +163,46 @@ void main() {
     );
   });
 
+  testWidgets(
+    'the event requests row carries its pending count and opens its page',
+    (tester) async {
+      _setViewport(tester, 1280);
+      String? selected;
+
+      await tester.pumpWidget(
+        _wrap(
+          AdminSidebar(
+            session: _session(),
+            destinations: adminDestinations,
+            selectedId: 'dashboard',
+            badges: const <String, int>{'eventRequests': 3},
+            onSelected: (id) => selected = id,
+            onSignOut: () {},
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final badge = find.text(localizeDigits('3'));
+      await tester.scrollUntilVisible(badge, 200);
+      await tester.pump();
+
+      final row = find.ancestor(
+        of: badge,
+        matching: find.byType(AdminSidebarItem),
+      );
+      expect(row, findsOneWidget);
+      expect(
+        find.descendant(of: row, matching: find.text(S.eventRequests)),
+        findsOneWidget,
+      );
+
+      await tester.tap(row);
+      await tester.pump();
+      expect(selected, 'eventRequests');
+    },
+  );
+
   test('every database feature is listed as a destination', () {
     final ids = adminDestinations.map((destination) => destination.id).toSet();
 
@@ -175,6 +215,7 @@ void main() {
         'pos',
         'kitchen',
         'tables',
+        'eventRequests',
         'products',
         'categories',
         'bundles',

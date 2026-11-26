@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'dart:async';
@@ -261,7 +262,7 @@ class _OrderSummary extends StatelessWidget {
                   ],
                 );
               }
-              return TextButton.icon(
+              return CustomTextButton.icon(
                 onPressed: () => cubit.refreshCheckoutQuote(cart.items),
                 icon: const Icon(AppIcons.refresh),
                 label: Text(S.retry),

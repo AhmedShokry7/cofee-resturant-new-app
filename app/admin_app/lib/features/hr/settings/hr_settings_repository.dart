@@ -17,7 +17,7 @@ abstract interface class HrSettingsRepository {
 }
 
 class SupabaseHrSettingsRepository implements HrSettingsRepository {
-  SupabaseHrSettingsRepository({SupabaseClient? client}) : _client = client;
+  SupabaseHrSettingsRepository({this._client});
   final SupabaseClient? _client;
   SupabaseClient get client => _client ?? SupabaseService.client;
 

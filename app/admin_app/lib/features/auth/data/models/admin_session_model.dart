@@ -33,6 +33,7 @@ class AdminSessionModel {
       fullName: '${_json['full_name'] ?? ''}',
       email: '${_json['email'] ?? ''}',
       status: '${_json['status'] ?? ''}',
+      avatarUrl: _json['avatar_url'] as String?,
       roles: _mapList(_json['roles'])
           .map(
             (role) => AdminRoleScope(

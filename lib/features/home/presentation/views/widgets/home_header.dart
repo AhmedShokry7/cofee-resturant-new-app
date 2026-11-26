@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
@@ -45,90 +45,97 @@ class HomeHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (showGreeting)
-              BlocBuilder<CurrentUserCubit, CurrentUserState>(
-                builder: (context, state) {
-                  final first = firstNameOf(state.name);
-                  final greeting = this.greeting ??
-                      (first == null
-                          ? getGreeting(now)
-                          : '${getGreeting(now)}, $first');
-                  return Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          greeting,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppFonts.regular14(context)
-                              .copyWith(color: AppColor.greyColor),
+                BlocBuilder<CurrentUserCubit, CurrentUserState>(
+                  builder: (context, state) {
+                    final first = firstNameOf(state.name);
+                    final greeting =
+                        this.greeting ??
+                        (first == null
+                            ? getGreeting(now)
+                            : '${getGreeting(now)}, $first');
+                    return Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            greeting,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppFonts.regular14(context)
+                                .copyWith(color: AppColor.greyColor),
+                          ),
                         ),
-                      ),
-                      SizedBox(width: AppSpacing.xs),
-                      Image.asset(
-                        isDaytime(now) ? AppImages.sun : AppImages.moon,
-                        width: AppSizes.px30,
-                        height: AppSizes.px30,
-                      ),
-                    ],
-                  );
-                },
-              ),
+                        SizedBox(width: AppSpacing.xs),
+                        Image.asset(
+                          isDaytime(now) ? AppImages.sun : AppImages.moon,
+                          width: AppSizes.px30,
+                          height: AppSizes.px30,
+                        ),
+                      ],
+                    );
+                  },
+                ),
               SizedBox(height: AppSpacing.xs),
-              Text(question ?? S.homeQuestion,
-                  style: AppFonts.semiBold20(context)),
+              Text(
+                question ?? S.homeQuestion,
+                style: AppFonts.semiBold20(context),
+              ),
             ],
           ),
         ),
         if (showLoyaltyPill) ...[
           SizedBox(width: AppSpacing.sm),
-        // The wallet as a live pill, not a mute gift glyph: the balance is the
-        // one number that makes the customer tap, and the pill is the same
-        // height as the bell beside it so the header stays one line.
-        Semantics(
-          button: true,
-          label: S.loyaltyPoints,
-          child: Material(
-            color: AppColor.primarySoft,
-            shape: StadiumBorder(
-              side: BorderSide(color: AppColor.primaryRing, width: 1),
-            ),
-            child: InkWell(
-              onTap: () =>
-                  Navigator.of(context).pushNamed(LoyaltyPage.routeName),
-              customBorder: const StadiumBorder(),
-              // The wallet may not be registered above this header (isolated
-              // previews and tests): a missing wallet means a gift glyph only,
-              // never an exception on screen.
-              child: _LoyaltyPillCount(),
+          // The wallet as a live pill, not a mute gift glyph: the balance is the
+          // one number that makes the customer tap, and the pill is the same
+          // height as the bell beside it so the header stays one line.
+          Semantics(
+            button: true,
+            label: S.loyaltyPoints,
+            child: Material(
+              color: AppColor.primarySoft,
+              shape: StadiumBorder(
+                side: BorderSide(
+                  color: AppColor.primaryRing,
+                  width: AppSizes.px1,
+                ),
+              ),
+              child: InkWell(
+                onTap: () =>
+                    Navigator.of(context).pushNamed(LoyaltyPage.routeName),
+                customBorder: const StadiumBorder(),
+                // The wallet may not be registered above this header (isolated
+                // previews and tests): a missing wallet means a gift glyph only,
+                // never an exception on screen.
+                child: _LoyaltyPillCount(),
+              ),
             ),
           ),
-        ),
         ],
         if (showNotification) ...[
           SizedBox(width: AppSpacing.sm),
-        Semantics(
-          button: true,
-          label: S.notifications,
-          child: Material(
-            color: AppColor.transparent,
-            shape: CircleBorder(
-              side: BorderSide(
-                color: AppColor.primaryRing,
-                width: AppSizes.px1,
+          Semantics(
+            button: true,
+            label: S.notifications,
+            child: Material(
+              color: AppColor.transparent,
+              shape: CircleBorder(
+                side: BorderSide(
+                  color: AppColor.primaryRing,
+                  width: AppSizes.px1,
+                ),
               ),
-            ),
-            child: InkWell(
-              onTap: () =>
-                  Navigator.of(context).pushNamed(NotificationsPage.routeName),
-              customBorder: const CircleBorder(),
-              child: SizedBox(
-                height: AppSizes.px44,
-                width: AppSizes.px44,
-                child: const _NotificationBell(),
+              child: InkWell(
+                onTap: () =>
+                    Navigator.of(context)
+                        .pushNamed(NotificationsPage.routeName),
+                customBorder: const CircleBorder(),
+                child: SizedBox(
+                  height: AppSizes.px44,
+                  width: AppSizes.px44,
+                  child: const _NotificationBell(),
+                ),
               ),
             ),
           ),
-        ),
         ],
       ],
     );

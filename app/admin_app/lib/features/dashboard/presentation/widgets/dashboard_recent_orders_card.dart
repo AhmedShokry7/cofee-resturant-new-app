@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/navigation/admin_navigator.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/dashboard/domain/entities/admin_dashboard_recent_order.dart';
 import 'package:admin_app/features/dashboard/presentation/widgets/dashboard_orders_table.dart';
@@ -26,17 +27,20 @@ class DashboardRecentOrdersCard extends StatelessWidget {
   final String emptyMessage;
 
   @override
-  Widget build(BuildContext context) => AdminSectionCard(
-    title: S.recentOrders,
-    subtitle: S.dashboardRecentOrdersSubtitle,
-    count: orders.isEmpty ? null : orders.length,
-    trailing: AdminSectionLink(
-      destinationId: 'orders',
-      label: S.dashboardViewAllOrders,
-      icon: AppIcons.arrowLeft01,
-    ),
-    child: orders.isEmpty
-        ? AdminEmptyState(icon: AppIcons.receiptDollar, message: emptyMessage)
-        : DashboardOrdersTable(orders: orders),
-  );
+  Widget build(BuildContext context) {
+    final openOrder = AdminNavigator.maybeOpenOrder(context);
+    return AdminSectionCard(
+      title: S.recentOrders,
+      subtitle: S.dashboardRecentOrdersSubtitle,
+      count: orders.isEmpty ? null : orders.length,
+      trailing: AdminSectionLink(
+        destinationId: 'orders',
+        label: S.dashboardViewAllOrders,
+        icon: AppIcons.arrowLeft01,
+      ),
+      child: orders.isEmpty
+          ? AdminEmptyState(icon: AppIcons.receiptDollar, message: emptyMessage)
+          : DashboardOrdersTable(orders: orders, onOpenOrder: openOrder),
+    );
+  }
 }

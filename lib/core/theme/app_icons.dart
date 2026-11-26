@@ -1,4 +1,5 @@
 import 'package:hugeicons/hugeicons.dart';
+import 'package:material_ui/material_ui.dart' show Icons;
 
 /// The app's icon index: every glyph is named here once, and `hugeicons` is
 /// imported nowhere else.
@@ -26,6 +27,8 @@ abstract final class AppIcons {
   static const refresh = HugeIcons.strokeRoundedRefresh;
   static const reload = HugeIcons.strokeRoundedReload;
   static const externalLink = HugeIcons.strokeRoundedLink01;
+  static const repeat = HugeIcons.strokeRoundedRepeat;
+  static const clock = HugeIcons.strokeRoundedTime01;
 
   // Commerce
   static const cart = HugeIcons.strokeRoundedShoppingCart01;
@@ -75,6 +78,8 @@ abstract final class AppIcons {
   static const notification = HugeIcons.strokeRoundedNotification01;
   static const notificationOff = HugeIcons.strokeRoundedNotificationBlock01;
   static const favourite = HugeIcons.strokeRoundedFavourite;
+  // Filled heart for a saved state: hugeicons has no solid heart.
+  static const favouriteFilled = Icons.favorite;
   static const star = HugeIcons.strokeRoundedStar;
   static const starOff = HugeIcons.strokeRoundedStarOff;
   static const thumbsUp = HugeIcons.strokeRoundedThumbsUp;

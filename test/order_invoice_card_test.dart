@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -54,6 +54,29 @@ Widget _app(
 );
 
 void main() {
+  testWidgets('shows a recoverable message when the document launcher throws', (
+    tester,
+  ) async {
+    final repository = _InvoiceRepository(
+      Future.value(
+        _invoice(documentUrl: 'https://storage.example/signed/invoice.pdf'),
+      ),
+    );
+    await tester.pumpWidget(
+      _app(
+        repository,
+        open: (_) async {
+          throw StateError('Launcher unavailable');
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(S.downloadInvoice));
+    await tester.pumpAndSettle();
+    expect(find.text(S.invoiceDownloadFailed), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('keeps the order receipt while no invoice exists', (
     tester,
   ) async {

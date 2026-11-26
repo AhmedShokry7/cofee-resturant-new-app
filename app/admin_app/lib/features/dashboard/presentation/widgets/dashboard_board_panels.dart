@@ -92,8 +92,12 @@ class DashboardBoardPanels extends StatelessWidget {
 
   /// صف بلوحة جانبية قد لا تكون: إذا غاب الهدف أو خطوات البداية تأخذ اللوحة
   /// العريضة العرض كله، لأن نصف صفحة فارغ يُقرأ خللًا لا قرارًا.
+  ///
+  /// الصف بارتفاع واحد: بطاقة تنتهي قبل أختها تُقرأ ناقصة، فالحافة السفلى
+  /// المشتركة هي التي تقول إن اللوحتين قرينتان.
   Widget _row(Widget? narrow, Widget wide) => AdminPanelRow(
     weights: narrow == null ? null : const [53, 100],
+    equalHeights: true,
     children: narrow == null ? [wide] : [narrow, wide],
   );
 }

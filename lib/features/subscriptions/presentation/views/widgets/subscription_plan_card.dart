@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -88,7 +89,7 @@ class SubscriptionPlanCard extends StatelessWidget {
                 SizedBox(height: AppSpacing.sm),
                 SizedBox(
                   width: double.infinity,
-                  child: FilledButton(
+                  child: CustomFilledButton(
                     onPressed: busy ? null : onSubscribe,
                     child: Text(
                       S.subscribeNow,

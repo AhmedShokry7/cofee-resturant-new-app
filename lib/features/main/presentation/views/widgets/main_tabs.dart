@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -37,9 +37,18 @@ List<MainTabView> buildMainTabs() => [
       page: switch (tab) {
         MainTab.home => const HomePage(),
         MainTab.categories => const CategoriesPage(),
-        MainTab.cart => DesignPageSectionsAbove(pageId: 'cart', child: const CartPage()),
-        MainTab.favorites => DesignPageSectionsAbove(pageId: 'favourites', child: const FavoritesPage()),
-        MainTab.settings => DesignPageSectionsAbove(pageId: 'settings', child: const SettingsPage()),
+        MainTab.cart => DesignPageSectionsAbove(
+          pageId: 'cart',
+          child: const CartPage(),
+        ),
+        MainTab.favorites => DesignPageSectionsAbove(
+          pageId: 'favourites',
+          child: const FavoritesPage(),
+        ),
+        MainTab.settings => DesignPageSectionsAbove(
+          pageId: 'settings',
+          child: const SettingsPage(),
+        ),
       },
     ),
 ];

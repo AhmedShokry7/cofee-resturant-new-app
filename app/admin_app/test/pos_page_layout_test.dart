@@ -17,6 +17,7 @@ import 'package:admin_app/features/pos/presentation/widgets/pos_cart_panel.dart'
 import 'package:admin_app/features/pos/presentation/widgets/pos_product_card.dart';
 import 'package:admin_app/core/models/dining_table.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
+import 'package:admin_app/shared/widgets/currency_input_row.dart';
 
 const _branches = <PosBranch>[
   PosBranch(id: 'b1', code: 'MAADI', nameAr: 'المعادي', nameEn: 'Maadi'),
@@ -361,8 +362,22 @@ void main() {
     expect(find.text(S.posSplitCashLabel), findsOneWidget);
     expect(find.text(S.posSplitCardLabel), findsOneWidget);
     expect(find.text(S.posSplitHint), findsOneWidget);
-    expect(find.byKey(const Key('pos-split-cash')), findsOneWidget);
-    expect(find.byKey(const Key('pos-split-card')), findsOneWidget);
+    final cashField = find.byKey(const Key('pos-split-cash'));
+    final cardField = find.byKey(const Key('pos-split-card'));
+    expect(cashField, findsOneWidget);
+    expect(cardField, findsOneWidget);
+    expect(find.byType(CurrencyInputRow), findsNWidgets(3));
+    expect(
+      find.ancestor(of: cashField, matching: find.byType(CurrencyInputRow)),
+      findsOneWidget,
+    );
+    expect(
+      find.ancestor(of: cardField, matching: find.byType(CurrencyInputRow)),
+      findsOneWidget,
+    );
+    expect(tester.widget<TextField>(cashField).decoration?.suffixIcon, isNull);
+    expect(tester.widget<TextField>(cardField).decoration?.suffixIcon, isNull);
+    expect(tester.getSize(cashField).height, tester.getSize(cardField).height);
     expect(
       tester
           .widget<TextField>(find.byKey(const Key('pos-split-cash')))
@@ -580,8 +595,25 @@ void main() {
         tester.getTopLeft(checkoutButton).dy,
       );
 
-      expect(find.byKey(const Key('pos-cash-received')), findsOneWidget);
+      final cashReceived = find.byKey(const Key('pos-cash-received'));
+      final cashChange = find.byKey(const Key('pos-cash-change-box'));
+      expect(cashReceived, findsOneWidget);
       expect(find.text(S.posCashChangeLabel), findsOneWidget);
+      expect(
+        tester.widget<TextField>(cashReceived).decoration?.suffixIcon,
+        isNull,
+      );
+      expect(
+        find.ancestor(
+          of: cashReceived,
+          matching: find.byType(CurrencyInputRow),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        tester.getSize(cashReceived).height,
+        tester.getSize(cashChange).height,
+      );
       expect(
         tester
             .widget<Text>(find.byKey(const Key('pos-cash-change-value')))

@@ -16,6 +16,13 @@ abstract interface class BannerRepository {
   /// يعدل بيانات بنر قائم.
   Future<void> updateBanner(AdminBanner banner);
 
+  /// Replaces the products and categories shown on this banner's detail page.
+  Future<void> saveBannerLinks({
+    required String bannerId,
+    required List<String> productIds,
+    required List<String> categoryIds,
+  });
+
   /// يحذف بنرًا قائمًا.
   Future<void> deleteBanner(String id);
 

@@ -1,5 +1,5 @@
 import 'package:new_coffee/shared/widgets/design_text.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -14,6 +14,7 @@ import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 class SavedCardsPage extends StatefulWidget {
   const SavedCardsPage({super.key});
@@ -46,7 +47,14 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
   Widget build(BuildContext context) {
     return AuthGuard(
       child: Scaffold(
-        appBar: AppBar(title: DesignText(S.paymentMethod, page: 'saved_cards', label: 'paymentMethod')),
+        appBar: AppBar(
+          leading: const AppBackButton(),
+          title: DesignText(
+            S.paymentMethod,
+            page: 'saved_cards',
+            label: 'paymentMethod',
+          ),
+        ),
         body: const _SavedCardsView(),
       ),
     );
@@ -64,14 +72,22 @@ class _SavedCardsView extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: DesignText(S.deleteCard, page: 'saved_cards', label: 'deleteCard'),
-        content: DesignText(S.deleteCardConfirm, page: 'saved_cards', label: 'deleteCardConfirm'),
+        title: DesignText(
+          S.deleteCard,
+          page: 'saved_cards',
+          label: 'deleteCard',
+        ),
+        content: DesignText(
+          S.deleteCardConfirm,
+          page: 'saved_cards',
+          label: 'deleteCardConfirm',
+        ),
         actions: [
-          TextButton(
+          CustomTextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: DesignText(S.cancel, page: 'saved_cards', label: 'cancel'),
           ),
-          TextButton(
+          CustomTextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: DesignText(S.delete, page: 'saved_cards', label: 'delete'),
           ),
@@ -185,7 +201,10 @@ class _ReadFailedBanner extends StatelessWidget {
           Semantics(
             button: true,
             label: S.retry,
-            child: TextButton(onPressed: onRetry, child: DesignText(S.retry, page: 'saved_cards', label: 'retry')),
+            child: CustomTextButton(
+              onPressed: onRetry,
+              child: DesignText(S.retry, page: 'saved_cards', label: 'retry'),
+            ),
           ),
         ],
       ),

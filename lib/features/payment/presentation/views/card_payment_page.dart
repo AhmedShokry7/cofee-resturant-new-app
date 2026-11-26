@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:card_flutter/card_flutter.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -14,6 +14,7 @@ import 'package:new_coffee/features/subscriptions/presentation/views/subscriptio
 import 'package:new_coffee/shared/widgets/primary_bottom_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 /// The hosted card form, the 3DS redirect it opens, and what happens when the
 /// customer comes back from it.
@@ -236,7 +237,10 @@ class _CardPaymentView extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<CardPaymentCubit>();
         return Scaffold(
-          appBar: AppBar(title: Text(S.payment)),
+          appBar: AppBar(
+            leading: const AppBackButton(),
+            title: Text(S.payment),
+          ),
           body: Column(
             children: [
               Expanded(

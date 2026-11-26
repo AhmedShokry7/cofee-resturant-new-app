@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The fonts page: the family, the weights, the sizes, the line heights.
 ///
@@ -33,6 +33,7 @@ abstract final class AppFontWeights {
 /// customer chose in the system settings scales it through
 /// `MediaQuery.textScaler`, while the width of the window does not.
 abstract final class AppFontSizes {
+  /// Additional sizes used by customer screens, kept in the typography scale.
   static const double size10 = 10;
   static const double size11 = 11;
   static const double size12 = 12;
@@ -54,6 +55,9 @@ abstract final class AppFontSizes {
 /// Line heights. Arabic descends and ascends further than Latin, so running
 /// text needs more room than the default metrics give it.
 abstract final class AppTextHeights {
+  /// Compact labels and short assistant replies.
+  static const double compact = 1.4;
+
   /// A single line: numbers, marks, button labels.
   static const double tight = 1.15;
 

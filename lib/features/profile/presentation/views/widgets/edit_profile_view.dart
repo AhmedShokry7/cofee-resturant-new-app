@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -7,6 +7,7 @@ import 'package:new_coffee/features/profile/presentation/manager/account_details
 import 'package:new_coffee/features/profile/presentation/views/widgets/change_password_dialog.dart';
 import 'package:new_coffee/features/profile/presentation/views/widgets/edit_profile_form.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 /// The account form: fills itself from the cubit's read, sends the cubit's two
 /// writes, and says what happened.
@@ -100,7 +101,10 @@ class _EditProfileViewState extends State<EditProfileView> {
         context.read<AccountDetailsCubit>().clearError();
       },
       child: Scaffold(
-        appBar: AppBar(title: Text(S.yourProfile)),
+        appBar: AppBar(
+          leading: const AppBackButton(),
+          title: Text(S.yourProfile),
+        ),
         body: BlocBuilder<AccountDetailsCubit, AccountDetailsState>(
           builder: (context, state) {
             if (state.isLoading) {

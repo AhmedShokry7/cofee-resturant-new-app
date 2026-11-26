@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
@@ -31,40 +31,49 @@ class CategoryScopedHeader extends StatelessWidget {
         AppSpacing.lg,
         AppSpacing.sm,
       ),
-      child: Row(
-        children: [
-          Semantics(
-            button: true,
-            label: S.back,
-            child: Material(
-              color: AppColor.transparent,
-              borderRadius: BorderRadius.circular(AppRadius.r8),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(AppRadius.r8),
-                onTap: onBack,
-                child: SizedBox(
-                  // The floor every target in the app keeps, on a glyph that is
-                  // half that wide: an arrow missed is a customer stuck on a
-                  // page with no other way out but the system gesture.
-                  width: AppDimensions.tapTargetMin,
-                  height: AppDimensions.tapTargetMin,
-                  child: Center(
-                    child: AppIcon(DirectionAwareIcons.back(context)),
+      child: SizedBox(
+        height: AppDimensions.tapTargetMin,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Semantics(
+                button: true,
+                label: S.back,
+                child: Material(
+                  color: AppColor.transparent,
+                  borderRadius: BorderRadius.circular(AppRadius.r8),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(AppRadius.r8),
+                    onTap: onBack,
+                    child: SizedBox(
+                      width: AppDimensions.tapTargetMin,
+                      height: AppDimensions.tapTargetMin,
+                      child: Center(
+                        child: AppIcon(DirectionAwareIcons.back(context)),
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          SizedBox(width: AppSpacing.xs),
-          Expanded(
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppFonts.semiBold20(context),
+            Padding(
+              // Keep the title truly centered while leaving room for the back
+              // target on both sides, including in RTL layouts.
+              padding: EdgeInsets.symmetric(
+                horizontal: AppDimensions.tapTargetMin + AppSpacing.xs,
+              ),
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: AppFonts.semiBold20(context),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

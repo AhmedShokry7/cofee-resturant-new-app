@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/features/home/data/model/banner_model.dart';
@@ -17,6 +17,7 @@ class HomeBannerSection extends StatelessWidget {
     super.key,
     this.autoplay = true,
     this.height,
+    this.placement = BannerPlacement.hero,
     this.radius = AppRadius.none,
     this.showDots = true,
     this.previewBanners,
@@ -24,6 +25,7 @@ class HomeBannerSection extends StatelessWidget {
 
   final bool autoplay;
   final double? height;
+  final BannerPlacement placement;
 
   /// تقويس زوايا كل بانر. الغائب صفر كما كان.
   final double radius;
@@ -35,13 +37,16 @@ class HomeBannerSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final allBanners =
-        previewBanners ?? context.watch<HomeCubit>().state.banners;
-    final banners = previewBanners == null
-        ? allBanners
-              .where((banner) => banner.placement == BannerPlacement.hero)
-              .toList(growable: false)
-        : allBanners;
+    final homeState = context.watch<HomeCubit>().state;
+    // A preview section owns its draft list. In the live home screen, the top
+    // carousel reads only its placement-specific collection.
+    final liveBanners =
+        previewBanners ??
+        switch (placement) {
+          BannerPlacement.hero => homeState.heroBanners,
+          BannerPlacement.inline => homeState.inlineBanners,
+        };
+    final banners = liveBanners;
     if (banners.isEmpty) return const SizedBox.shrink();
     return BlocProvider(
       create: (context) =>
@@ -141,7 +146,7 @@ class _BannerCarouselState extends State<_BannerCarousel> {
               },
             ),
           ),
-          if (widget.showDots) ...[
+          if (widget.showDots && widget.banners.length > 1) ...[
             SizedBox(height: AppSpacing.md),
             BlocBuilder<BannerCubit, BannerState>(
               builder: (context, state) => BannerDots(

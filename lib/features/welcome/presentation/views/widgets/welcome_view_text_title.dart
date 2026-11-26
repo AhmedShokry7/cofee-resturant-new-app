@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -25,8 +25,7 @@ class WelcomeViewTextTitle extends StatelessWidget {
       ),
     );
     if (nativeHidden(node)) return const SizedBox.shrink();
-    final highlight =
-        (node?.localizedText('highlight') ?? S.yourCoffee).trim();
+    final highlight = (node?.localizedText('highlight') ?? S.yourCoffee).trim();
     final rest = (node?.localizedText('rest') ?? S.yourMoment).trim();
     if (highlight.isEmpty && rest.isEmpty) return const SizedBox.shrink();
     final size = node?.numberProperty('size');
@@ -37,22 +36,22 @@ class WelcomeViewTextTitle extends StatelessWidget {
     };
     final weight = node?.property('textWeight') ?? 'brand';
     FontWeight weightFor(String part) => switch (weight) {
-      'light' => FontWeight.w300,
-      'regular' => FontWeight.normal,
-      'medium' => FontWeight.w500,
-      'semibold' => FontWeight.w600,
-      'bold' => FontWeight.bold,
-      _ => part == 'highlight' ? FontWeight.bold : FontWeight.w600,
+      'light' => AppFontWeights.regular,
+      'regular' => AppFontWeights.regular,
+      'medium' => AppFontWeights.medium,
+      'semibold' => AppFontWeights.semiBold,
+      'bold' => AppFontWeights.bold,
+      _ => part == 'highlight' ? AppFontWeights.bold : AppFontWeights.semiBold,
     };
     Color colorFor(String? value, Color fallback) {
       if (value == null ||
-          !RegExp(r'^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$')
-              .hasMatch(value)) {
+          !RegExp(r'^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$').hasMatch(value)) {
         return fallback;
       }
       final parsed = int.parse(value.substring(1), radix: 16);
       return value.length == 9 ? Color(parsed) : Color(0xFF000000 | parsed);
     }
+
     return Text.rich(
       textAlign: alignment,
       TextSpan(
@@ -69,7 +68,8 @@ class WelcomeViewTextTitle extends StatelessWidget {
                 fontWeight: weightFor('highlight'),
               ),
             ),
-          if (highlight.isNotEmpty && rest.isNotEmpty) const TextSpan(text: " "),
+          if (highlight.isNotEmpty && rest.isNotEmpty)
+            const TextSpan(text: " "),
           if (rest.isNotEmpty)
             TextSpan(
               text: rest,

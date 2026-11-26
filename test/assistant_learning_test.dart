@@ -9,6 +9,7 @@ import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/assistant/data/assistant_engine.dart';
 import 'package:new_coffee/features/assistant/data/llm/llm_client.dart';
 import 'package:new_coffee/features/assistant/data/llm/llm_reply_sanitizer.dart';
+import 'package:new_coffee/features/assistant/data/model/chat_message.dart';
 import 'package:new_coffee/features/assistant/presentation/manager/assistant/assistant_cubit.dart';
 
 import 'support/mock_product_repository.dart';
@@ -34,16 +35,28 @@ class _RecordingLlmClient implements LlmClient {
     bool webSearch = false,
     bool captureKnowledgeGap = false,
   }) async {
-    calls.add(
-      (
-        questionKey: questionKey,
-        learn: learn,
-        personal: personal,
-        query: query,
-      ),
-    );
+    calls.add((
+      questionKey: questionKey,
+      learn: learn,
+      personal: personal,
+      query: query,
+    ));
     return const LlmReply(text: 'رد الموديل', provider: 'groq');
   }
+}
+
+class _ThrowingLlmClient implements LlmClient {
+  @override
+  Future<LlmReply?> complete({
+    required String system,
+    required List<Map<String, String>> history,
+    required String query,
+    String questionKey = '',
+    bool learn = true,
+    bool personal = false,
+    bool webSearch = false,
+    bool captureKnowledgeGap = false,
+  }) async => throw StateError('provider failed');
 }
 
 class _NoOrders implements OrdersRepository {
@@ -154,4 +167,23 @@ void main() {
   test('the model reply loses its markdown', () {
     expect(sanitizeLlmReply('السعر **35 ريال**'), 'السعر 35 ريال');
   });
+
+  test(
+    'an unexpected model failure clears typing and uses the local reply',
+    () async {
+      final cubit = AssistantCubit(
+        catalog: const MockProductRepository(),
+        orders: _NoOrders(),
+        llmClient: _ThrowingLlmClient(),
+      );
+      addTearDown(cubit.close);
+      await cubit.start();
+
+      await cubit.sendMessage('ايه رأيك في طقس اليوم؟');
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+
+      expect(cubit.state.typing, isFalse);
+      expect(cubit.state.messages.last.role, MessageRole.assistant);
+    },
+  );
 }

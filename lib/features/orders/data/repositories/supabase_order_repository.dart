@@ -252,6 +252,7 @@ class SupabaseOrdersRepository
     String? addressId,
     String? couponCode,
     String? note,
+    String? subscriptionRunId,
   }) => _submitOrder(
     branchId: branchId,
     lines: lines,
@@ -262,6 +263,7 @@ class SupabaseOrdersRepository
     couponCode: couponCode,
     note: note,
     expectedTotal: expectedTotal,
+    subscriptionRunId: subscriptionRunId,
   );
 
   Future<PlacedOrder> _submitOrder({
@@ -274,6 +276,7 @@ class SupabaseOrdersRepository
     String? couponCode,
     String? note,
     double? expectedTotal,
+    String? subscriptionRunId,
   }) async {
     _requireUserId();
     final branch = branchId.trim();
@@ -313,6 +316,8 @@ class SupabaseOrdersRepository
         if (addressIdValue.isNotEmpty) 'p_address_id': addressIdValue,
         if (coupon.isNotEmpty) 'p_coupon_code': coupon,
         if (orderNote.isNotEmpty) 'p_note': orderNote,
+        if (subscriptionRunId?.trim().isNotEmpty ?? false)
+          'p_subscription_run_id': subscriptionRunId!.trim(),
       },
     );
 

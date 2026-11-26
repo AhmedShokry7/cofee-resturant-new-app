@@ -630,7 +630,7 @@ grant execute on function public.admin_set_customer_product_subscription_status(
 -- ---------------------------------------------------------------------------
 alter table floor.reservations
   add column if not exists user_id uuid references auth.users(id) on delete set null,
-  add column if not exists source text not null default 'staff',
+  add column if not exists source text not null default 'admin',
   add column if not exists reservation_type text not null default 'table',
   add column if not exists customer_note text,
   add column if not exists admin_note text,

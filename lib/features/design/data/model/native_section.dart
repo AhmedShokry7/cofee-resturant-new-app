@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/features/design/data/model/published_design.dart';
 
@@ -187,7 +188,10 @@ class SplashSettings {
     return value;
   }
 
-  static Color colorFromHex(String value, {Color fallback = Colors.white}) {
+  static Color colorFromHex(
+    String value, {
+    Color fallback = AppColor.whiteColor,
+  }) {
     final hex = _validHex(value);
     if (hex == null) return fallback;
     final color = int.parse(hex.substring(1), radix: 16);

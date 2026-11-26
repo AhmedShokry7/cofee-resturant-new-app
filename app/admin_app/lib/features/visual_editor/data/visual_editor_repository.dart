@@ -268,7 +268,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
   @override
   Future<Map<String, dynamic>?> loadDraftDocument() async {
     final raw = _rpc('admin_get_app_design', {'p_slot': 'draft'});
-    final value = await raw;
+    final value = raw;
     if (value == null) return null;
     return jsonDecode(jsonEncode(value)) as Map<String, dynamic>;
   }
@@ -276,7 +276,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
   @override
   Future<Map<String, dynamic>?> loadPublishedDocument() async {
     final raw = _rpc('admin_get_app_design', {'p_slot': 'published'});
-    final value = await raw;
+    final value = raw;
     if (value == null) return null;
     return jsonDecode(jsonEncode(value)) as Map<String, dynamic>;
   }
@@ -313,7 +313,10 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     // المراجعة نفسها قد ينجو؛ يعالجه 254 فور اعتماده.
     // قراءة حية أولًا: كتابة الصفحات المدمجة تبني على آخر ما في
     // القاعدة — لا على لقطة قديمة من ذاكرة المحرّر.
-    final fresh = await loadDraftDocument() ?? await loadPublishedDocument() ?? const <String, dynamic>{};
+    final fresh =
+        await loadDraftDocument() ??
+        await loadPublishedDocument() ??
+        const <String, dynamic>{};
     final serverRevisions = DesignDocumentMeta.pageRevisions(fresh);
     // فحص كل الصفحات قبل أي كتابة: تعارض واحد يرفض الحفظ كله دفعة
     // واحدة، فلا يدخل الحفظ الجماعي حالة نصف مكتوبة.
@@ -336,16 +339,18 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     final savedRevisions = <String, int>{};
     for (final pageId in componentsByPage.keys) {
       final revision = (serverRevisions[pageId] ?? 0) + 1;
-      document = DesignDocumentMeta.withPageRevision(document, pageId, revision);
+      document = DesignDocumentMeta.withPageRevision(
+        document,
+        pageId,
+        revision,
+      );
       savedRevisions[pageId] = revision;
     }
     final invalid = DesignDocumentCodec.validate(document);
     if (invalid != null) {
       throw StateError('المستند غير صالح للحفظ: $invalid');
     }
-    final saved = await _rpc('admin_save_app_design_draft', {
-      'p_document': document,
-    });
+    final saved = _rpc('admin_save_app_design_draft', {'p_document': document});
     _loadedTheme = jsonEncode(theme.toJson());
     final savedAt = saved is Map ? saved['saved_at']?.toString() : null;
     return PageSaveResult(
@@ -382,9 +387,11 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     _loadedTheme = jsonEncode(theme.toJson());
     return PageSaveResult(
       savedRevisions: Map<String, int>.from(result['revisions'] as Map),
-      savedAt: DateTime.tryParse(result['saved_at'].toString()) ?? DateTime.now(),
+      savedAt:
+          DateTime.tryParse(result['saved_at'].toString()) ?? DateTime.now(),
     );
   }
+
   /// RPC يحوّل خطأ تعارض المراجعة من القاعدة (40001 — رمز قابل للإعادة)
   /// إلى [PageRevisionConflict] بتفاصيله، ويمرّر ما سواه كما هو.
   Future<Object?> _rpcWithConflict(
@@ -392,7 +399,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     Map<String, dynamic> params,
   ) async {
     try {
-      return await _rpc(function, params);
+      return _rpc(function, params);
     } on PostgrestException catch (e) {
       final conflict = _conflictFromMessage(e.message);
       if (conflict != null) throw conflict;
@@ -441,7 +448,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     String? name,
     String? note,
   }) async {
-    final version = await _rpc('admin_publish_app_design', {
+    final version = _rpc('admin_publish_app_design', {
       'p_document': designDocument,
       'p_name': name?.trim(),
       'p_note': note,
@@ -466,21 +473,24 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     // إلى المنشور — لا يمكن لعميل قديم أن يعتمد غير ما رأى.
     if (_atomicRpcSupported != false) {
       try {
-        final version = await _rpcWithConflict('admin_publish_app_design_pages', {
-          'p_pages': [
-            for (final pageId in pageIds)
-              {
-                'page': pageId,
-                // الإجبار يمرّر مرجعًا فارغًا: SQL NULL يلغي فحص التعارض
-                // في الـ RPC، وغيره يفعّل الفحص الذري داخل القاعدة.
-                'expected_revision': force
-                    ? null
-                    : knownRevisions[pageId] ?? 0,
-              },
-          ],
-          'p_name': name?.trim(),
-          'p_note': note,
-        });
+        final version = await _rpcWithConflict(
+          'admin_publish_app_design_pages',
+          {
+            'p_pages': [
+              for (final pageId in pageIds)
+                {
+                  'page': pageId,
+                  // الإجبار يمرّر مرجعًا فارغًا: SQL NULL يلغي فحص التعارض
+                  // في الـ RPC، وغيره يفعّل الفحص الذري داخل القاعدة.
+                  'expected_revision': force
+                      ? null
+                      : knownRevisions[pageId] ?? 0,
+                },
+            ],
+            'p_name': name?.trim(),
+            'p_note': note,
+          },
+        );
         final info = PublishedVersionInfo.fromJson(version);
         if (info == null) {
           throw StateError(
@@ -510,7 +520,10 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     for (final pageId in pageIds) {
       final server = serverRevisions[pageId] ?? 0;
       final known = knownRevisions[pageId] ?? 0;
-      if (server == 0 && !(draft['pages'] as List).any((p) => p is Map && p['page'] == pageId)) {
+      if (server == 0 &&
+          !(draft['pages'] as List).any(
+            (p) => p is Map && p['page'] == pageId,
+          )) {
         throw StateError(
           'الصفحة "$pageId" ليست محفوظة في المسودة — احفظ أولًا ثم انشر.',
         );
@@ -538,7 +551,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
 
   @override
   Future<List<PublishedVersionInfo>> listVersions({int limit = 1000000}) async {
-    final raw = await _rpc('admin_list_app_design_versions', {
+    final raw = _rpc('admin_list_app_design_versions', {
       'p_limit': limit.clamp(1, 1000000),
     });
     if (raw is! List) return const [];
@@ -555,7 +568,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     String? name,
     String? note,
   ) async {
-    await _rpc('admin_update_app_design_version_details', {
+    _rpc('admin_update_app_design_version_details', {
       'p_version_id': versionId,
       'p_name': name?.trim(),
       'p_note': note?.trim(),
@@ -564,12 +577,12 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
 
   @override
   Future<void> deleteVersion(String versionId) async {
-    await _rpc('admin_delete_app_design_version', {'p_version_id': versionId});
+    _rpc('admin_delete_app_design_version', {'p_version_id': versionId});
   }
 
   @override
   Future<Map<String, dynamic>?> getVersionDocument(String versionId) async {
-    final raw = await _rpc('admin_get_app_design_version', {
+    final raw = _rpc('admin_get_app_design_version', {
       'p_version_id': versionId,
     });
     if (raw == null) return null;
@@ -578,7 +591,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
 
   @override
   Future<PublishedVersionInfo> restoreVersion(String versionId) async {
-    final version = await _rpc('admin_restore_app_design_version', {
+    final version = _rpc('admin_restore_app_design_version', {
       'p_version_id': versionId,
     });
     final info = PublishedVersionInfo.fromJson(version);
@@ -592,12 +605,12 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
 
   @override
   Future<void> discardDraft() async {
-    await _rpc('admin_discard_app_design_draft', const {});
+    _rpc('admin_discard_app_design_draft', const {});
   }
 
   @override
   Future<List<DesignTemplateInfo>> listTemplates() async {
-    final raw = await _rpc('admin_list_app_design_templates', const {});
+    final raw = _rpc('admin_list_app_design_templates', const {});
     if (raw is! List) return const [];
     return [
       for (final item in raw)
@@ -608,9 +621,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
 
   @override
   Future<Map<String, dynamic>?> getTemplateDocument(String templateId) async {
-    final raw = await _rpc('admin_get_app_design_template', {
-      'p_id': templateId,
-    });
+    final raw = _rpc('admin_get_app_design_template', {'p_id': templateId});
     if (raw == null) return null;
     return jsonDecode(jsonEncode(raw)) as Map<String, dynamic>;
   }
@@ -621,7 +632,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     required String name,
     required Map<String, dynamic> document,
   }) async {
-    final raw = await _rpc('admin_save_app_design_template', {
+    final raw = _rpc('admin_save_app_design_template', {
       'p_id': id,
       'p_name': name.trim(),
       'p_document': document,
@@ -635,6 +646,6 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
 
   @override
   Future<void> deleteTemplate(String templateId) async {
-    await _rpc('admin_delete_app_design_template', {'p_id': templateId});
+    _rpc('admin_delete_app_design_template', {'p_id': templateId});
   }
 }

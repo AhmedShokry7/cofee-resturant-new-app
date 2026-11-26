@@ -7,6 +7,15 @@ abstract interface class BatchProductRepository {
   Future<List<ProductModel>> getByIds(List<String> ids, {String? branchId});
 }
 
+/// Optional branch availability lookup for flows that must not put stale
+/// products back into a customer's cart.
+abstract interface class ProductAvailabilityRepository {
+  Future<Set<String>> unavailableProductIds(
+    List<String> ids, {
+    required String branchId,
+  });
+}
+
 /// Uses the bulk implementation when available. Small local/test repositories
 /// retain a compatible fallback.
 Future<List<ProductModel>> getProductsByIds(

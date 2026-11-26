@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
@@ -29,8 +29,7 @@ class HomeSingleBannerSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final banner =
-        context.watch<HomeCubit>().state.promoBannerAt(bannerIndex);
+    final banner = context.watch<HomeCubit>().state.promoBannerAt(bannerIndex);
     if (banner == null) return const SizedBox.shrink();
     return SizedBox(
       height: height ?? AppDimensions.homeBannerHeight,

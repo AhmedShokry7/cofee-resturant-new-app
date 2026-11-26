@@ -1,5 +1,12 @@
 import 'package:new_coffee/features/addresses/presentation/views/address_form_page.dart';
 import 'package:new_coffee/features/addresses/presentation/views/addresses_page.dart';
+import 'package:new_coffee/features/customer_bundles/presentation/views/my_bundles_page.dart';
+import 'package:new_coffee/features/customer_bundles/presentation/views/customer_bundle_editor_page.dart';
+import 'package:new_coffee/features/customer_reservations/presentation/views/my_reservations_page.dart';
+import 'package:new_coffee/features/customer_reservations/presentation/views/reservation_form_page.dart';
+import 'package:new_coffee/features/customer_reservations/presentation/views/event_request_form_page.dart';
+import 'package:new_coffee/features/product_subscriptions/presentation/views/my_product_subscriptions_page.dart';
+import 'package:new_coffee/features/product_subscriptions/presentation/views/product_subscription_form_page.dart';
 import 'package:new_coffee/features/assistant/presentation/views/assistant_memory_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/email_auth_page.dart';
@@ -73,5 +80,12 @@ const Map<String, String> previewPageRoutes = {
   'notification_settings': NotificationSettingsPage.routeName,
   'help': HelpPage.routeName,
   'privacy': PrivacyPolicyPage.routeName,
+  'my_bundles': MyBundlesPage.routeName,
+  'customer_bundle_editor': CustomerBundleEditorPage.routeName,
+  'my_reservations': MyReservationsPage.routeName,
+  'reservation_form': ReservationFormPage.routeName,
+  'event_request_form': EventRequestFormPage.routeName,
+  'my_product_subscriptions': MyProductSubscriptionsPage.routeName,
+  'product_subscription_form': ProductSubscriptionFormPage.routeName,
   'assistant_memory': AssistantMemoryPage.routeName,
 };

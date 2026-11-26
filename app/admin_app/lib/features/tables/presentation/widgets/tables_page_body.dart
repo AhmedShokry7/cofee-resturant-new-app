@@ -35,6 +35,7 @@ class TablesPageBody extends StatelessWidget {
     required this.onOpenReservation,
     required this.onToggleTable,
     required this.onDeleteTable,
+    required this.onMoveTable,
     required this.onEditReservation,
     required this.onSeatReservation,
     required this.onCompleteReservation,
@@ -58,6 +59,7 @@ class TablesPageBody extends StatelessWidget {
   final ValueChanged<DiningTable> onOpenReservation;
   final ValueChanged<DiningTable> onToggleTable;
   final ValueChanged<DiningTable> onDeleteTable;
+  final Future<void> Function(DiningTable table, double x, double y) onMoveTable;
   final ValueChanged<DiningReservation> onEditReservation;
   final ValueChanged<DiningReservation> onSeatReservation;
   final ValueChanged<DiningReservation> onCompleteReservation;
@@ -99,6 +101,7 @@ class TablesPageBody extends StatelessWidget {
             onOpenReservation: onOpenReservation,
             onToggleTable: onToggleTable,
             onDeleteTable: onDeleteTable,
+            onMoveTable: onMoveTable,
             onEditReservation: onEditReservation,
             onSeatReservation: onSeatReservation,
             onCompleteReservation: onCompleteReservation,

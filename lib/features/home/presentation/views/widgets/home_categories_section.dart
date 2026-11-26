@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -42,15 +42,17 @@ class HomeCategoriesSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (showTitle)
-        HomeSectionTitle(
-          title: title?.trim().isNotEmpty == true ? title!.trim() : S.categories,
-          titleStyle: titleStyle ?? AppFonts.semiBold18(context),
-          trailing: HomeSectionLink(
-            label: S.seeAll,
-            onTap: () =>
-                context.read<MainCubit>().changeTab(MainTab.categories.index),
+          HomeSectionTitle(
+            title: title?.trim().isNotEmpty == true
+                ? title!.trim()
+                : S.categories,
+            titleStyle: titleStyle ?? AppFonts.semiBold18(context),
+            trailing: HomeSectionLink(
+              label: S.seeAll,
+              onTap: () =>
+                  context.read<MainCubit>().changeTab(MainTab.categories.index),
+            ),
           ),
-        ),
         SizedBox(height: AppSpacing.md),
         CategoryMarquee(
           categories: categories,

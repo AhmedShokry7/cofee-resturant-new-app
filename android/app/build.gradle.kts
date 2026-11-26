@@ -13,6 +13,7 @@ plugins {
     // the plugin to run after com.android.application, because it reads the
     // applicationId to pick the matching client out of the JSON file.
     id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
 }
 
 // Release signing.

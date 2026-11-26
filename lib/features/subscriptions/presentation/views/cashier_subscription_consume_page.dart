@@ -1,5 +1,6 @@
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/design_text.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -9,6 +10,7 @@ import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cu
 import 'package:new_coffee/features/subscriptions/data/repositories/subscription_repository.dart';
 import 'package:new_coffee/features/subscriptions/presentation/manager/subscription_consume/subscription_consume_cubit.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 /// The counter screen a cashier uses to spend cups from a subscription.
 class CashierSubscriptionConsumePage extends StatefulWidget {
@@ -65,7 +67,14 @@ class _ConsumeForm extends StatelessWidget {
   Widget build(BuildContext context) {
     final branchId = context.watch<BranchCubit>().state.selected?.id ?? '';
     return Scaffold(
-      appBar: AppBar(title: DesignText(S.consumeSubscription, page: 'cashier_subscription', label: 'consumeSubscription')),
+      appBar: AppBar(
+        leading: const AppBackButton(),
+        title: DesignText(
+          S.consumeSubscription,
+          page: 'cashier_subscription',
+          label: 'consumeSubscription',
+        ),
+      ),
       body: Padding(
         padding: EdgeInsets.all(AppSpacing.lg),
         child: Column(
@@ -95,7 +104,7 @@ class _ConsumeForm extends StatelessWidget {
                 children: [
                   SizedBox(
                     width: double.infinity,
-                    child: FilledButton(
+                    child: CustomFilledButton(
                       onPressed: state.isSubmitting
                           ? null
                           : () => context
@@ -106,7 +115,11 @@ class _ConsumeForm extends StatelessWidget {
                                   productId: productController.text,
                                   quantityText: quantityController.text,
                                 ),
-                      child: DesignText(S.deduct, page: 'cashier_subscription', label: 'deduct'),
+                      child: DesignText(
+                        S.deduct,
+                        page: 'cashier_subscription',
+                        label: 'deduct',
+                      ),
                     ),
                   ),
                   if (state.message != null) ...[

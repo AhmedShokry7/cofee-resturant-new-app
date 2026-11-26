@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
@@ -176,7 +176,7 @@ class _SavedCardRow extends StatelessWidget {
                           Container(
                             padding: EdgeInsets.symmetric(
                               horizontal: AppSpacing.xs,
-                              vertical: 2,
+                              vertical: AppSpacing.xxs,
                             ),
                             decoration: BoxDecoration(
                               color: AppColor.primarySoft,
@@ -193,7 +193,7 @@ class _SavedCardRow extends StatelessWidget {
                         ],
                       ],
                     ),
-                    SizedBox(height: 2),
+                    SizedBox(height: AppSizes.px2),
                     Text(
                       '${S.cardExpires} ${card.expiry}',
                       style: AppFonts.regular12(context)

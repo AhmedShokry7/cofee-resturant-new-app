@@ -54,13 +54,12 @@ class AssistantCubit extends Cubit<AssistantState> {
     LlmClient? llmClient,
     AssistantMemoryStore? memoryStore,
     AssistantRetrieval? retrieval,
-    WeatherModel? Function()? currentWeather,
+    this._currentWeather,
     this._cartExecutor,
     this.llmConfig = const LlmConfig(),
   }) : _llmClient = llmClient ?? HttpLlmClient(llmConfig),
        _store = memoryStore ?? const NoAssistantMemoryStore(),
        _retrieval = retrieval ?? const NoRetrieval(),
-       _currentWeather = currentWeather,
        super(const AssistantState()) {
     _snapshot = const AssistantSnapshot.empty();
   }
@@ -164,11 +163,10 @@ class AssistantCubit extends Cubit<AssistantState> {
   /// Lessons learned from past conversations: phrasing → intent.
   AssistantLearnedIntents _learned = AssistantLearnedIntents();
 
-  /// Guards against a second message while one is being answered.
-  ///
-  /// The chat's "typing" bubble is not used for this: it now means "waiting
-  /// for the language model", and the local answer is instant.
-  bool _answering = false;
+  /// Number of turns still doing foreground work. A new customer message is
+  /// allowed to supersede an older one; `_turn` makes sure only the newest
+  /// turn can write a reply to the chat.
+  int _pendingTurns = 0;
 
   /// The newest question the assistant is still allowed to answer.
   ///
@@ -378,27 +376,29 @@ class AssistantCubit extends Cubit<AssistantState> {
     MessageChannel channel = MessageChannel.text,
   }) async {
     final text = raw.trim();
-    if (text.isEmpty || _answering) return;
-    _answering = true;
+    if (text.isEmpty) return;
     // This question is now the newest one the assistant may answer, whatever
     // was still on its way.
-    _turn++;
+    final turn = ++_turn;
+    _pendingTurns++;
     try {
       await _send(
         raw,
         text,
+        turn: turn,
         favoriteIds: favoriteIds,
         cartProductIds: cartProductIds,
         channel: channel,
       );
     } finally {
-      _answering = false;
+      _pendingTurns--;
     }
   }
 
   Future<void> _send(
     String raw,
     String text, {
+    required int turn,
     required Set<String> favoriteIds,
     required Set<String> cartProductIds,
     required MessageChannel channel,
@@ -434,7 +434,7 @@ class AssistantCubit extends Cubit<AssistantState> {
     } catch (_) {
       // An empty catalogue still answers, just with less to say.
     }
-    if (isClosed) return;
+    if (isClosed || turn != _turn) return;
 
     // Who is allowed to answer this sentence, decided before anyone answers it.
     final reading = AssistantUnderstanding.analyse(
@@ -495,10 +495,19 @@ class AssistantCubit extends Cubit<AssistantState> {
       // it: the answer may take seconds, and a chat they asked something in
       // must be in the drawer even while it is still being thought about.
       unawaited(_saveOpenChat());
-      unawaited(_answerWithModel(text, reading, turn, answer));
+      unawaited(
+        _answerWithModel(text, reading, turn, answer).catchError((_) async {
+          // Retrieval or a non-default LLM client can throw before returning
+          // its normal null failure result. Keep the current chat usable and
+          // answer from the already-computed local result in that case.
+          if (!isClosed && turn == _turn) {
+            await _emitLocalAnswer(text, answer, turn);
+          }
+        }),
+      );
       return;
     }
-    await _emitLocalAnswer(text, answer, _turn);
+    await _emitLocalAnswer(text, answer, turn);
   }
 
   /// Puts the offline engine's answer on screen and records the turn.
@@ -840,7 +849,7 @@ class AssistantCubit extends Cubit<AssistantState> {
       (message) => message.role == MessageRole.user,
       orElse: () => const ChatMessage(id: '', role: MessageRole.user, text: ''),
     );
-    if (lastUser.text.trim().isEmpty || _answering) return;
+    if (lastUser.text.trim().isEmpty || _pendingTurns > 0) return;
     await sendMessage(
       lastUser.text,
       favoriteIds: favoriteIds,

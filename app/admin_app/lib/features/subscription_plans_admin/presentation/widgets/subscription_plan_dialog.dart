@@ -22,7 +22,6 @@ import 'package:admin_app/features/subscription_plans_admin/presentation/widgets
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/admin_help_button.dart';
 import 'package:admin_app/shared/widgets/category_image_dialog.dart';
-import 'package:admin_app/shared/widgets/currency_icon.dart';
 import 'package:admin_app/shared/widgets/custom_text_form_field.dart';
 
 Future<void> showSubscriptionPlanDialog({
@@ -239,7 +238,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
                           ),
                           inputFormatters: [_decimalFormatter],
                           validator: _validatePrice,
-                          suffixIcon: const CurrencyIcon(size: 10),
+                          currencyIconOutside: true,
                         ),
                         _field(
                           fieldKey: const Key('plan-currency'),
@@ -316,9 +315,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
                             ),
                             inputFormatters: [_decimalFormatter],
                             validator: _validateBonusValue,
-                            suffixIcon: _bonusType == 'fixed'
-                                ? const CurrencyIcon(size: 10)
-                                : null,
+                            currencyIconOutside: _bonusType == 'fixed',
                           ),
                         ]),
                       if (_bonusType != 'none')
@@ -548,7 +545,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
     TextInputAction textInputAction = TextInputAction.next,
     List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,
-    Widget? suffixIcon,
+    bool currencyIconOutside = false,
     int maxLines = 1,
   }) {
     return CustomTextFormField(
@@ -564,7 +561,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
       inputFormatters: inputFormatters,
       validator: validator,
       maxLines: maxLines,
-      suffixIcon: suffixIcon,
+      currencyIconOutside: currencyIconOutside,
     );
   }
 

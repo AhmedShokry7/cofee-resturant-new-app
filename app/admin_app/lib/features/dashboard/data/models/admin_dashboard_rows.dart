@@ -35,6 +35,7 @@ class AdminDashboardRows {
     return AdminDashboardTopProduct(
       nameAr: AdminDashboardJson.text(row['product_name_ar']),
       nameEn: AdminDashboardJson.text(row['product_name_en']),
+      productId: AdminDashboardJson.nullableText(row['product_id']),
       quantity: AdminDashboardJson.integer(row['quantity']),
       revenue: AdminDashboardJson.decimal(row['revenue']),
       imageUrl: AdminDashboardJson.nullableText(row['image_url']),

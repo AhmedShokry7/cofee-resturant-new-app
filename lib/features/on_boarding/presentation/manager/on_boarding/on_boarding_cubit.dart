@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/services/session_repository.dart';
@@ -26,10 +26,9 @@ class OnBoardingCubit extends Cubit<OnBoardingState> {
     this.session = const SessionRepository(),
     List<OnBoardingModel>? slides,
     Duration? slideDuration,
-    Duration? autoAdvance,
+    this._autoAdvance,
   }) : _slides = slides ?? onBoardingSlides(),
        _slideDuration = slideDuration ?? MotionTokens.entrance,
-       _autoAdvance = autoAdvance,
        pageController = PageController(initialPage: _firstPage),
        super(const OnBoardingInitial()) {
     _startAutoTimer();
@@ -52,7 +51,8 @@ class OnBoardingCubit extends Cubit<OnBoardingState> {
     required Duration? autoAdvance,
   }) {
     if (slides.isEmpty) return;
-    final sameSlides = slides.length == _slides.length &&
+    final sameSlides =
+        slides.length == _slides.length &&
         slides.asMap().entries.every(
           (e) =>
               e.value.image == _slides[e.key].image &&
@@ -135,10 +135,7 @@ class OnBoardingCubit extends Cubit<OnBoardingState> {
   /// reports where it stopped, and this method only asks for the move.
   void back() {
     if (_currentPage > _firstPage) {
-      pageController.previousPage(
-        duration: _slideDuration,
-        curve: _slideCurve,
-      );
+      pageController.previousPage(duration: _slideDuration, curve: _slideCurve);
     }
   }
 

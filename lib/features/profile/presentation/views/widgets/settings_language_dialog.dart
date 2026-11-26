@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -37,7 +38,7 @@ Future<void> showSettingsLanguageDialog(BuildContext context) {
         ],
       ),
       actions: [
-        TextButton(
+        CustomTextButton(
           onPressed: () => Navigator.of(dialogContext).pop(),
           child: Text(S.cancel),
         ),

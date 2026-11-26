@@ -39,6 +39,16 @@ List<AdminDestination> get operationsDestinations => <AdminDestination>[
     tables: <String>['floor.tables', 'floor.reservations'],
   ),
   AdminDestination(
+    id: 'eventRequests',
+    label: S.eventRequests,
+    icon: AppIcons.gift,
+    // This page has no search, so an empty hint hides the search field.
+    searchHint: '',
+    anyPermissions: <String>['tables.read', 'tables.manage'],
+    section: S.sectionOperations,
+    tables: <String>['floor.customer_event_requests'],
+  ),
+  AdminDestination(
     id: 'inventory',
     label: S.inventory,
     icon: AppIcons.package,

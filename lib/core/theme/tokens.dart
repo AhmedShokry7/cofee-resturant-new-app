@@ -24,6 +24,15 @@ import 'app_color.dart';
 /// These are the values the app already used, so moving a page onto them
 /// changes where the number comes from, never the layout.
 abstract final class AppSpacing {
+  /// Additional measured gaps centralized for consistent layout tuning.
+
+  static const double px3 = 3;
+  static const double px5 = 5;
+  static const double px6 = 6;
+  static const double px10 = 10;
+  static const double px14 = 14;
+  static const double px18 = 18;
+  static const double px20 = 20;
   AppSpacing._();
 
   /// No space at all.
@@ -65,6 +74,30 @@ abstract final class AppSpacing {
 abstract final class AppSizes {
   AppSizes._();
 
+  /// Additional measured component dimensions centralized for tuning.
+  static const double px1_4 = 1.4;
+  static const double px2_5 = 2.5;
+  static const double px19 = 19;
+  static const double px42 = 42;
+  static const double px62 = 62;
+  static const double px90 = 90;
+  static const double px96 = 96;
+  static const double px100 = 100;
+  static const double px130 = 130;
+  static const double px140 = 140;
+  static const double px150 = 150;
+  static const double px180 = 180;
+  static const double px184 = 184;
+  static const double px200 = 200;
+  static const double px216 = 216;
+  static const double px224 = 224;
+  static const double px236 = 236;
+  static const double px240 = 240;
+  static const double px350 = 350;
+  static const double px440 = 440;
+  static const double px460 = 460;
+  static const double px520 = 520;
+
   static const double px1 = 1.0;
   static const double px1_5 = 1.5;
   static const double px2 = 2.0;
@@ -80,6 +113,7 @@ abstract final class AppSizes {
   static const double px14 = 14.0;
   static const double px15 = 15.0;
   static const double px16 = 16.0;
+  static const double px17 = 17.0;
   static const double px18 = 18.0;
   static const double px20 = 20.0;
   static const double px22 = 22.0;
@@ -142,6 +176,11 @@ abstract final class AppIconSize {
 /// Corner radii. The name is the value; [AppDimensions] gives them roles.
 abstract final class AppRadius {
   AppRadius._();
+
+  /// Additional measured corner radii centralized for tuning.
+  static const double r18 = 18;
+  static const double r22 = 22;
+  static const double r30 = 30;
 
   /// A square corner.
   static const double none = 0.0;

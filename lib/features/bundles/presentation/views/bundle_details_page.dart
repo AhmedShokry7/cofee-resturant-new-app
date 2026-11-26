@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -15,6 +15,7 @@ import 'package:new_coffee/shared/widgets/animated_add_to_cart_button.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 class BundleDetailsPage extends StatelessWidget {
   const BundleDetailsPage({super.key, required this.bundle});
@@ -38,7 +39,10 @@ class BundleDetailsPage extends StatelessWidget {
           listener: (context, state) =>
               context.read<BundleDetailsCubit>().setBranch(state.selected?.id),
           child: Scaffold(
-            appBar: AppBar(title: Text(bundle.title)),
+            appBar: AppBar(
+              leading: const AppBackButton(),
+              title: Text(bundle.title),
+            ),
             body: const _BundleDetailsBody(),
             bottomNavigationBar: Container(
               padding: EdgeInsets.all(AppSpacing.lg),

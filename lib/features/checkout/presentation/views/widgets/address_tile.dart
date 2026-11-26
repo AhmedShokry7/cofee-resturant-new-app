@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
@@ -98,7 +99,7 @@ class AddressTile extends StatelessWidget {
                             child: Container(
                               padding: EdgeInsets.symmetric(
                                 horizontal: AppSpacing.xs,
-                                vertical: 2,
+                                vertical: AppSpacing.xxs,
                               ),
                               decoration: BoxDecoration(
                                 color: AppColor.primarySoft,
@@ -132,13 +133,13 @@ class AddressTile extends StatelessWidget {
               ),
               SizedBox(width: AppSpacing.md),
               if (onEdit != null)
-                IconButton(
+                CustomIconButton(
                   icon: const Icon(AppIcons.edit, size: AppIconSize.xl),
                   tooltip: S.editAddress,
                   onPressed: onEdit,
                 ),
               if (onDelete != null)
-                IconButton(
+                CustomIconButton(
                   icon: const Icon(AppIcons.delete, size: AppIconSize.xl),
                   tooltip: S.deleteAddress,
                   onPressed: onDelete,

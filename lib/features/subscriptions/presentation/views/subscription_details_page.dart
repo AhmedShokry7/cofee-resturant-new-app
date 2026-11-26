@@ -1,5 +1,6 @@
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/design_text.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -17,6 +18,7 @@ import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:qr/qr.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 class SubscriptionDetailsPage extends StatelessWidget {
   const SubscriptionDetailsPage({super.key});
@@ -56,6 +58,7 @@ class _SubscriptionDetailsView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: const AppBackButton(),
         title: DesignText(
           S.mySubscription,
           page: 'subscription_details',
@@ -77,7 +80,7 @@ class _SubscriptionDetailsView extends StatelessWidget {
                 children: [
                   Text(S.couldNotLoadSubscription, textAlign: TextAlign.center),
                   SizedBox(height: AppSpacing.md),
-                  FilledButton(
+                  CustomFilledButton(
                     onPressed: () => context.read<SubscriptionCubit>().load(),
                     child: DesignText(
                       S.retry,
@@ -100,7 +103,7 @@ class _SubscriptionDetailsView extends StatelessWidget {
                     label: 'noSubscriptionYet',
                   ),
                   SizedBox(height: AppSpacing.md),
-                  FilledButton(
+                  CustomFilledButton(
                     onPressed: () =>
                         Navigator.of(context)
                             .pushNamed(SubscriptionPlansPage.routeName),
@@ -172,7 +175,7 @@ class _SubscriptionBody extends StatelessWidget {
           runSpacing: AppSpacing.sm,
           children: [
             if (subscription.isPendingPayment)
-              FilledButton(
+              CustomFilledButton(
                 onPressed: busy ? null : () => cubit.load(),
                 child: DesignText(
                   S.checkPaymentStatus,
@@ -181,7 +184,7 @@ class _SubscriptionBody extends StatelessWidget {
                 ),
               ),
             if (subscription.isActive)
-              FilledButton(
+              CustomFilledButton(
                 onPressed: busy ? null : () => _showQr(context),
                 child: DesignText(
                   S.showQrCode,
@@ -189,7 +192,7 @@ class _SubscriptionBody extends StatelessWidget {
                   label: 'showQrCode',
                 ),
               ),
-            OutlinedButton(
+            CustomOutlinedButton(
               onPressed: busy ? null : () => _renew(context),
               child: DesignText(
                 S.renew,
@@ -197,7 +200,7 @@ class _SubscriptionBody extends StatelessWidget {
                 label: 'renew',
               ),
             ),
-            OutlinedButton(
+            CustomOutlinedButton(
               onPressed: subscription.isActive && !busy
                   ? () => _cancel(context)
                   : null,
@@ -276,7 +279,7 @@ class _SubscriptionBody extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColor.whiteColor,
                 borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
               ),
               child: CustomPaint(
@@ -289,7 +292,7 @@ class _SubscriptionBody extends StatelessWidget {
           ],
         ),
         actions: [
-          TextButton(
+          CustomTextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: DesignText(
               S.ok,
@@ -467,7 +470,7 @@ class _SubscriptionQrPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final moduleSize = size.width / (_image.moduleCount + 8);
     final quietZone = moduleSize * 4;
-    final paint = Paint()..color = Colors.black;
+    final paint = Paint()..color = AppColor.blackColor;
     for (var row = 0; row < _image.moduleCount; row++) {
       for (var column = 0; column < _image.moduleCount; column++) {
         if (_image.isDark(row, column)) {
@@ -521,7 +524,7 @@ class _StaleNotice extends StatelessWidget {
             label: S.retry,
             child: Material(
               color: AppColor.transparent,
-              child: TextButton(
+              child: CustomTextButton(
                 onPressed: onRetry,
                 child: DesignText(
                   S.retry,
@@ -554,7 +557,7 @@ class _UsageHistory extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(S.couldNotLoadUsage, style: AppFonts.regular14(context)),
-          TextButton(
+          CustomTextButton(
             onPressed: onRetry,
             child: DesignText(
               S.retry,

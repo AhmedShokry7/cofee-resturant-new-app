@@ -71,11 +71,18 @@ abstract final class DesignContract {
     'notification_settings',
     'help',
     'privacy',
+    'my_bundles',
+    'customer_bundle_editor',
+    'my_reservations',
+    'reservation_form',
+    'event_request_form',
+    'my_product_subscriptions',
+    'product_subscription_form',
     'assistant_memory',
   ];
 
   /// حد الصفحات في المستند الواحد، كما يتحقق منه `app_design_is_valid`.
-  static const int maxPages = 40;
+  static const int maxPages = 48;
 
   /// أنواع العقد التي يرسمها الهاتف (DesignWidgetTypes لدى العميل).
   static const String pageHome = 'page.home';

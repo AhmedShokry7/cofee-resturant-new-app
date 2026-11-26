@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/shared/widgets/shimmer/catalog_skeletons.dart';
@@ -50,14 +50,22 @@ class ProductDetailsSkeleton extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Shimmer(child: ShimmerLine(width: 100, height: 13)),
+                const Shimmer(
+                  child: ShimmerLine(
+                    width: AppSizes.px100,
+                    height: AppSizes.px13,
+                  ),
+                ),
                 SizedBox(height: AppSpacing.xs),
                 Shimmer(
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Expanded(
-                        child: ShimmerLine(widthFactor: 0.9, height: 19),
+                        child: ShimmerLine(
+                          widthFactor: 0.9,
+                          height: AppSizes.px19,
+                        ),
                       ),
                       SizedBox(width: AppSpacing.sm),
                       ShimmerBox(
@@ -73,7 +81,10 @@ class ProductDetailsSkeleton extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const ShimmerLine(width: 90, height: 15),
+                      const ShimmerLine(
+                        width: AppSizes.px90,
+                        height: AppSizes.px15,
+                      ),
                       ShimmerBox(
                         width: AppDimensions.skeletonChipWidth,
                         height: AppSizes.px36,
@@ -83,17 +94,22 @@ class ProductDetailsSkeleton extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: AppSpacing.lg),
-                const Shimmer(child: ShimmerLine(width: 140, height: 15)),
+                const Shimmer(
+                  child: ShimmerLine(
+                    width: AppSizes.px140,
+                    height: AppSizes.px15,
+                  ),
+                ),
                 SizedBox(height: AppSpacing.sm),
                 const Shimmer(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ShimmerLine(widthFactor: 1, height: 13),
+                      ShimmerLine(widthFactor: 1, height: AppSizes.px13),
                       SizedBox(height: AppDimensions.skeletonLineGap),
-                      ShimmerLine(widthFactor: 1, height: 13),
+                      ShimmerLine(widthFactor: 1, height: AppSizes.px13),
                       SizedBox(height: AppDimensions.skeletonLineGap),
-                      ShimmerLine(widthFactor: 0.6, height: 13),
+                      ShimmerLine(widthFactor: 0.6, height: AppSizes.px13),
                     ],
                   ),
                 ),
@@ -105,7 +121,7 @@ class ProductDetailsSkeleton extends StatelessWidget {
                       children: [
                         const ShimmerLine(
                           width: AppDimensions.skeletonChipShortWidth,
-                          height: 15,
+                          height: AppSizes.px15,
                         ),
                         SizedBox(height: AppSpacing.xs),
                         Row(
@@ -160,14 +176,18 @@ class BundleDetailsSkeleton extends StatelessWidget {
           ),
         ),
         SizedBox(height: AppSpacing.lg),
-        const Shimmer(child: ShimmerLine(width: 200, height: 19)),
+        const Shimmer(
+          child: ShimmerLine(width: AppSizes.px200, height: AppSizes.px19),
+        ),
         SizedBox(height: AppSpacing.xs),
-        const Shimmer(child: ShimmerLine(widthFactor: 0.7, height: 13)),
+        const Shimmer(
+          child: ShimmerLine(widthFactor: 0.7, height: AppSizes.px13),
+        ),
         SizedBox(height: AppSpacing.lg),
         const Shimmer(
           child: ShimmerLine(
             width: AppDimensions.skeletonChipWidth,
-            height: 15,
+            height: AppSizes.px15,
           ),
         ),
         SizedBox(height: AppSpacing.sm),
@@ -186,7 +206,7 @@ class BundleDetailsSkeleton extends StatelessWidget {
                   ),
                   SizedBox(width: AppSpacing.sm),
                   const Expanded(
-                    child: ShimmerLine(widthFactor: 0.8, height: 13),
+                    child: ShimmerLine(widthFactor: 0.8, height: AppSizes.px13),
                   ),
                   ShimmerBox(
                     width: AppSizes.px52,
@@ -205,7 +225,7 @@ class BundleDetailsSkeleton extends StatelessWidget {
               children: [
                 const ShimmerLine(
                   width: AppDimensions.skeletonChipShortWidth,
-                  height: 13,
+                  height: AppSizes.px13,
                 ),
                 ShimmerBox(
                   width: AppDimensions.skeletonTagWidth,
@@ -248,9 +268,9 @@ class OrderCardSkeleton extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ShimmerLine(width: 90, height: 11),
+                  ShimmerLine(width: AppSizes.px90, height: AppSizes.px11),
                   SizedBox(height: AppSpacing.xs),
-                  ShimmerLine(widthFactor: 0.95, height: 15),
+                  ShimmerLine(widthFactor: 0.95, height: AppSizes.px15),
                   SizedBox(height: AppDimensions.skeletonLineGap),
                   ShimmerLine(
                     width: AppDimensions.skeletonLineBrief,
@@ -389,7 +409,10 @@ class NotificationTileSkeleton extends StatelessWidget {
                   Row(
                     children: [
                       const Expanded(
-                        child: ShimmerLine(widthFactor: 0.9, height: 15),
+                        child: ShimmerLine(
+                          widthFactor: 0.9,
+                          height: AppSizes.px15,
+                        ),
                       ),
                       SizedBox(width: AppSpacing.sm),
                       ShimmerBox(
@@ -400,9 +423,9 @@ class NotificationTileSkeleton extends StatelessWidget {
                     ],
                   ),
                   SizedBox(height: AppSpacing.xs),
-                  const ShimmerLine(widthFactor: 1, height: 13),
+                  const ShimmerLine(widthFactor: 1, height: AppSizes.px13),
                   SizedBox(height: AppSpacing.xs),
-                  const ShimmerLine(widthFactor: 0.7, height: 13),
+                  const ShimmerLine(widthFactor: 0.7, height: AppSizes.px13),
                 ],
               ),
             ),
@@ -455,9 +478,9 @@ class CouponCardSkeleton extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ShimmerLine(widthFactor: 0.8, height: 15),
+                        ShimmerLine(widthFactor: 0.8, height: AppSizes.px15),
                         SizedBox(height: AppSpacing.xs),
-                        ShimmerLine(widthFactor: 1, height: 11),
+                        ShimmerLine(widthFactor: 1, height: AppSizes.px11),
                         SizedBox(height: AppSpacing.sm),
                         ShimmerLine(
                           width: AppDimensions.skeletonLineTile,
@@ -502,7 +525,9 @@ class CouponsLoadingView extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       padding: skeletonListPadding(context),
       children: [
-        const Shimmer(child: ShimmerLine(width: 130, height: 17)),
+        const Shimmer(
+          child: ShimmerLine(width: AppSizes.px130, height: AppSizes.px17),
+        ),
         SizedBox(height: AppSpacing.lg),
         for (var i = 0; i < itemCount; i++) const CouponCardSkeleton(),
       ],
@@ -534,7 +559,7 @@ class RewardCardSkeleton extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ShimmerLine(widthFactor: 0.85, height: 15),
+                  ShimmerLine(widthFactor: 0.85, height: AppSizes.px15),
                   SizedBox(height: AppSpacing.xs),
                   ShimmerLine(
                     width: AppDimensions.skeletonLineShort,
@@ -578,7 +603,7 @@ class LoyaltyLoadingView extends StatelessWidget {
               children: [
                 const ShimmerLine(
                   width: AppDimensions.skeletonChipWidth,
-                  height: 13,
+                  height: AppSizes.px13,
                 ),
                 SizedBox(height: AppSpacing.xs),
                 const ShimmerLine(
@@ -587,15 +612,17 @@ class LoyaltyLoadingView extends StatelessWidget {
                   radius: AppRadius.r8,
                 ),
                 SizedBox(height: AppSpacing.xs),
-                const ShimmerLine(widthFactor: 0.8, height: 11),
+                const ShimmerLine(widthFactor: 0.8, height: AppSizes.px11),
                 SizedBox(height: AppSpacing.xs),
-                const ShimmerLine(widthFactor: 0.6, height: 11),
+                const ShimmerLine(widthFactor: 0.6, height: AppSizes.px11),
               ],
             ),
           ),
         ),
         SizedBox(height: AppSpacing.xl),
-        const Shimmer(child: ShimmerLine(width: 180, height: 17)),
+        const Shimmer(
+          child: ShimmerLine(width: AppSizes.px180, height: AppSizes.px17),
+        ),
         SizedBox(height: AppSpacing.md),
         for (var i = 0; i < 3; i++) const RewardCardSkeleton(),
       ],
@@ -627,9 +654,9 @@ class TrackTimelineSkeleton extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ShimmerLine(widthFactor: 0.7, height: 14),
+                      ShimmerLine(widthFactor: 0.7, height: AppSizes.px14),
                       SizedBox(height: AppSpacing.xs),
-                      ShimmerLine(widthFactor: 0.45, height: 11),
+                      ShimmerLine(widthFactor: 0.45, height: AppSizes.px11),
                     ],
                   ),
                 ),
@@ -660,7 +687,9 @@ class FaqLoadingView extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       padding: skeletonListPadding(context),
       children: [
-        const Shimmer(child: ShimmerLine(width: 150, height: 15)),
+        const Shimmer(
+          child: ShimmerLine(width: AppSizes.px150, height: AppSizes.px15),
+        ),
         SizedBox(height: AppSpacing.md),
         for (var i = 0; i < itemCount; i++)
           Container(
@@ -674,7 +703,7 @@ class FaqLoadingView extends StatelessWidget {
               child: Row(
                 children: [
                   const Expanded(
-                    child: ShimmerLine(widthFactor: 0.9, height: 14),
+                    child: ShimmerLine(widthFactor: 0.9, height: AppSizes.px14),
                   ),
                   SizedBox(width: AppSpacing.md),
                   ShimmerCircle(size: AppSizes.px22),
@@ -704,7 +733,10 @@ class PolicyLoadingView extends StatelessWidget {
             children: [
               for (var i = 0; i < 9; i++) ...[
                 if (i > 0) SizedBox(height: AppSpacing.sm),
-                ShimmerLine(widthFactor: i == 8 ? 0.55 : 1, height: 13),
+                ShimmerLine(
+                  widthFactor: i == 8 ? 0.55 : 1,
+                  height: AppSizes.px13,
+                ),
               ],
             ],
           ),

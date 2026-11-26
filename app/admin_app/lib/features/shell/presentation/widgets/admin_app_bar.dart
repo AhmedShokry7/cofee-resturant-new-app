@@ -81,7 +81,9 @@ class AdminAppBar extends StatelessWidget implements PreferredSizeWidget {
                   if (!isCompact && hasSearch) ...[
                     const SizedBox(width: AppSpacing.lg),
                     ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: AppDimensions.searchFieldWidth),
+                      constraints: BoxConstraints(
+                        maxWidth: AppDimensions.searchFieldWidth,
+                      ),
                       child: _AdminSearchField(
                         hint: searchHint,
                         searchController: searchController,

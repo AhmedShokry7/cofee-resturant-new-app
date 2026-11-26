@@ -1,5 +1,5 @@
 import 'package:new_coffee/shared/widgets/design_text.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
@@ -8,8 +8,10 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/checkout/presentation/views/e_receipt_page.dart';
 import 'package:new_coffee/features/loyalty/presentation/manager/loyalty/loyalty_cubit.dart';
+import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 class PaymentSuccessPage extends StatelessWidget {
   const PaymentSuccessPage({super.key});
@@ -19,7 +21,10 @@ class PaymentSuccessPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: DesignText(S.payment, page: 'payment_success', label: 'payment')),
+      appBar: AppBar(
+        leading: const AppBackButton(),
+        title: DesignText(S.payment, page: 'payment_success', label: 'payment'),
+      ),
       body: Column(
         children: [
           Expanded(
@@ -84,8 +89,11 @@ class PaymentSuccessPage extends StatelessWidget {
               children: [
                 CustomBtn(
                   text: S.goToMain,
-                  onPressed: () =>
-                      Navigator.of(context).popUntil((route) => route.isFirst),
+                  onPressed: () => Navigator.of(context)
+                      .pushNamedAndRemoveUntil(
+                        MainPage.routeName,
+                        (route) => false,
+                      ),
                 ),
                 SizedBox(height: AppSpacing.md),
                 GestureDetector(

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -35,8 +35,7 @@ class WelcomeViewTextBody extends StatelessWidget {
     final colorValue = node?.property('color');
     Color color = AppColor.greyColor;
     if (colorValue != null &&
-        RegExp(r'^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$')
-            .hasMatch(colorValue)) {
+        RegExp(r'^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$').hasMatch(colorValue)) {
       final parsed = int.parse(colorValue.substring(1), radix: 16);
       color = colorValue.length == 9
           ? Color(parsed)

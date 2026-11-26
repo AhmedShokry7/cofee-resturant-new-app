@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_locale.dart';
@@ -25,7 +26,7 @@ class AssistantFeedbackRow extends StatelessWidget {
       padding: EdgeInsets.only(bottom: AppSpacing.xs),
       child: Row(
         children: [
-          IconButton(
+          CustomIconButton(
             onPressed: open ? () => cubit.giveFeedback(message.id, true) : null,
             icon: Icon(
               AppIcons.thumbsUp,
@@ -35,7 +36,7 @@ class AssistantFeedbackRow extends StatelessWidget {
                   : AppColor.greyColor,
             ),
           ),
-          IconButton(
+          CustomIconButton(
             onPressed: open
                 ? () => _rateDown(context, cubit)
                 : null,
@@ -75,11 +76,11 @@ class AssistantFeedbackRow extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton(
+          CustomTextButton(
             onPressed: () => Navigator.of(dialogContext).pop(''),
             child: Text(arabic ? 'تخطي' : 'Skip'),
           ),
-          FilledButton(
+          CustomFilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(controller.text),
             child: Text(arabic ? 'إرسال' : 'Send'),
           ),

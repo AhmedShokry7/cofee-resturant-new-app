@@ -4,7 +4,9 @@
 /// iframe renders and never enter a draft, a published document, or the
 /// customer's saved preferences. The enums mirror `PreviewMessageType` in the
 /// customer app; a source-level parity test guards the wire values.
-import 'package:flutter/material.dart';
+library;
+
+import 'package:material_ui/material_ui.dart';
 
 enum VisualEditorMessageType {
   previewReady('PREVIEW_READY'),
@@ -303,6 +305,13 @@ const List<(String, IconData, List<String>)> editorPageCategories = [
       'notification_settings',
       'help',
       'privacy',
+      'my_bundles',
+      'customer_bundle_editor',
+      'my_reservations',
+      'reservation_form',
+      'event_request_form',
+      'my_product_subscriptions',
+      'product_subscription_form',
       'assistant_memory',
     ],
   ),
@@ -892,6 +901,111 @@ class EditorPages {
       pageId: 'privacy',
       label: 'الخصوصية',
       routeName: '/privacy',
+      isEditable: true,
+      allowedComponentTypes: [
+        'heading',
+        'text',
+        'image',
+        'button',
+        'divider',
+        'spacer',
+        'column',
+      ],
+    ),
+    EditorPage(
+      pageId: 'my_bundles',
+      label: 'باقاتي الشخصية',
+      routeName: '/my-bundles',
+      isEditable: true,
+      allowedComponentTypes: [
+        'heading',
+        'text',
+        'image',
+        'button',
+        'divider',
+        'spacer',
+        'column',
+      ],
+    ),
+    EditorPage(
+      pageId: 'customer_bundle_editor',
+      label: 'إنشاء باقة',
+      routeName: '/customer-bundle-editor',
+      isEditable: true,
+      allowedComponentTypes: [
+        'heading',
+        'text',
+        'image',
+        'button',
+        'divider',
+        'spacer',
+        'column',
+      ],
+    ),
+    EditorPage(
+      pageId: 'my_reservations',
+      label: 'حجوزاتي',
+      routeName: '/my-reservations',
+      isEditable: true,
+      allowedComponentTypes: [
+        'heading',
+        'text',
+        'image',
+        'button',
+        'divider',
+        'spacer',
+        'column',
+      ],
+    ),
+    EditorPage(
+      pageId: 'reservation_form',
+      label: 'حجز جديد',
+      routeName: '/reservation-form',
+      isEditable: true,
+      allowedComponentTypes: [
+        'heading',
+        'text',
+        'image',
+        'button',
+        'divider',
+        'spacer',
+        'column',
+      ],
+    ),
+    EditorPage(
+      pageId: 'event_request_form',
+      label: 'طلب مناسبة خاصة',
+      routeName: '/event-request-form',
+      isEditable: true,
+      allowedComponentTypes: [
+        'heading',
+        'text',
+        'image',
+        'button',
+        'divider',
+        'spacer',
+        'column',
+      ],
+    ),
+    EditorPage(
+      pageId: 'my_product_subscriptions',
+      label: 'اشتراكات المنتجات',
+      routeName: '/my-product-subscriptions',
+      isEditable: true,
+      allowedComponentTypes: [
+        'heading',
+        'text',
+        'image',
+        'button',
+        'divider',
+        'spacer',
+        'column',
+      ],
+    ),
+    EditorPage(
+      pageId: 'product_subscription_form',
+      label: 'اشتراك منتج جديد',
+      routeName: '/product-subscription-form',
       isEditable: true,
       allowedComponentTypes: [
         'heading',

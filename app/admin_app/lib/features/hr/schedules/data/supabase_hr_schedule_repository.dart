@@ -5,7 +5,7 @@ import '../domain/hr_schedule.dart';
 import '../domain/hr_schedule_repository.dart';
 
 class SupabaseHrScheduleRepository implements HrScheduleRepository {
-  SupabaseHrScheduleRepository({SupabaseClient? client}) : _client = client;
+  SupabaseHrScheduleRepository({this._client});
   final SupabaseClient? _client;
   SupabaseClient get client => _client ?? SupabaseService.client;
 

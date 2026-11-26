@@ -35,6 +35,7 @@ class CartItem {
     this.optionValueIds = const [],
     this.unitPrice,
     this.bundleId,
+    this.customerBundleId,
     this.bundleComponents = const [],
   });
 
@@ -53,6 +54,10 @@ class CartItem {
   /// Bundle this line belongs to, when it was added as a bundle component.
   final String? bundleId;
 
+  /// Customer's saved product list shown as one local cart line. Its server
+  /// components use regular product prices, so it has no catalogue bundle id.
+  final String? customerBundleId;
+
   /// Components of a bundle sold as one cart line. Empty for standalone
   /// products and for legacy bundle-component lines.
   final List<CartBundleComponent> bundleComponents;
@@ -66,7 +71,7 @@ class CartItem {
   /// product.
   String get lineId {
     final prefix = isBundle
-        ? 'bundle:${bundleId ?? product.id}'
+        ? 'bundle:${customerBundleId ?? bundleId ?? product.id}'
         : (bundleId == null || bundleId!.trim().isEmpty
               ? product.id
               : '${product.id}::bundle:$bundleId');
@@ -83,6 +88,7 @@ class CartItem {
     List<String>? optionValueIds,
     double? unitPrice,
     String? bundleId,
+    String? customerBundleId,
     List<CartBundleComponent>? bundleComponents,
   }) => CartItem(
     product: product,
@@ -91,6 +97,7 @@ class CartItem {
     optionValueIds: optionValueIds ?? this.optionValueIds,
     unitPrice: unitPrice ?? this.unitPrice,
     bundleId: bundleId ?? this.bundleId,
+    customerBundleId: customerBundleId ?? this.customerBundleId,
     bundleComponents: bundleComponents ?? this.bundleComponents,
   );
 }

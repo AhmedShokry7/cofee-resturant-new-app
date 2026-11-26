@@ -21,6 +21,7 @@ class DiningTablesState {
     this.view = DiningView.tables,
     this.isRefreshing = false,
     this.loadFailure,
+    this.eventRequests = const <Map<String, dynamic>>[],
   });
 
   final DiningStatus status;
@@ -38,6 +39,7 @@ class DiningTablesState {
 
   /// Why the last load failed; the page turns it into localized copy.
   final DiningLoadFailure? loadFailure;
+  final List<Map<String, dynamic>> eventRequests;
 
   bool get isLoading => status == DiningStatus.loading;
   bool get isFailure => status == DiningStatus.failure;
@@ -152,6 +154,7 @@ class DiningTablesState {
     bool? isRefreshing,
     DiningLoadFailure? loadFailure,
     bool clearLoadFailure = false,
+    List<Map<String, dynamic>>? eventRequests,
   }) {
     return DiningTablesState(
       status: status ?? this.status,
@@ -165,6 +168,7 @@ class DiningTablesState {
       view: view ?? this.view,
       isRefreshing: isRefreshing ?? this.isRefreshing,
       loadFailure: clearLoadFailure ? null : (loadFailure ?? this.loadFailure),
+      eventRequests: eventRequests ?? this.eventRequests,
     );
   }
 }

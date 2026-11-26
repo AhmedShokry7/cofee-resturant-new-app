@@ -1,12 +1,21 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
+import 'package:new_coffee/features/customer_bundles/data/model/customer_bundle.dart';
+import 'package:new_coffee/features/customer_bundles/data/repositories/customer_bundle_repository.dart';
+import 'package:new_coffee/features/menu/data/repositories/batch_product_repository.dart';
+import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
+import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 import 'package:new_coffee/features/orders/data/model/order_group.dart';
+import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
 import 'package:new_coffee/features/orders/presentation/manager/orders/orders_cubit.dart';
 import 'package:new_coffee/features/orders/presentation/views/leave_review_page.dart';
@@ -14,6 +23,7 @@ import 'package:new_coffee/features/orders/presentation/views/order_details_page
 import 'package:new_coffee/features/orders/presentation/views/track_order_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/widgets/order_status_badge.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
+import 'package:new_coffee/shared/widgets/app_icon.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 
 /// One order in the history list: number, date, status, item count and the
@@ -22,6 +32,212 @@ class OrderCard extends StatelessWidget {
   const OrderCard({super.key, required this.order});
 
   final OrderGroup order;
+
+  Future<void> _saveAsList(BuildContext context) async {
+    final name = TextEditingController(
+      text: S.orderNumber(order.displayNumber),
+    );
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(S.saveOrderAsList),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(S.saveOrderAsListHint),
+            SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: name,
+              maxLength: 80,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(labelText: S.bundleName),
+            ),
+          ],
+        ),
+        actions: [
+          CustomTextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(S.cancel),
+          ),
+          CustomFilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(S.save),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) {
+      name.dispose();
+      return;
+    }
+    final bundleName = name.text.trim();
+    name.dispose();
+    if (bundleName.isEmpty) return;
+    final quantities = <String, int>{};
+    final sourceLines = <String, OrderItemModel>{};
+    for (final line in order.lines) {
+      final id = line.product.id;
+      if (id.startsWith('removed-product-')) continue;
+      sourceLines.putIfAbsent(id, () => line);
+      quantities.update(
+        id,
+        (value) => (value + line.quantity).clamp(1, 99).toInt(),
+        ifAbsent: () => line.quantity.clamp(1, 99).toInt(),
+      );
+    }
+    final items = [
+      for (final entry in sourceLines.entries)
+        CustomerBundleItem(
+          id: '',
+          bundleId: '',
+          productId: entry.key,
+          quantity: quantities[entry.key]!,
+          productNameAr: entry.value.product.nameAr,
+          productNameEn: entry.value.product.nameEn,
+          note: entry.value.note.isEmpty ? null : entry.value.note,
+        ),
+    ];
+    if (items.isEmpty) return;
+    try {
+      await CustomerBundleRepository().createBundle(
+        name: bundleName,
+        description: S.orderNumber(order.displayNumber),
+        items: items,
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.bundleSaved)));
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.couldNotSaveBundle)));
+    }
+  }
+
+  Future<void> _reorder(BuildContext context) async {
+    final cart = context.read<CartCubit>();
+    if (cart.state.isLoading) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.reorderCartLoading)));
+      return;
+    }
+    final validLines = order.lines
+        .where((line) => !line.product.id.startsWith('removed-product-'))
+        .toList(growable: false);
+    final List<ProductModel> products;
+    final Set<String> branchUnavailable;
+    try {
+      final productRepository = context.read<ProductRepository>();
+      products = await getProductsByIds(
+        productRepository,
+        validLines.map((line) => line.product.id).toList(growable: false),
+        branchId: cart.branchId,
+      );
+      branchUnavailable =
+          cart.branchId != null &&
+              productRepository is ProductAvailabilityRepository
+          ? await (productRepository as ProductAvailabilityRepository)
+                .unavailableProductIds(
+                  validLines
+                      .map((line) => line.product.id)
+                      .toList(growable: false),
+                  branchId: cart.branchId!,
+                )
+          : const <String>{};
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.reorderFailed)));
+      return;
+    }
+    if (!context.mounted) return;
+    final byId = {for (final product in products) product.id: product};
+    final available = [
+      for (final line in validLines)
+        if (byId.containsKey(line.product.id) &&
+            !branchUnavailable.contains(line.product.id))
+          (line, byId[line.product.id]!),
+    ];
+    final unavailable = validLines
+        .where(
+          (line) =>
+              !byId.containsKey(line.product.id) ||
+              branchUnavailable.contains(line.product.id),
+        )
+        .toList(growable: false);
+    final hasOldNotes = available.any(
+      (entry) => entry.$1.note.trim().isNotEmpty,
+    );
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(S.reorderOrder),
+        content: SizedBox(
+          width: AppSizes.px440,
+          height: AppSizes.px350,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(S.reorderReview),
+              if (hasOldNotes) ...[
+                SizedBox(height: AppSpacing.sm),
+                Text(S.reorderOptionsNote),
+              ],
+              SizedBox(height: AppSpacing.sm),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final entry in available)
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(entry.$2.name),
+                        subtitle: Text(S.quantityLabel(entry.$1.quantity)),
+                        trailing: Text(Formatters.price(entry.$2.price)),
+                      ),
+                    for (final line in unavailable)
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(line.product.name),
+                        subtitle: Text(S.reorderUnavailable),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          CustomTextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(S.cancel),
+          ),
+          CustomFilledButton(
+            onPressed: available.isEmpty
+                ? null
+                : () => Navigator.pop(dialogContext, true),
+            child: Text(S.reorderAddAvailable),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    for (final entry in available) {
+      cart.add(
+        entry.$2,
+        quantity: entry.$1.quantity,
+        note: entry.$1.note,
+        unitPrice: entry.$2.price,
+      );
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(S.reorderAdded(available.length, unavailable.length)),
+      ),
+    );
+  }
 
   /// Opens one of the order's pages and reloads the list once that page reports
   /// the order changed underneath — a cancellation is the only way it can.
@@ -152,6 +368,26 @@ class OrderCard extends StatelessWidget {
                         ),
                     ],
                   ),
+                  if (order.status == OrderStatus.completed) ...[
+                    SizedBox(height: AppSpacing.sm),
+                    Wrap(
+                      alignment: WrapAlignment.end,
+                      spacing: AppSpacing.xs,
+                      runSpacing: AppSpacing.xs,
+                      children: [
+                        CustomOutlinedButton.icon(
+                          onPressed: () => _saveAsList(context),
+                          icon: const AppIcon(AppIcons.bundle),
+                          label: Text(S.saveOrderAsList),
+                        ),
+                        CustomOutlinedButton.icon(
+                          onPressed: () => _reorder(context),
+                          icon: const AppIcon(AppIcons.repeat),
+                          label: Text(S.reorderOrder),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),

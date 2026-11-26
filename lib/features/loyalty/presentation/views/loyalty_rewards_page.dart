@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -9,6 +10,7 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/loyalty/data/model/reward_model.dart';
 import 'package:new_coffee/features/loyalty/presentation/manager/loyalty/loyalty_cubit.dart';
 import 'package:new_coffee/features/loyalty/presentation/views/widgets/reward_card.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 class LoyaltyRewardsPage extends StatelessWidget {
   const LoyaltyRewardsPage({super.key, required this.onRedeem});
@@ -26,14 +28,15 @@ class LoyaltyRewardsPage extends StatelessWidget {
             .toList();
         return Scaffold(
           appBar: AppBar(
+            leading: const AppBackButton(),
             title: Text(S.loyaltyRedeemableProducts),
             actions: [
-              IconButton(
+              CustomIconButton(
                 tooltip: S.loyaltyRefreshCatalog,
                 onPressed: state.isLoading
                     ? null
                     : () => context.read<LoyaltyCubit>().load(),
-                icon: const Icon(Icons.refresh),
+                icon: const Icon(AppIcons.refresh),
               ),
             ],
             bottom: TabBar(
@@ -51,7 +54,7 @@ class LoyaltyRewardsPage extends StatelessWidget {
                   AppSpacing.md,
                   AppSpacing.md,
                   AppSpacing.md,
-                  0,
+                  AppSpacing.none,
                 ),
                 padding: EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(

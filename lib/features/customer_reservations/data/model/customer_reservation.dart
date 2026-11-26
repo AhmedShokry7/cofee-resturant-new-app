@@ -5,6 +5,10 @@ class CustomerReservation {
     required this.id,
     required this.branchId,
     this.tableId,
+    this.spaceName,
+    this.branchName,
+    this.occasionName,
+    this.occasionType,
     required this.status,
     required this.source,
     required this.reservedFor,
@@ -21,6 +25,10 @@ class CustomerReservation {
   final String id;
   final String branchId;
   final String? tableId;
+  final String? spaceName;
+  final String? branchName;
+  final String? occasionName;
+  final String? occasionType;
   final String status;
   final String source;
   final DateTime reservedFor;
@@ -38,12 +46,22 @@ class CustomerReservation {
       id: Db.text(json['id']),
       branchId: Db.text(json['branch_id']),
       tableId: Db.textOrNull(json['table_id']),
+      spaceName: Db.textOrNull(json['table_name']),
+      branchName: Db.textOrNull(
+        json['branch_name_ar'] ?? json['branch_name_en'],
+      ),
+      occasionName: Db.textOrNull(json['occasion_name']),
+      occasionType: Db.textOrNull(json['occasion_type']),
       status: Db.text(json['status'], 'pending'),
       source: Db.text(json['source'], 'customer'),
       reservedFor: Db.asDateTime(json['reserved_for']),
-      requestedEndAt: Db.asDateTimeOrNull(json['requested_end_at']),
+      requestedEndAt: Db.asDateTimeOrNull(
+        json['requested_end_at'] ?? json['reserved_until'],
+      ),
       reservedUntil: Db.asDateTimeOrNull(json['reserved_until']),
-      partySize: json['party_size'] == null ? null : Db.asInt(json['party_size']),
+      partySize: json['party_size'] == null
+          ? null
+          : Db.asInt(json['party_size']),
       customerNote: Db.textOrNull(json['customer_note'] ?? json['note']),
       adminNote: Db.textOrNull(json['admin_note']),
       cancellationReason: Db.textOrNull(json['cancellation_reason']),

@@ -1,7 +1,9 @@
+import 'package:new_coffee/core/theme/app_color.dart';
+
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/theme/motion_tokens.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
@@ -168,11 +170,11 @@ class _CategoryMarqueeState extends State<CategoryMarquee>
           child: ShaderMask(
             blendMode: BlendMode.dstIn,
             shaderCallback: (Rect bounds) => LinearGradient(
-              colors: const [
-                Colors.transparent,
-                Colors.black,
-                Colors.black,
-                Colors.transparent,
+              colors: [
+                AppColor.transparent,
+                AppColor.blackColor,
+                AppColor.blackColor,
+                AppColor.transparent,
               ],
               stops: [0.0, stop, 1.0 - stop, 1.0],
             ).createShader(bounds),

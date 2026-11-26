@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -12,6 +12,7 @@ import 'package:new_coffee/features/home/presentation/views/widgets/home_product
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 class BannerDetailsPage extends StatelessWidget {
   const BannerDetailsPage({super.key, required this.banner});
@@ -46,7 +47,7 @@ class _BannerDetailsView extends StatelessWidget {
     final state = context.watch<BannerDetailsCubit>().state;
     final banner = state.banner;
     return Scaffold(
-      appBar: AppBar(title: Text(banner.title)),
+      appBar: AppBar(leading: const AppBackButton(), title: Text(banner.title)),
       body: ListView(
         padding: EdgeInsets.all(AppSpacing.lg),
         children: [

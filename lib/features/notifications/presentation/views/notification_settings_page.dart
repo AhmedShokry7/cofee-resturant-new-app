@@ -1,11 +1,14 @@
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:new_coffee/shared/widgets/design_text.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/notifications/presentation/views/widgets/notification_preferences_sheet.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 class NotificationSettingsPage extends StatefulWidget {
   const NotificationSettingsPage({super.key});
@@ -31,7 +34,14 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       BlocBuilder<NotificationsCubit, NotificationsState>(
         builder: (context, state) {
           return Scaffold(
-            appBar: AppBar(title: DesignText(S.notificationPreferences, page: 'notification_settings', label: 'notificationPreferences')),
+            appBar: AppBar(
+              leading: const AppBackButton(),
+              title: DesignText(
+                S.notificationPreferences,
+                page: 'notification_settings',
+                label: 'notificationPreferences',
+              ),
+            ),
             body: state.signedOut
                 ? const AuthRequiredView(
                     originRoute: NotificationSettingsPage.routeName,
@@ -41,24 +51,32 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                 : state.preferencesLoadFailed
                 ? Center(
                     child: Padding(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(AppSpacing.px20),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          DesignText(S.notificationPreferencesLoadFailed, page: 'notification_settings', label: 'notificationPreferencesLoadFailed'),
-                          const SizedBox(height: 12),
-                          TextButton(
+                          DesignText(
+                            S.notificationPreferencesLoadFailed,
+                            page: 'notification_settings',
+                            label: 'notificationPreferencesLoadFailed',
+                          ),
+                          const SizedBox(height: AppSizes.px12),
+                          CustomTextButton(
                             onPressed: () => context
                                 .read<NotificationsCubit>()
                                 .loadPushState(),
-                            child: DesignText(S.tryAgain, page: 'notification_settings', label: 'tryAgain'),
+                            child: DesignText(
+                              S.tryAgain,
+                              page: 'notification_settings',
+                              label: 'tryAgain',
+                            ),
                           ),
                         ],
                       ),
                     ),
                   )
                 : const SingleChildScrollView(
-                    padding: EdgeInsets.all(20),
+                    padding: EdgeInsets.all(AppSpacing.px20),
                     child: NotificationPreferencesPanel(),
                   ),
           );

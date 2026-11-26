@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -24,7 +24,7 @@ class CategoryCircleItem extends StatelessWidget {
   final VoidCallback onTap;
 
   /// The circle's edge - the same mark size every other category tile uses.
-  static const double diameter = AppDimensions.categoryTile;
+  static const double diameter = AppDimensions.categoryTile + AppSizes.px12;
 
   /// The air between two circles.
   ///
@@ -45,7 +45,13 @@ class CategoryCircleItem extends StatelessWidget {
   /// fixed allowance would cut the descenders off a large-font setting.
   static double labelHeight(BuildContext context) {
     final size = AppFonts.medium12(context).fontSize ?? AppFontSizes.size12;
-    return MediaQuery.textScalerOf(context).scale(size) * AppTextHeights.body;
+    // Names such as "Cold Coffee" should wrap beneath the image instead of
+    // being cut off after the first word. Keep the row and its skeleton sized
+    // for both lines, including the customer's accessibility text scale.
+    return MediaQuery.textScalerOf(context).scale(size) *
+            AppTextHeights.body *
+            2 +
+        AppSpacing.xs;
   }
 
   /// The height the whole row needs: circle, air, name.
@@ -96,9 +102,12 @@ class CategoryCircleItem extends StatelessWidget {
                 child: Text(
                   category.label,
                   textAlign: TextAlign.center,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: AppFonts.medium12(context),
+                  style: AppFonts.medium12(context).copyWith(
+                    color: AppColor.textPrimaryDefault,
+                    height: AppTextHeights.body,
+                  ),
                 ),
               ),
             ],

@@ -1,11 +1,14 @@
 import 'dart:math';
 
 import 'package:material_ui/material_ui.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/dining_enums.dart';
 import 'package:admin_app/core/models/dining_table.dart';
+import 'package:admin_app/core/services/admin_image_picker.dart';
+import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
@@ -50,9 +53,11 @@ class _DiningTableDialogState extends State<_DiningTableDialog> {
   late final TextEditingController _capacity;
   late final TextEditingController _sort;
   late final TextEditingController _note;
+  late final TextEditingController _imageUrl;
   late DiningArea _area;
   late bool _active;
   bool _saving = false;
+  bool _uploadingImage = false;
   String? _error;
 
   bool get _editing => widget.table != null;
@@ -65,6 +70,7 @@ class _DiningTableDialogState extends State<_DiningTableDialog> {
     _capacity = TextEditingController(text: '${table?.capacity ?? 2}');
     _sort = TextEditingController(text: '${table?.sortOrder ?? 0}');
     _note = TextEditingController(text: table?.note ?? '');
+    _imageUrl = TextEditingController(text: table?.imageUrl ?? '');
     _area = table?.area ?? DiningArea.hall;
     _active = table?.isActive ?? true;
   }
@@ -75,6 +81,7 @@ class _DiningTableDialogState extends State<_DiningTableDialog> {
     _capacity.dispose();
     _sort.dispose();
     _note.dispose();
+    _imageUrl.dispose();
     super.dispose();
   }
 
@@ -103,6 +110,7 @@ class _DiningTableDialogState extends State<_DiningTableDialog> {
         area: _area.value,
         capacity: parseLocalizedInt(_capacity.text) ?? 2,
         note: _note.text.trim(),
+        imageUrl: _imageUrl.text.trim().isEmpty ? null : _imageUrl.text.trim(),
         sortOrder: parseLocalizedInt(_sort.text) ?? 0,
         isActive: _active,
       ),
@@ -118,6 +126,53 @@ class _DiningTableDialogState extends State<_DiningTableDialog> {
     });
   }
 
+  Future<void> _uploadImage() async {
+    if (_uploadingImage || _saving) return;
+    final branchId =
+        widget.table?.branchId ??
+        widget.branchId ??
+        widget.cubit.state.branchId;
+    if (branchId == null || branchId.isEmpty) {
+      setState(() => _error = S.tablesNoBranch);
+      return;
+    }
+    setState(() {
+      _uploadingImage = true;
+      _error = null;
+    });
+    try {
+      final source = await pickAdminImage();
+      if (source == null || source.bytes == null) return;
+      final originalName = source.fileName ?? 'space.jpg';
+      final extension = originalName.contains('.')
+          ? originalName
+                .split('.')
+                .last
+                .toLowerCase()
+                .replaceAll(RegExp(r'[^a-z0-9]'), '')
+          : 'jpg';
+      final path =
+          'dining/tables/$branchId/'
+          '${DateTime.now().microsecondsSinceEpoch}.${extension.isEmpty ? 'jpg' : extension}';
+      final storage = SupabaseService.client.storage.from('product-images');
+      await storage.uploadBinary(
+        path,
+        source.bytes!,
+        fileOptions: FileOptions(
+          contentType: source.contentType ?? 'image/jpeg',
+          upsert: false,
+        ),
+      );
+      if (!mounted) return;
+      setState(() => _imageUrl.text = storage.getPublicUrl(path));
+    } catch (_) {
+      if (mounted)
+        setState(() => _error = 'تعذر رفع صورة المكان، حاول مرة أخرى.');
+    } finally {
+      if (mounted) setState(() => _uploadingImage = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -126,7 +181,7 @@ class _DiningTableDialogState extends State<_DiningTableDialog> {
     final height = min(600.0, size.height * .9);
 
     return PopScope(
-      canPop: !_saving,
+      canPop: !_saving && !_uploadingImage,
       child: Dialog(
         backgroundColor: theme.colorScheme.surface,
         insetPadding: const EdgeInsets.symmetric(
@@ -146,7 +201,7 @@ class _DiningTableDialogState extends State<_DiningTableDialog> {
               AdminDialogHeader(
                 title: _editing ? S.editTable : S.addTable,
                 subtitle: S.tableEditorSubtitle,
-                onClose: _saving
+                onClose: _saving || _uploadingImage
                     ? null
                     : () => Navigator.of(context).maybePop(),
               ),
@@ -277,6 +332,89 @@ class _DiningTableDialogState extends State<_DiningTableDialog> {
                             label: S.tableNote,
                             hint: S.tableNoteHint,
                           ),
+                        ),
+                        const SizedBox(height: AppSizes.px8),
+                        TextFormField(
+                          controller: _imageUrl,
+                          enabled: !_saving,
+                          keyboardType: TextInputType.url,
+                          textInputAction: TextInputAction.next,
+                          validator: (value) {
+                            final text = (value ?? '').trim();
+                            if (text.isEmpty) return null;
+                            final uri = Uri.tryParse(text);
+                            return uri != null &&
+                                    (uri.scheme == 'http' ||
+                                        uri.scheme == 'https') &&
+                                    uri.host.isNotEmpty
+                                ? null
+                                : 'أدخل رابط صورة صحيحًا يبدأ بـ https://';
+                          },
+                          style: TextStyle(
+                            color: adminBodyColor(theme),
+                            fontSize: AppFontSizes.size11_5,
+                          ),
+                          decoration: adminDialogFieldDecoration(
+                            context,
+                            label: 'رابط صورة المكان (اختياري)',
+                            hint: 'https://...',
+                          ),
+                        ),
+                        const SizedBox(height: AppSizes.px8),
+                        ValueListenableBuilder<TextEditingValue>(
+                          valueListenable: _imageUrl,
+                          builder: (context, value, _) {
+                            final imageUrl = value.text.trim();
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                if (imageUrl.isNotEmpty)
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.md,
+                                    ),
+                                    child: Image.network(
+                                      imageUrl,
+                                      height: 160,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => Container(
+                                        height: 90,
+                                        alignment: Alignment.center,
+                                        color: adminTintedSurfaceColor(theme),
+                                        child: const Text(
+                                          'تعذر تحميل معاينة الصورة',
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                const SizedBox(height: AppSizes.px8),
+                                OutlinedButton.icon(
+                                  onPressed: _uploadingImage
+                                      ? null
+                                      : _uploadImage,
+                                  icon: _uploadingImage
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const AppIcon(
+                                          AppIcons.imageAdd01,
+                                          size: 17,
+                                        ),
+                                  label: Text(
+                                    _uploadingImage
+                                        ? 'جارٍ رفع الصورة…'
+                                        : imageUrl.isEmpty
+                                        ? 'رفع صورة من الجهاز'
+                                        : 'استبدال الصورة من الجهاز',
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                         const SizedBox(height: AppSizes.px8),
                         Container(

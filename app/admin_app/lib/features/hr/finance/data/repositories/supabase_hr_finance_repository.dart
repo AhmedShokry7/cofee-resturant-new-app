@@ -5,7 +5,7 @@ import '../../domain/models/hr_finance_models.dart';
 import '../../domain/repositories/hr_finance_repository.dart';
 
 class SupabaseHrFinanceRepository implements HrFinanceRepository {
-  SupabaseHrFinanceRepository({SupabaseClient? client}) : _client = client;
+  SupabaseHrFinanceRepository({this._client});
   final SupabaseClient? _client;
   SupabaseClient get client => _client ?? SupabaseService.client;
 

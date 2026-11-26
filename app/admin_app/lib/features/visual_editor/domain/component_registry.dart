@@ -223,29 +223,122 @@ class ComponentRegistry {
   /// وأزرارها. كل خاصية فارغة تعني «كما هو»، والإخفاء يُسقط المكوّن الأصلي
   /// (نوع العقدة `visible: false`)، لا يُرسم فراغًا.
   static void _registerNativeScreenComponents() {
-    register(const ComponentRegistryEntry(
-      componentType: 'nativeBody', displayName: 'محتوى الصفحة', description: 'مسافات وحواف واجهة الصفحة الأصلية',
-      category: 'screen', classification: ComponentClassification.editable,
-      properties: {
-        'padTop': ComponentPropertyDefinition(key: 'padTop', label: 'المسافة العلوية', description: '', type: PropertyType.number, validation: {'min': 0, 'max': 96}),
-        'padBottom': ComponentPropertyDefinition(key: 'padBottom', label: 'المسافة السفلية', description: '', type: PropertyType.number, validation: {'min': 0, 'max': 96}),
-        'padLeft': ComponentPropertyDefinition(key: 'padLeft', label: 'المسافة اليسرى', description: '', type: PropertyType.number, validation: {'min': 0, 'max': 96}),
-        'padRight': ComponentPropertyDefinition(key: 'padRight', label: 'المسافة اليمنى', description: '', type: PropertyType.number, validation: {'min': 0, 'max': 96}),
-        'backgroundColor': ComponentPropertyDefinition(key: 'backgroundColor', label: 'لون خلفية الهوامش', description: '', type: PropertyType.color),
-      }, allowedParentTypes: [], allowedChildTypes: [], allowedOperations: ['edit', 'hide'],
-      defaultValues: {}, validationRules: {}, iconName: 'layout', version: 1,
-    ));
-    register(const ComponentRegistryEntry(
-      componentType: 'nativeLabel', displayName: 'نص الصفحة', description: 'نص داخل واجهة التطبيق',
-      category: 'screen', classification: ComponentClassification.editable,
-      properties: {
-        'text_ar': ComponentPropertyDefinition(key: 'text_ar', label: 'النص بالعربية', description: '', type: PropertyType.text),
-        'text_en': ComponentPropertyDefinition(key: 'text_en', label: 'النص بالإنجليزية', description: '', type: PropertyType.text),
-        'textColor': ComponentPropertyDefinition(key: 'textColor', label: 'لون النص', description: '', type: PropertyType.color),
-        'fontSize': ComponentPropertyDefinition(key: 'fontSize', label: 'حجم الخط', description: '', type: PropertyType.number, validation: {'min': 8, 'max': 72}),
-      }, allowedParentTypes: [], allowedChildTypes: [], allowedOperations: ['edit', 'hide'],
-      defaultValues: {}, validationRules: {}, iconName: 'text', version: 1,
-    ));
+    register(
+      const ComponentRegistryEntry(
+        componentType: 'nativeBody',
+        displayName: 'محتوى الصفحة',
+        description: 'مسافات وحواف واجهة الصفحة الأصلية',
+        category: 'screen',
+        classification: ComponentClassification.editable,
+        properties: {
+          'padTop': ComponentPropertyDefinition(
+            key: 'padTop',
+            label: 'المسافة العلوية',
+            description: '',
+            type: PropertyType.number,
+            validation: {'min': 0, 'max': 96},
+          ),
+          'padBottom': ComponentPropertyDefinition(
+            key: 'padBottom',
+            label: 'المسافة السفلية',
+            description: '',
+            type: PropertyType.number,
+            validation: {'min': 0, 'max': 96},
+          ),
+          'padLeft': ComponentPropertyDefinition(
+            key: 'padLeft',
+            label: 'المسافة اليسرى',
+            description: '',
+            type: PropertyType.number,
+            validation: {'min': 0, 'max': 96},
+          ),
+          'padRight': ComponentPropertyDefinition(
+            key: 'padRight',
+            label: 'المسافة اليمنى',
+            description: '',
+            type: PropertyType.number,
+            validation: {'min': 0, 'max': 96},
+          ),
+          'backgroundColor': ComponentPropertyDefinition(
+            key: 'backgroundColor',
+            label: 'لون خلفية الهوامش',
+            description: '',
+            type: PropertyType.color,
+          ),
+        },
+        allowedParentTypes: [],
+        allowedChildTypes: [],
+        allowedOperations: ['edit', 'hide'],
+        defaultValues: {},
+        validationRules: {},
+        iconName: 'layout',
+        version: 1,
+      ),
+    );
+    register(
+      const ComponentRegistryEntry(
+        componentType: 'nativeLabel',
+        displayName: 'نص الصفحة',
+        description: 'نص داخل واجهة التطبيق',
+        category: 'screen',
+        classification: ComponentClassification.editable,
+        properties: {
+          'textAlignment': ComponentPropertyDefinition(
+            key: 'textAlignment',
+            label: 'محاذاة النص',
+            description: 'البداية والنهاية تتبعان لغة التطبيق',
+            type: PropertyType.enum_,
+            options: ['start', 'center', 'end', 'justify'],
+          ),
+          'fontWeight': ComponentPropertyDefinition(
+            key: 'fontWeight',
+            label: 'سمك الخط',
+            description: '',
+            type: PropertyType.enum_,
+            options: ['normal', 'medium', 'bold'],
+          ),
+          'lineHeight': ComponentPropertyDefinition(
+            key: 'lineHeight',
+            label: 'تباعد السطور',
+            description: 'مضاعف حجم الخط',
+            type: PropertyType.number,
+            validation: {'min': 1, 'max': 3},
+          ),
+          'text_ar': ComponentPropertyDefinition(
+            key: 'text_ar',
+            label: 'النص بالعربية',
+            description: '',
+            type: PropertyType.text,
+          ),
+          'text_en': ComponentPropertyDefinition(
+            key: 'text_en',
+            label: 'النص بالإنجليزية',
+            description: '',
+            type: PropertyType.text,
+          ),
+          'textColor': ComponentPropertyDefinition(
+            key: 'textColor',
+            label: 'لون النص',
+            description: '',
+            type: PropertyType.color,
+          ),
+          'fontSize': ComponentPropertyDefinition(
+            key: 'fontSize',
+            label: 'حجم الخط',
+            description: '',
+            type: PropertyType.number,
+            validation: {'min': 8, 'max': 72},
+          ),
+        },
+        allowedParentTypes: [],
+        allowedChildTypes: [],
+        allowedOperations: ['edit', 'hide'],
+        defaultValues: {},
+        validationRules: {},
+        iconName: 'text',
+        version: 1,
+      ),
+    );
     // إعدادات شاشة الافتتاحية: مكوّن واحد يملك الشكل والانتقال كله.
     register(
       ComponentRegistryEntry(
@@ -1881,6 +1974,15 @@ class ComponentRegistry {
         classification: ComponentClassification.configurableBusiness,
         properties: {
           ..._bannerDraftProperties(),
+          'displayLocation': const ComponentPropertyDefinition(
+            key: 'displayLocation',
+            label: 'مكان عرض البانرات',
+            description: 'اختر مجموعة البانرات التي يعرضها هذا المكوّن',
+            type: PropertyType.enum_,
+            defaultValue: 'hero',
+            options: ['hero', 'inline'],
+            group: 'المحتوى',
+          ),
           'autoplay': ComponentPropertyDefinition(
             key: 'autoplay',
             label: 'التشغيل التلقائي',
@@ -2138,6 +2240,7 @@ class ComponentRegistry {
         defaultValues: {
           for (final entry in _bannerDraftProperties().entries)
             entry.key: entry.value.defaultValue,
+          'displayLocation': 'hero',
           'autoplay': true,
           'showDots': true,
           'height': 184,
@@ -2156,10 +2259,11 @@ class ComponentRegistry {
       ComponentRegistryEntry(
         componentType: 'promoBanner',
         displayName: 'بانر ترويجي',
-        description: 'بانر ترويجي واحد من البانرات المنشورة',
+        description: 'سلايدر بانرات مستقل داخل الصفحة الرئيسية',
         category: 'restaurant',
         classification: ComponentClassification.configurableBusiness,
         properties: {
+          ..._bannerDraftProperties(),
           'bannerIndex': ComponentPropertyDefinition(
             key: 'bannerIndex',
             label: 'رقم البانر',
@@ -2168,6 +2272,22 @@ class ComponentRegistry {
             defaultValue: 0,
             validation: {'min': 0, 'max': 10},
             group: 'المحتوى',
+          ),
+          'autoplay': ComponentPropertyDefinition(
+            key: 'autoplay',
+            label: 'التشغيل التلقائي',
+            description: 'تنقل البانرات تلقائيًا في هذا الموضع',
+            type: PropertyType.boolean,
+            defaultValue: true,
+            group: 'السلوك',
+          ),
+          'showDots': ComponentPropertyDefinition(
+            key: 'showDots',
+            label: 'إظهار المؤشرات',
+            description: 'إظهار نقاط التنقل الخاصة بهذا البانر',
+            type: PropertyType.boolean,
+            defaultValue: true,
+            group: 'السلوك',
           ),
           'height': ComponentPropertyDefinition(
             key: 'height',
@@ -2408,6 +2528,8 @@ class ComponentRegistry {
         ],
         defaultValues: {
           'bannerIndex': 0,
+          'autoplay': true,
+          'showDots': true,
           'backgroundColor': '',
           'borderColor': '',
           'shadowColor': '',

@@ -44,6 +44,15 @@ class CartLine {
   String get identity =>
       '$productId::$note::${optionValueIds.join(',')}::${bundleId ?? ''}';
 
+  CartLine copyWith({int? quantity}) => CartLine(
+    productId: productId,
+    quantity: quantity ?? this.quantity,
+    note: note,
+    optionValueIds: optionValueIds,
+    unitPrice: unitPrice,
+    bundleId: bundleId,
+  );
+
   /// The payload the server expects. It never carries a price: `replace_cart`
   /// re-prices every line from the catalogue.
   Map<String, dynamic> toServerPayload() => <String, dynamic>{

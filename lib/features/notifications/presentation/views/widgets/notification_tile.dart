@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/app_icons.dart';
@@ -12,9 +12,8 @@ import 'package:new_coffee/core/theme/tokens.dart';
 /// The row decides nothing by itself - [onTap] comes from the page, which asks
 /// the cubit for the destination and marks the row seen.
 ///
-/// An unread row is drawn on the 6% brand tint the selected rows already use,
-/// ringed with the brand ring token, so the part of the list still waiting for
-/// the customer is legible without relying on the small dot alone.
+/// An unread row uses a quiet brand tint and a narrow edge marker. The heading,
+/// message and time have separate visual weight so the list scans quickly.
 class NotificationTile extends StatelessWidget {
   const NotificationTile({
     super.key,
@@ -40,17 +39,13 @@ class NotificationTile extends StatelessWidget {
         button: true,
         selected: isSelected,
         child: Material(
-          color: isSelected
+          color: isSelected || !isRead
               ? AppColor.primarySoft
-              : isRead
-              ? AppColor.cardSurface
-              : AppColor.primarySoft,
+              : AppColor.cardSurface,
           shape: RoundedRectangleBorder(
             borderRadius: corner,
             side: BorderSide(
-              color: isSelected || !isRead
-                  ? AppColor.primaryRing
-                  : AppColor.borderColor,
+              color: isSelected ? AppColor.primaryRing : AppColor.borderColor,
             ),
           ),
           clipBehavior: Clip.antiAlias,
@@ -58,64 +53,107 @@ class NotificationTile extends StatelessWidget {
             onTap: onTap,
             onLongPress: onLongPress,
             borderRadius: corner,
-            child: Padding(
-              padding: EdgeInsets.all(AppSpacing.md),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _Lead(notification: notification),
-                  SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+            child: Stack(
+              children: [
+                if (!isRead && !isSelected)
+                  PositionedDirectional(
+                    start: 0,
+                    top: 12,
+                    bottom: 12,
+                    child: Container(
+                      width: AppSizes.px3,
+                      decoration: BoxDecoration(
+                        color: AppColor.primaryColor,
+                        borderRadius: BorderRadius.circular(AppRadius.r4),
+                      ),
+                    ),
+                  ),
+                Padding(
+                  padding: EdgeInsets.all(AppSpacing.md),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _Lead(notification: notification),
+                      SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Text(
-                                notification.title,
-                                style: isRead
-                                    ? AppFonts.semiBold16(context)
-                                    : AppFonts.bold16(context),
-                              ),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    notification.title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppFonts.semiBold16(context)
+                                        .copyWith(
+                                          fontWeight: isRead
+                                              ? AppFontWeights.semiBold
+                                              : AppFontWeights.bold,
+                                        ),
+                                  ),
+                                ),
+                                if (!isRead)
+                                  Container(
+                                    height: AppSizes.px8,
+                                    width: AppSizes.px8,
+                                    margin: EdgeInsetsDirectional.only(
+                                      start: AppSpacing.xs,
+                                      top: AppSpacing.xs,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColor.primaryColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                if (isSelected)
+                                  Icon(
+                                    AppIcons.checkmarkCircle,
+                                    color: AppColor.primaryColor,
+                                    size: AppSizes.px20,
+                                  ),
+                              ],
                             ),
-                            if (!isRead)
-                              Container(
-                                height: AppSizes.px10,
-                                width: AppSizes.px10,
-                                margin: EdgeInsetsDirectional.only(
-                                  start: AppSpacing.xs,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColor.primaryColor,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                            if (isSelected)
-                              Icon(
-                                AppIcons.checkmarkCircle,
-                                color: AppColor.primaryColor,
-                                size: AppSizes.px20,
-                              ),
-                            SizedBox(width: AppSpacing.sm),
+                            SizedBox(height: AppSpacing.xs),
                             Text(
-                              notification.time,
-                              style: AppFonts.regular12(context)
+                              notification.body,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppFonts.regular14(context)
                                   .copyWith(color: AppColor.greyColor),
+                            ),
+                            SizedBox(height: AppSpacing.sm),
+                            Row(
+                              children: [
+                                Icon(
+                                  AppIcons.calendar,
+                                  size: AppSizes.px14,
+                                  color: AppColor.greyColor,
+                                ),
+                                SizedBox(width: AppSpacing.xs),
+                                Text(
+                                  notification.time,
+                                  style: AppFonts.regular12(context)
+                                      .copyWith(color: AppColor.greyColor),
+                                ),
+                                const Spacer(),
+                                if (!isRead)
+                                  Text(
+                                    'جديد',
+                                    style: AppFonts.semiBold12(context)
+                                        .copyWith(color: AppColor.primaryColor),
+                                  ),
+                              ],
                             ),
                           ],
                         ),
-                        SizedBox(height: AppSpacing.xs),
-                        Text(
-                          notification.body,
-                          style: AppFonts.regular14(context)
-                              .copyWith(color: AppColor.greyColor),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -138,7 +176,7 @@ class _Lead extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final image = notification.imageUrl;
-    final size = AppSizes.px44;
+    final size = AppSizes.px48;
     if (image == null) {
       return Container(
         height: size,

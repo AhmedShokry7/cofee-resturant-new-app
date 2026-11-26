@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
@@ -17,6 +17,7 @@ import 'package:new_coffee/shared/widgets/app_icon.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/labeled_value_row.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 /// The frozen invoice of one order: its lines, its discounts and what was
 /// actually charged.
@@ -73,7 +74,10 @@ class _OrderDetailsViewState extends State<OrderDetailsView> {
     final order = widget.order;
 
     return Scaffold(
-      appBar: AppBar(title: Text(S.orderDetails)),
+      appBar: AppBar(
+        leading: const AppBackButton(),
+        title: Text(S.orderDetails),
+      ),
       body: ListView(
         padding: AppLayout.pageBody,
         children: [

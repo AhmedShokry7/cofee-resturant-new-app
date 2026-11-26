@@ -41,6 +41,8 @@ class ProductModel {
     this.imageFit = 'cover',
     this.imageAlignment = 'center',
     this.relatedProductIds = const [],
+    this.averageRating = 0,
+    this.reviewCount = 0,
   }) : _legacyName = name ?? '',
        _legacyCategory = category ?? '',
        _legacyDescription = description ?? '';
@@ -138,6 +140,10 @@ class ProductModel {
 
   /// Admin-defined companion products for "Goes well with".
   final List<String> relatedProductIds;
+
+  /// Aggregate of published customer reviews, loaded in batches for listings.
+  final double averageRating;
+  final int reviewCount;
 
   /// First usable product image, with legacy and secondary-image fallbacks.
   String? get displayImageUrl {
@@ -264,6 +270,8 @@ class ProductModel {
               ?.map((e) => e.toString())
               .toList() ??
           const [],
+      averageRating: Db.asDouble(json['average_rating']),
+      reviewCount: Db.asInt(json['review_count']),
     );
   }
 
@@ -325,6 +333,8 @@ class ProductModel {
     String? imageFit,
     String? imageAlignment,
     List<String>? relatedProductIds,
+    double? averageRating,
+    int? reviewCount,
   }) => ProductModel(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -359,6 +369,8 @@ class ProductModel {
     imageFit: imageFit ?? this.imageFit,
     imageAlignment: imageAlignment ?? this.imageAlignment,
     relatedProductIds: relatedProductIds ?? this.relatedProductIds,
+    averageRating: averageRating ?? this.averageRating,
+    reviewCount: reviewCount ?? this.reviewCount,
   );
 
   @override

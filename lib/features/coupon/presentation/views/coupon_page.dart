@@ -1,5 +1,6 @@
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/design_text.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -14,6 +15,7 @@ import 'package:new_coffee/features/coupon/presentation/views/widgets/coupon_car
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 class CouponPage extends StatelessWidget {
   const CouponPage({super.key});
@@ -36,7 +38,10 @@ class _CouponsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: DesignText(S.coupon, page: 'coupon', label: 'coupon')),
+      appBar: AppBar(
+        leading: const AppBackButton(),
+        title: DesignText(S.coupon, page: 'coupon', label: 'coupon'),
+      ),
       body: BlocBuilder<CouponsCubit, CouponsState>(
         builder: (context, state) {
           // A re-read keeps the offers the customer is reading: only a page
@@ -122,7 +127,10 @@ class _OutdatedNotice extends StatelessWidget {
             label: S.retry,
             child: Material(
               color: AppColor.transparent,
-              child: TextButton(onPressed: onRetry, child: DesignText(S.retry, page: 'coupon', label: 'retry')),
+              child: CustomTextButton(
+                onPressed: onRetry,
+                child: DesignText(S.retry, page: 'coupon', label: 'retry'),
+              ),
             ),
           ),
         ],

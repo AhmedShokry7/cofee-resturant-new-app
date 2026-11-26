@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
@@ -25,7 +26,7 @@ class ContentFailureView extends StatelessWidget {
         children: [
           Text(message, textAlign: TextAlign.center),
           SizedBox(height: AppSpacing.md),
-          TextButton(onPressed: onRetry, child: Text(S.retry)),
+          CustomTextButton(onPressed: onRetry, child: Text(S.retry)),
         ],
       ),
     );

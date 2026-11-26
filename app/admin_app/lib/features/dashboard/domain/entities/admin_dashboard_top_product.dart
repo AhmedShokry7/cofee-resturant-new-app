@@ -11,8 +11,11 @@ class AdminDashboardTopProduct {
     required this.quantity,
     required this.revenue,
     this.imageUrl,
+    this.productId,
   });
 
+  /// المعرف الحالي من سطر الطلب؛ قد يكون null إذا حُذف المنتج.
+  final String? productId;
   final String nameAr;
   final String nameEn;
   final int quantity;

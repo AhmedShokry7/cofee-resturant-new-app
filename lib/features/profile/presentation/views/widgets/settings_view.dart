@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_locale.dart';
@@ -147,19 +147,22 @@ class _SettingsEntries extends StatelessWidget {
           onTap: () => Navigator.of(context).pushNamed(LoyaltyPage.routeName),
         ),
         ProfileMenuTile(
-          icon: Icons.inventory_2_outlined,
+          icon: AppIcons.package,
           label: S.myBundles,
           onTap: () => Navigator.of(context).pushNamed(MyBundlesPage.routeName),
         ),
         ProfileMenuTile(
-          icon: Icons.autorenew_rounded,
+          icon: AppIcons.repeat,
           label: S.productSubscriptions,
-          onTap: () => Navigator.of(context).pushNamed(MyProductSubscriptionsPage.routeName),
+          onTap: () =>
+              Navigator.of(context)
+                  .pushNamed(MyProductSubscriptionsPage.routeName),
         ),
         ProfileMenuTile(
-          icon: Icons.event_available_outlined,
+          icon: AppIcons.calendar,
           label: S.myReservations,
-          onTap: () => Navigator.of(context).pushNamed(MyReservationsPage.routeName),
+          onTap: () =>
+              Navigator.of(context).pushNamed(MyReservationsPage.routeName),
         ),
         ProfileMenuTile(
           icon: AppIcons.settings,

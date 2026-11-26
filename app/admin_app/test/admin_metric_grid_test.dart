@@ -1,5 +1,5 @@
 import 'package:admin_app/shared/widgets/admin_metric_grid.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// شبكة المقاييس لا تعرض أبدًا «٣ جنبًا وبطاقة نازلة وحدها»:

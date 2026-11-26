@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
@@ -7,7 +7,10 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:new_coffee/features/auth/presentation/views/phone_auth_page.dart';
 
+/// The divided "or sign in with" block: Google and phone side by side. Used by
+/// both the sign-in and the sign-up pages so they stay identical.
 class AuthSocialLogin extends StatelessWidget {
   const AuthSocialLogin({super.key, this.label, this.isLoading = false});
 
@@ -34,27 +37,24 @@ class AuthSocialLogin extends StatelessWidget {
         ),
         SizedBox(height: AppSpacing.lg),
         Row(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _SocialButton(
-              icon: AppIcons.google,
-              label: S.continueWithGoogle,
-              isLoading: isLoading,
-              onTap: () => context.read<AuthCubit>().signInWithGoogle(),
+            Expanded(
+              child: _ChoiceTile(
+                icon: AppIcons.google,
+                label: S.continueWithGoogle,
+                isLoading: isLoading,
+                onTap: () => context.read<AuthCubit>().signInWithGoogle(),
+              ),
             ),
-            SizedBox(width: AppSpacing.lg),
-            _SocialButton(
-              icon: AppIcons.facebook,
-              label: S.continueWithFacebook,
-              isLoading: isLoading,
-              onTap: () => context.read<AuthCubit>().signInWithFacebook(),
-            ),
-            SizedBox(width: AppSpacing.lg),
-            _SocialButton(
-              icon: AppIcons.apple,
-              label: S.continueWithApple,
-              isLoading: isLoading,
-              onTap: () => context.read<AuthCubit>().signInWithApple(),
+            SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: _ChoiceTile(
+                icon: AppIcons.smartphone,
+                label: S.continueWithPhone,
+                isLoading: isLoading,
+                onTap: () =>
+                    Navigator.of(context).pushNamed(PhoneAuthPage.routeName),
+              ),
             ),
           ],
         ),
@@ -63,8 +63,10 @@ class AuthSocialLogin extends StatelessWidget {
   }
 }
 
-class _SocialButton extends StatelessWidget {
-  const _SocialButton({
+/// One of two equal sign-in choices: icon and label on one line, in the
+/// neutral grey of the divider text, inside a border-coloured outline.
+class _ChoiceTile extends StatelessWidget {
+  const _ChoiceTile({
     required this.icon,
     required this.label,
     required this.onTap,
@@ -72,11 +74,6 @@ class _SocialButton extends StatelessWidget {
   });
 
   final IconData icon;
-
-  /// What the button does, said out loud.
-  ///
-  /// A circle with a logo inside announces itself to a screen reader as an
-  /// image with no name; the provider is only guessable from the picture.
   final String label;
   final VoidCallback onTap;
   final bool isLoading;
@@ -90,15 +87,36 @@ class _SocialButton extends StatelessWidget {
       child: Material(
         color: AppColor.cardSurface,
         clipBehavior: Clip.antiAlias,
-        shape: CircleBorder(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.r16),
           side: BorderSide(color: AppColor.borderColor),
         ),
         child: InkWell(
           onTap: isLoading ? null : onTap,
-          child: SizedBox(
-            height: AppSizes.px56,
-            width: AppSizes.px56,
-            child: Icon(icon, size: AppSizes.px26, color: AppColor.blackColor),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.px6,
+              vertical: AppSpacing.px10,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: AppSizes.px26, color: AppColor.greyColor),
+                SizedBox(width: AppSpacing.xs),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppFonts.regular14(context).copyWith(
+                      color: AppColor.greyColor,
+                      fontWeight: AppFontWeights.medium,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -34,6 +34,7 @@ class DashboardTargetFacts extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: AdminLabeledValue(
@@ -41,6 +42,7 @@ class DashboardTargetFacts extends StatelessWidget {
                 child: _amount(theme, target),
               ),
             ),
+            const SizedBox(width: AppSizes.px12),
             Expanded(
               child: AdminLabeledValue(
                 label: S.dashboardCurrentSales,
@@ -49,13 +51,13 @@ class DashboardTargetFacts extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: AppSizes.px14),
+        const SizedBox(height: AppSizes.px18),
         AdminProgressBar(
           value: progress,
-          height: AppSizes.px6,
+          height: AppSizes.px8,
           color: reached ? AppColor.trendPositive : AppColor.adminAccent,
         ),
-        const SizedBox(height: AppSizes.px10),
+        const SizedBox(height: AppSizes.px12),
         DashboardTargetGap(
           reached: reached,
           remaining: target - metrics.monthRevenue,
@@ -76,14 +78,14 @@ class DashboardTargetFacts extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: color,
-              fontSize: AppFontSizes.size10,
+              fontSize: AppFontSizes.size13,
               fontWeight: AppFontWeights.semiBold,
               height: AppTextHeights.line1_4,
             ),
           ),
         ),
-        const SizedBox(width: AppSizes.px4),
-        CurrencyIcon(size: 13, color: color),
+        const SizedBox(width: AppSizes.px6),
+        CurrencyIcon(size: 15, color: color),
       ],
     );
   }

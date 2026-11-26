@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Tracks the top route name of the root navigator so widgets that live
 /// above the [Navigator] (e.g. global overlays) can react to navigation.

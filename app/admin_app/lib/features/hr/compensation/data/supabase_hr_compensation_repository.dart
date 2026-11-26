@@ -4,7 +4,7 @@ import 'package:admin_app/core/services/supabase_service.dart';
 import '../domain/hr_compensation_repository.dart';
 
 class SupabaseHrCompensationRepository implements HrCompensationRepository {
-  SupabaseHrCompensationRepository({SupabaseClient? client}) : _client = client;
+  SupabaseHrCompensationRepository({this._client});
   final SupabaseClient? _client;
   SupabaseClient get client => _client ?? SupabaseService.client;
 

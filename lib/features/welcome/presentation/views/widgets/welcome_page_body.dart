@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:new_coffee/features/design/data/model/native_section.dart';
 import 'package:new_coffee/features/design/data/model/published_design.dart';
@@ -59,7 +60,7 @@ class WelcomePageBody extends StatelessWidget {
           bottom: 0,
           child: WavyContainer(
             curveHeight: curveDepth,
-            color: panelColor ?? const Color(0xFFFFFFFF),
+            color: panelColor ?? AppColor.cardSurface,
             padding: EdgeInsets.fromLTRB(
               horizontal,
               clearance,

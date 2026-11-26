@@ -1,5 +1,5 @@
 import 'package:new_coffee/shared/widgets/design_text.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
@@ -13,6 +13,7 @@ import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/address_tile.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 /// Standalone address book reachable from Settings.
 ///
@@ -27,7 +28,14 @@ class AddressesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return AuthGuard(
       child: Scaffold(
-        appBar: AppBar(title: DesignText(S.myAddresses, page: 'addresses', label: 'myAddresses')),
+        appBar: AppBar(
+          leading: const AppBackButton(),
+          title: DesignText(
+            S.myAddresses,
+            page: 'addresses',
+            label: 'myAddresses',
+          ),
+        ),
         body: const _AddressesView(),
       ),
     );
@@ -45,14 +53,22 @@ class _AddressesView extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: DesignText(S.deleteAddress, page: 'addresses', label: 'deleteAddress'),
-        content: DesignText(S.deleteAddressConfirm, page: 'addresses', label: 'deleteAddressConfirm'),
+        title: DesignText(
+          S.deleteAddress,
+          page: 'addresses',
+          label: 'deleteAddress',
+        ),
+        content: DesignText(
+          S.deleteAddressConfirm,
+          page: 'addresses',
+          label: 'deleteAddressConfirm',
+        ),
         actions: [
-          TextButton(
+          CustomTextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: DesignText(S.cancel, page: 'addresses', label: 'cancel'),
           ),
-          TextButton(
+          CustomTextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: DesignText(S.delete, page: 'addresses', label: 'delete'),
           ),

@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
@@ -56,7 +57,7 @@ class ProfileAvatar extends StatelessWidget {
                 width: radius * 0.6,
                 height: radius * 0.6,
                 child: CircularProgressIndicator(
-                  strokeWidth: 2,
+                  strokeWidth: AppSizes.px2,
                   valueColor: AlwaysStoppedAnimation<Color>(
                     AppColor.primaryColor,
                   ),

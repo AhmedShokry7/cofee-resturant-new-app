@@ -1,11 +1,9 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart' as fl;
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
-import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/visual_editor/data/visual_editor_repository.dart';
 import 'package:admin_app/features/visual_editor/domain/component_registry.dart';
 import 'package:admin_app/features/visual_editor/domain/design_contract.dart';
@@ -131,7 +129,7 @@ void main() {
     // الصفحة من القائمة — initState يعيد التهيئة فتعود المعاينة للرئيسية).
     tester
         .widget<StudioSingleRowToolbar>(find.byType(StudioSingleRowToolbar))
-        .onPageChanged!('welcome');
+        .onPageChanged('welcome');
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));

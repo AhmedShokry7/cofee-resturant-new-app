@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -45,7 +46,7 @@ class NotificationPushToggle extends StatelessWidget {
       builder: (context, state) {
         if (state.signedOut) return const SizedBox.shrink();
         final enabled = state.pushEnabled;
-        return IconButton(
+        return CustomIconButton(
           key: const ValueKey('notification-push-toggle'),
           tooltip: enabled ? S.turnOffNotifications : S.turnOnNotifications,
           icon: Icon(

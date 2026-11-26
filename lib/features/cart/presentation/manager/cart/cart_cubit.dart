@@ -340,28 +340,42 @@ class CartCubit extends Cubit<CartState> {
                 }
                 final guestImage =
                     entry['bundleImage']?.toString().trim() ?? '';
-                addBundle(
-                  bundleId: bundleId,
-                  titleAr: entry['bundleNameAr']?.toString(),
-                  titleEn: entry['bundleNameEn']?.toString(),
-                  title: entry['bundleTitle']?.toString() ?? '',
-                  titleCopy: AppCopy.bundleLabel,
-                  image: guestImage.isEmpty
-                      ? await _bundleFallbackImage(components, catalog)
-                      : guestImage,
-                  price:
-                      (entry['bundlePrice'] as num?)?.toDouble() ??
-                      (entry['unitPrice'] as num?)?.toDouble() ??
-                      0,
-                  components: components,
-                  quantity: entry['quantity'] as int? ?? 1,
-                  note: entry['note'] as String? ?? '',
-                  optionValueIds:
-                      (entry['optionValueIds'] as List?)
-                          ?.map((e) => e.toString())
-                          .toList() ??
-                      const <String>[],
-                );
+                final image = guestImage.isEmpty
+                    ? await _bundleFallbackImage(components, catalog)
+                    : guestImage;
+                final customerBundleId = entry['customerBundleId']?.toString();
+                final price =
+                    (entry['bundlePrice'] as num?)?.toDouble() ??
+                    (entry['unitPrice'] as num?)?.toDouble() ??
+                    0;
+                if (customerBundleId != null && customerBundleId.isNotEmpty) {
+                  addPersonalBundle(
+                    customerBundleId: customerBundleId,
+                    title: entry['bundleTitle']?.toString() ?? '',
+                    image: image,
+                    price: price,
+                    components: components,
+                    quantity: entry['quantity'] as int? ?? 1,
+                  );
+                } else {
+                  addBundle(
+                    bundleId: bundleId,
+                    titleAr: entry['bundleNameAr']?.toString(),
+                    titleEn: entry['bundleNameEn']?.toString(),
+                    title: entry['bundleTitle']?.toString() ?? '',
+                    titleCopy: AppCopy.bundleLabel,
+                    image: image,
+                    price: price,
+                    components: components,
+                    quantity: entry['quantity'] as int? ?? 1,
+                    note: entry['note'] as String? ?? '',
+                    optionValueIds:
+                        (entry['optionValueIds'] as List?)
+                            ?.map((e) => e.toString())
+                            .toList() ??
+                        const <String>[],
+                  );
+                }
                 continue;
               }
 
@@ -621,6 +635,56 @@ class CartCubit extends Cubit<CartState> {
     _onCartChanged();
   }
 
+  /// Adds a customer's saved product list as one visible cart row while its
+  /// components remain ordinary, branch-priced products on the server.
+  void addPersonalBundle({
+    required String customerBundleId,
+    required String title,
+    required String image,
+    required double price,
+    required List<CartBundleComponent> components,
+    int quantity = 1,
+  }) {
+    if (components.isEmpty) return;
+    final items = [...state.items];
+    final index = items.indexWhere(
+      (item) => item.customerBundleId == customerBundleId && item.isBundle,
+    );
+    if (index == -1 && items.length >= _maxItems) {
+      emit(CartState(items: state.items, error: AppCopy.cartLineLimitReached));
+      return;
+    }
+    final product = ProductModel(
+      id: 'personal-bundle:$customerBundleId',
+      name: title,
+      nameAr: title,
+      price: price,
+      image: image,
+    );
+    if (index == -1) {
+      items.add(
+        CartItem(
+          product: product,
+          quantity: quantity.clamp(1, CartLimits.maxQuantity),
+          unitPrice: price,
+          customerBundleId: customerBundleId,
+          bundleComponents: components,
+        ),
+      );
+    } else {
+      items[index] = items[index].copyWith(
+        quantity: (items[index].quantity + quantity).clamp(
+          1,
+          CartLimits.maxQuantity,
+        ),
+        unitPrice: price,
+        bundleComponents: components,
+      );
+    }
+    emit(CartState(items: items));
+    _onCartChanged();
+  }
+
   /// Kept for callers that only know a product. The cart page and stepper now
   /// use the line-specific variants below, so different notes/options for the
   /// same product are no longer conflated.
@@ -803,6 +867,7 @@ class CartCubit extends Cubit<CartState> {
     final items = <CartItem>[];
     for (final entry in entries) {
       if (entry['isBundle'] == true) {
+        final customerBundleId = entry['customerBundleId']?.toString();
         final bundleId =
             entry['bundleId']?.toString() ??
             entry['productId']?.toString() ??
@@ -837,9 +902,15 @@ class CartCubit extends Cubit<CartState> {
           image = await _bundleFallbackImage(components, catalog);
         }
         final product = ProductModel(
-          id: 'bundle:$bundleId',
+          id: customerBundleId != null && customerBundleId.isNotEmpty
+              ? 'personal-bundle:$customerBundleId'
+              : 'bundle:$bundleId',
           name: title,
-          nameAr: titleAr,
+          nameAr:
+              titleAr ??
+              (customerBundleId != null && customerBundleId.isNotEmpty
+                  ? title
+                  : null),
           nameEn: titleEn,
           nameCopy: AppCopy.bundleLabel,
           price: price,
@@ -852,7 +923,13 @@ class CartCubit extends Cubit<CartState> {
             note: entry['note']?.toString() ?? '',
             optionValueIds: _optionIds(entry['optionValueIds']),
             unitPrice: price,
-            bundleId: bundleId,
+            bundleId: customerBundleId != null && customerBundleId.isNotEmpty
+                ? null
+                : bundleId,
+            customerBundleId:
+                customerBundleId != null && customerBundleId.isNotEmpty
+                ? customerBundleId
+                : null,
             bundleComponents: components,
           ),
         );
@@ -961,6 +1038,8 @@ class CartCubit extends Cubit<CartState> {
                   if (item.unitPrice != null) 'unitPrice': item.unitPrice,
                   if (item.bundleId != null && item.bundleId!.isNotEmpty)
                     'bundleId': item.bundleId,
+                  if (item.customerBundleId != null)
+                    'customerBundleId': item.customerBundleId,
                   if (item.isBundle) 'isBundle': true,
                   if (item.isBundle) 'bundleTitle': item.product.name,
                   if (item.product.nameAr != null)

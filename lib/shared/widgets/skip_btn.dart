@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
@@ -31,7 +32,7 @@ class SkipBtn extends StatelessWidget {
           top: AppDimensions.skipInset,
           end: AppDimensions.skipInset,
         ),
-        child: TextButton(
+        child: CustomTextButton(
           onPressed: onTap,
           // The box is the accessibility floor the app already promises, so the
           // word's own width never decides how hard the control is to hit.

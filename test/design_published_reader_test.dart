@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -103,9 +103,7 @@ void main() {
           'theme': <Object?, Object?>{
             'colors': <Object?, Object?>{'primary': '#00FF00'},
           },
-        })!
-            .theme
-            .color(ThemeColorRole.primary),
+        })!.theme.color(ThemeColorRole.primary),
         const Color(0xFF00FF00),
       );
     });
@@ -238,7 +236,10 @@ void main() {
       ];
       final repository = SupabaseDesignRepository(client: server.client);
       final design = await repository.published();
-      expect(design!.theme.color(ThemeColorRole.primary), const Color(0xFFC09060));
+      expect(
+        design!.theme.color(ThemeColorRole.primary),
+        const Color(0xFFC09060),
+      );
       expect(server.query, contains('key=eq.app_design_published'));
       expect(server.query, contains('is_public=eq.true'));
 

@@ -354,8 +354,9 @@ class PropertiesInspectorPanel extends StatelessWidget {
     Future<String?> Function()? onPickImage,
     Future<String?> Function()? onBrowseImages,
   ) {
-    if (splashGroup != null && splashGroup != title)
+    if (splashGroup != null && splashGroup != title) {
       return const SizedBox.shrink();
+    }
     final fields = properties.entries
         .where((entry) => keys.contains(entry.key))
         .toList();

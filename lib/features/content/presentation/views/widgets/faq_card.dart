@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -33,7 +33,7 @@ class FaqCard extends StatelessWidget {
         title: Text(faq.question, style: AppFonts.medium16(context)),
         childrenPadding: EdgeInsets.fromLTRB(
           AppSpacing.lg,
-          0,
+          AppSpacing.none,
           AppSpacing.lg,
           AppSpacing.lg,
         ),

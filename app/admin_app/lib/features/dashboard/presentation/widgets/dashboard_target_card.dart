@@ -55,7 +55,7 @@ class DashboardTargetCard extends StatelessWidget {
                     reached: metrics.monthRevenue >= target,
                   ),
                 ),
-                const SizedBox(height: AppSizes.px14),
+                const SizedBox(height: AppSizes.px18),
                 DashboardTargetFacts(metrics: metrics),
               ],
             ),

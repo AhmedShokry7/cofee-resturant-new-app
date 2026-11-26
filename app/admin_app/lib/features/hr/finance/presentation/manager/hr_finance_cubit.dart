@@ -49,13 +49,14 @@ class HrFinanceCubit extends Cubit<HrFinanceState> {
         );
       }
     } catch (error) {
-      if (!isClosed && id == _loadId)
+      if (!isClosed && id == _loadId) {
         emit(
           state.copyWith(
             status: HrFinanceStatus.failure,
             error: adminErrorMessage(error),
           ),
         );
+      }
     }
   }
 
@@ -66,8 +67,9 @@ class HrFinanceCubit extends Cubit<HrFinanceState> {
       await load();
       return true;
     } catch (error) {
-      if (!isClosed)
+      if (!isClosed) {
         emit(state.copyWith(clearBusy: true, error: adminErrorMessage(error)));
+      }
       return false;
     }
   }

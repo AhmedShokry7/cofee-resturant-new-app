@@ -1,11 +1,12 @@
 import 'package:new_coffee/shared/widgets/design_text.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 
 import 'package:new_coffee/features/checkout/presentation/views/widgets/shipping_addresses_bottom_bar.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/shipping_addresses_page_body.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 class ShippingAddressesPage extends StatelessWidget {
   const ShippingAddressesPage({super.key});
@@ -16,7 +17,14 @@ class ShippingAddressesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return AuthGuard(
       child: Scaffold(
-        appBar: AppBar(title: DesignText(S.shippingAddress, page: 'shipping_addresses', label: 'shippingAddress')),
+        appBar: AppBar(
+          leading: const AppBackButton(),
+          title: DesignText(
+            S.shippingAddress,
+            page: 'shipping_addresses',
+            label: 'shippingAddress',
+          ),
+        ),
         body: const ShippingAddressesPageBody(),
         bottomNavigationBar: const ShippingAddressesBottomBar(),
       ),

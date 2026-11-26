@@ -42,6 +42,9 @@ class DiningTable {
     this.isActive = true,
     this.sortOrder = 0,
     this.note = '',
+    this.imageUrl,
+    this.layoutX,
+    this.layoutY,
     this.status = DiningTableStatus.available,
     this.activeOrder,
     this.reservation,
@@ -56,6 +59,9 @@ class DiningTable {
   final bool isActive;
   final int sortOrder;
   final String note;
+  final String? imageUrl;
+  final double? layoutX;
+  final double? layoutY;
   final DiningTableStatus status;
   final DiningActiveOrder? activeOrder;
 
@@ -70,6 +76,30 @@ class DiningTable {
 
   bool get hasOrder => activeOrder != null;
 
+  DiningTable copyWith({
+    String? imageUrl,
+    bool clearImageUrl = false,
+    double? layoutX,
+    double? layoutY,
+  }) =>
+      DiningTable(
+        id: id,
+        branchId: branchId,
+        name: name,
+        area: area,
+        capacity: capacity,
+        isActive: isActive,
+        sortOrder: sortOrder,
+        note: note,
+        imageUrl: clearImageUrl ? null : (imageUrl ?? this.imageUrl),
+        layoutX: layoutX ?? this.layoutX,
+        layoutY: layoutY ?? this.layoutY,
+        status: status,
+        activeOrder: activeOrder,
+        reservation: reservation,
+        nextReservation: nextReservation,
+      );
+
   factory DiningTable.fromJson(Map<String, dynamic> json) {
     final branchId = _text(json['branch_id']);
     final name = _text(json['name']);
@@ -82,6 +112,9 @@ class DiningTable {
       isActive: _flag(json['is_active'], fallback: true),
       sortOrder: _integer(json['sort_order']),
       note: _text(json['note']),
+      imageUrl: _textOrNull(json['image_url']),
+      layoutX: _numberOrNull(json['layout_x']),
+      layoutY: _numberOrNull(json['layout_y']),
       status: DiningTableStatus.fromValue(json['status']),
       activeOrder: _mapOrNull(json['active_order'], DiningActiveOrder.fromJson),
       reservation: _mapOrNull(
@@ -127,6 +160,11 @@ int _integer(Object? value, {int fallback = 0}) {
 double _number(Object? value, {double fallback = 0}) {
   if (value is num) return value.toDouble();
   return double.tryParse('${value ?? ''}') ?? fallback;
+}
+
+double? _numberOrNull(Object? value) {
+  if (value is num) return value.toDouble();
+  return double.tryParse('${value ?? ''}');
 }
 
 bool _flag(Object? value, {bool fallback = false}) {

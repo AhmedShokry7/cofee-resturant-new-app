@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -109,9 +109,12 @@ class NotificationsPageBody extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(AppIcons.delete, color: Colors.white),
+                const Icon(AppIcons.delete, color: AppColor.whiteColor),
                 SizedBox(width: AppSpacing.xs),
-                Text(S.delete, style: const TextStyle(color: Colors.white)),
+                Text(
+                  S.delete,
+                  style: const TextStyle(color: AppColor.whiteColor),
+                ),
               ],
             ),
           ),
@@ -147,7 +150,7 @@ class NotificationsPageBody extends StatelessWidget {
   }
 }
 
-/// Pull-to-refresh wrapped around a column that may be shorter than the screen.
+/// Notifications refresh through the cubit's realtime and push subscriptions.
 class _Refreshable extends StatelessWidget {
   const _Refreshable({required this.children});
 
@@ -155,13 +158,10 @@ class _Refreshable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: () => context.read<NotificationsCubit>().refresh(),
-      child: ListView(
-        padding: AppLayout.pageBody,
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: children,
-      ),
+    return ListView.builder(
+      padding: AppLayout.pageBody,
+      itemCount: children.length,
+      itemBuilder: (context, index) => children[index],
     );
   }
 }

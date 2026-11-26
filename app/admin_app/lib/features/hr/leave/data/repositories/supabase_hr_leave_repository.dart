@@ -5,7 +5,7 @@ import '../../domain/models/hr_leave_models.dart';
 import '../../domain/repositories/hr_leave_repository.dart';
 
 class SupabaseHrLeaveRepository implements HrLeaveRepository {
-  SupabaseHrLeaveRepository({SupabaseClient? client}) : _client = client;
+  SupabaseHrLeaveRepository({this._client});
   final SupabaseClient? _client;
   SupabaseClient get client => _client ?? SupabaseService.client;
 

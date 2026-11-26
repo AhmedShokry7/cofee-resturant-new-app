@@ -106,7 +106,7 @@ class _ProductOptionValueRowState extends State<ProductOptionValueRow> {
               width: AppDimensions.productOptionPriceWidth,
               child: finalPrice,
             ),
-            if (reset != null) reset,
+            ?reset,
           ],
         );
       },

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
@@ -28,7 +28,7 @@ class StarRating extends StatelessWidget {
           button: true,
           label: S.rateStars(value),
           child: Material(
-            color: Colors.transparent,
+            color: AppColor.transparent,
             child: InkWell(
               onTap: () => onChanged(value),
               customBorder: const CircleBorder(),

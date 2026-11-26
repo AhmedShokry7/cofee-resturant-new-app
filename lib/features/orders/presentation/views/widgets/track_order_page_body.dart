@@ -1,7 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/order_item_card.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
@@ -11,6 +13,7 @@ import 'package:new_coffee/features/orders/presentation/manager/order_tracking/o
 import 'package:new_coffee/features/orders/presentation/views/widgets/order_status_timeline.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/labeled_value_row.dart';
+import 'package:new_coffee/shared/widgets/app_icon.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
@@ -51,6 +54,12 @@ class _TrackOrderView extends StatelessWidget {
           note: order.note,
           unitPrice: order.chargedUnit,
         ),
+        if (order.isDelivery &&
+            order.deliveryEstimatedMinutes != null &&
+            order.placedAt != null) ...[
+          SizedBox(height: AppSpacing.md),
+          _EstimatedArrival(order: order),
+        ],
         SizedBox(height: AppSpacing.lg),
         Text(S.orderDetails, style: AppFonts.semiBold16(context)),
         SizedBox(height: AppSpacing.md),
@@ -87,7 +96,7 @@ class _TrackOrderView extends StatelessWidget {
                 children: [
                   Text(S.liveStatusFailed, style: AppFonts.regular14(context)),
                   SizedBox(height: AppSpacing.sm),
-                  TextButton(
+                  CustomTextButton(
                     onPressed: () => context.read<OrderTrackingCubit>().load(),
                     child: Text(S.retry),
                   ),
@@ -104,6 +113,50 @@ class _TrackOrderView extends StatelessWidget {
           },
         ),
       ],
+    );
+  }
+}
+
+class _EstimatedArrival extends StatelessWidget {
+  const _EstimatedArrival({required this.order});
+
+  final OrderItemModel order;
+
+  @override
+  Widget build(BuildContext context) {
+    final estimate = order.placedAt!.add(
+      Duration(minutes: order.deliveryEstimatedMinutes!),
+    );
+    final time = TimeOfDay.fromDateTime(estimate).format(context);
+    final text = '${Formatters.date(estimate)} · $time';
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primaryContainer
+            .withValues(alpha: .45),
+        borderRadius: BorderRadius.circular(AppRadius.r16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const AppIcon(AppIcons.clock),
+              SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  S.estimatedDelivery,
+                  style: AppFonts.semiBold14(context),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.xs),
+          Text(text, style: AppFonts.semiBold16(context)),
+          SizedBox(height: AppSpacing.xxs),
+          Text(S.estimatedDeliveryNote, style: AppFonts.regular12(context)),
+        ],
+      ),
     );
   }
 }

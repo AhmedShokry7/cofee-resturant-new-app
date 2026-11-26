@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
@@ -31,7 +31,11 @@ class FavoritesPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              PageTitle(title: S.favorites, page: 'favourites', label: 'favorites'),
+              PageTitle(
+                title: S.favorites,
+                page: 'favourites',
+                label: 'favorites',
+              ),
               Expanded(
                 child: BlocBuilder<FavoritesCubit, FavoritesState>(
                   builder: (context, state) {

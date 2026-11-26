@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
@@ -10,6 +10,8 @@ import 'package:new_coffee/core/theme/motion_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/bundles/presentation/views/bundle_details_page.dart';
+import 'package:new_coffee/features/customer_bundles/data/repositories/customer_bundle_repository.dart';
+import 'package:new_coffee/features/customer_bundles/presentation/views/customer_bundle_editor_page.dart';
 import 'package:new_coffee/features/checkout/presentation/views/checkout_page.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_card.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
@@ -40,7 +42,16 @@ class CartPage extends StatelessWidget {
         action: SnackBarAction(
           label: S.undo,
           onPressed: () {
-            if (item.isBundle) {
+            if (item.customerBundleId != null) {
+              cart.addPersonalBundle(
+                customerBundleId: item.customerBundleId!,
+                title: item.product.name,
+                image: item.product.image,
+                price: item.product.price,
+                components: item.bundleComponents,
+                quantity: item.quantity,
+              );
+            } else if (item.isBundle) {
               cart.addBundle(
                 bundleId: item.bundleId!,
                 title: item.product.name,
@@ -117,7 +128,12 @@ class CartPage extends StatelessWidget {
                                 note: item.note,
                                 lineId: item.lineId,
                                 unitPrice: item.unitPrice,
-                                onTap: item.isBundle
+                                onTap: item.customerBundleId != null
+                                    ? () => _openPersonalBundle(
+                                        context,
+                                        item.customerBundleId!,
+                                      )
+                                    : item.isBundle
                                     ? () => _openBundle(context, item.bundleId!)
                                     : null,
                                 onIncrement: () => context
@@ -153,6 +169,27 @@ class CartPage extends StatelessWidget {
     } catch (_) {
       // The line remains usable if the bundle was unpublished after it was
       // added; opening details is best-effort and must not mutate the cart.
+    }
+  }
+
+  Future<void> _openPersonalBundle(
+    BuildContext context,
+    String customerBundleId,
+  ) async {
+    try {
+      final bundle = await CustomerBundleRepository().getBundle(
+        customerBundleId,
+      );
+      if (!context.mounted || bundle == null) return;
+      await Navigator.of(context).pushNamed(
+        CustomerBundleEditorPage.routeName,
+        arguments: bundle,
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.couldNotLoadBundles)),
+      );
     }
   }
 }

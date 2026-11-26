@@ -61,22 +61,24 @@ void registerPreviewView({
     ..reset(keepPending: true);
 
   _factories[viewType] = () => createPreviewIframe(
-      viewType: viewType,
-      url: url,
-      sessionId: sessionId,
-      parentOrigin: parentOrigin,
-      previewOrigin: previewOrigin,
-      queue: queue,
-      report: report,
-      onElementSelected: onElementSelected,
-      onPreviewReady: onPreviewReady,
-      onPreviewError: onPreviewError,
-      onPropertyUpdated: onPropertyUpdated,
-      onTreeUpdated: onTreeUpdated,
-    );
+    viewType: viewType,
+    url: url,
+    sessionId: sessionId,
+    parentOrigin: parentOrigin,
+    previewOrigin: previewOrigin,
+    queue: queue,
+    report: report,
+    onElementSelected: onElementSelected,
+    onPreviewReady: onPreviewReady,
+    onPreviewError: onPreviewError,
+    onPropertyUpdated: onPropertyUpdated,
+    onTreeUpdated: onTreeUpdated,
+  );
   if (!_registered) {
-    ui_web.platformViewRegistry.registerViewFactory('visual-editor-preview',
-        (int id, {Object? params}) => _factories[params]!());
+    ui_web.platformViewRegistry.registerViewFactory(
+      'visual-editor-preview',
+      (int id, {Object? params}) => _factories[params]!(),
+    );
     _registered = true;
   }
 }
@@ -102,10 +104,12 @@ void disposePreviewView(String viewType) {
   _factories.remove(viewType);
 }
 
-void _defaultConnectionSink(PreviewConnection _, String? __) {}
+void _defaultConnectionSink(PreviewConnection _, String? _) {}
 
-Widget buildPreviewView({required String viewType}) =>
-    HtmlElementView(viewType: 'visual-editor-preview', creationParams: viewType);
+Widget buildPreviewView({required String viewType}) => HtmlElementView(
+  viewType: 'visual-editor-preview',
+  creationParams: viewType,
+);
 
 /// يطبّق التحجيم النهائي على عنصر iframe نفسه.
 ///

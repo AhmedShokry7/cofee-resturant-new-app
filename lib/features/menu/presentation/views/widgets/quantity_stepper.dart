@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
@@ -32,7 +33,7 @@ class QuantityStepper extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
+          CustomIconButton(
             onPressed: onDecrement,
             icon: const Icon(AppIcons.minus),
             color: AppColor.primaryColor,
@@ -44,7 +45,7 @@ class QuantityStepper extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs),
             child: Text('$quantity', style: AppFonts.semiBold16(context)),
           ),
-          IconButton(
+          CustomIconButton(
             onPressed: onIncrement,
             icon: const Icon(AppIcons.add),
             color: AppColor.primaryColor,

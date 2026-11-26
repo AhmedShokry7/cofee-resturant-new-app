@@ -12,4 +12,13 @@ class ProductSubscriptionsCubit extends Cubit<ProductSubscriptionsState> {
   Future<void> pause(String id) async { try{ await _repo.pause(id); await load(); } catch(e){ emit(state.copyWith(error:e.toString())); } }
   Future<void> resume(String id) async { try{ await _repo.resume(id); await load(); } catch(e){ emit(state.copyWith(error:e.toString())); } }
   Future<void> cancel(String id) async { try{ await _repo.cancel(id); await load(); } catch(e){ emit(state.copyWith(error:e.toString())); } }
+
+  Future<void> skipRun(String runId) async {
+    try {
+      await _repo.skipRun(runId);
+      await load();
+    } catch (error) {
+      emit(state.copyWith(error: error.toString()));
+    }
+  }
 }

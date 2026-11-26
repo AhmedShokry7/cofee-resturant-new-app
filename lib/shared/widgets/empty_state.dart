@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -55,7 +56,7 @@ class EmptyState extends StatelessWidget {
             ],
             if (actionLabel != null && onAction != null) ...[
               SizedBox(height: AppSpacing.md),
-              TextButton(onPressed: onAction, child: Text(actionLabel!)),
+              CustomTextButton(onPressed: onAction, child: Text(actionLabel!)),
             ],
           ],
         ),

@@ -61,11 +61,12 @@ class SearchCubit extends Cubit<SearchState> {
   /// so they never re-run a query the customer has already replaced.
   String _latestQuery = '';
 
-  /// Unfiltered results for the current query and branch. Category, price and
-  /// sort controls operate on this in-memory snapshot, so changing filters does
-  /// not issue another catalogue request.
+  /// Current server page set. Filters and sort are sent to the search RPC so
+  /// pagination covers matching products, not just the first page.
   List<ProductModel> _queryResults = const [];
   String? _loadedResultKey;
+  int _nextOffset = 0;
+  bool _hasMoreResults = false;
 
   /// Monotonic id of the newest search. Only the run holding the latest number
   /// may write state.
@@ -184,6 +185,55 @@ class SearchCubit extends Cubit<SearchState> {
     return [prices.first, prices.last];
   }
 
+  /// Fetches the next server page for the current query. The list view calls
+  /// this near its end; results already loaded remain visible while it runs.
+  Future<void> loadMore() async {
+    final current = state;
+    if (isClosed ||
+        current.isLoading ||
+        current.isLoadingMore ||
+        !_hasMoreResults ||
+        current.query.trim().isEmpty) {
+      return;
+    }
+    final generation = _searchGeneration;
+    emit(_copyState(current, isLoadingMore: true));
+    try {
+      final page = await _catalog.search(
+        current.query,
+        branchId: _effectiveBranch,
+        categoryId: current.category,
+        minPrice: current.minPrice,
+        maxPrice: current.maxPrice,
+        sort: _serverSort(current.sort),
+        limit: 100,
+        offset: _nextOffset,
+      );
+      if (isClosed || generation != _searchGeneration) return;
+      _nextOffset += page.length;
+      _hasMoreResults = page.length == 100;
+      _queryResults = [..._queryResults, ...page];
+      emit(
+        _copyState(
+          current,
+          results: _visibleResults(
+            _queryResults,
+            category: current.category,
+            minPrice: current.minPrice,
+            maxPrice: current.maxPrice,
+            sort: current.sort,
+          ),
+          isLoadingMore: false,
+          hasMore: _hasMoreResults,
+        ),
+      );
+    } catch (error, stackTrace) {
+      if (isClosed || generation != _searchGeneration) return;
+      emit(_copyState(current, isLoadingMore: false, error: error.toString()));
+      addError(error, stackTrace);
+    }
+  }
+
   Future<void> _run({
     required String query,
     SearchSort? sort,
@@ -209,8 +259,18 @@ class SearchCubit extends Cubit<SearchState> {
     );
 
     try {
-      final key = '${_effectiveBranch ?? ''}|${query.trim().toLowerCase()}';
+      final key = [
+        _effectiveBranch ?? '',
+        query.trim().toLowerCase(),
+        category ?? '',
+        minPrice?.toString() ?? '',
+        maxPrice?.toString() ?? '',
+        effectiveSort.name,
+      ].join('|');
       if (_loadedResultKey != key) {
+        _queryResults = const [];
+        _nextOffset = 0;
+        _hasMoreResults = false;
         final allowed = await RateLimitClient().check('search');
         if (isClosed || generation != _searchGeneration) return;
         if (!allowed) {
@@ -232,9 +292,15 @@ class SearchCubit extends Cubit<SearchState> {
         _queryResults = await _catalog.search(
           query,
           branchId: _effectiveBranch,
-          sort: 'relevance',
+          categoryId: category,
+          minPrice: minPrice,
+          maxPrice: maxPrice,
+          sort: _serverSort(effectiveSort),
           limit: 100,
+          offset: 0,
         );
+        _nextOffset = _queryResults.length;
+        _hasMoreResults = _queryResults.length == 100;
         _loadedResultKey = key;
       }
       if (isClosed) return;
@@ -242,25 +308,15 @@ class SearchCubit extends Cubit<SearchState> {
       // cancelling the request that is already on the wire.
       if (generation != _searchGeneration) return;
 
-      // All filters stay local to the loaded result page. The selected category
-      // and sort mode are presentation choices; they do not change the search
-      // document being searched on the server.
-      var results = _queryResults.where((p) {
-        if (category != null && p.categoryId != category) return false;
-        if (minPrice != null && p.price < minPrice) return false;
-        if (maxPrice != null && p.price > maxPrice) return false;
-        return true;
-      }).toList();
-      switch (effectiveSort) {
-        case SearchSort.priceLowHigh:
-          results.sort((a, b) => a.price.compareTo(b.price));
-        case SearchSort.priceHighLow:
-          results.sort((a, b) => b.price.compareTo(a.price));
-        case SearchSort.nameAsc:
-          results.sort((a, b) => a.name.compareTo(b.name));
-        case SearchSort.relevance:
-          break;
-      }
+      // Keep a local guard as well so preview repositories and cached data
+      // still obey the current filter state.
+      final results = _visibleResults(
+        _queryResults,
+        category: category,
+        minPrice: minPrice,
+        maxPrice: maxPrice,
+        sort: effectiveSort,
+      );
       if (isClosed) return;
       if (generation != _searchGeneration) return;
       emit(
@@ -273,6 +329,7 @@ class SearchCubit extends Cubit<SearchState> {
           maxPrice: maxPrice,
           results: results,
           hasSearched: true,
+          hasMore: _hasMoreResults,
         ),
       );
     } catch (error, stackTrace) {
@@ -296,6 +353,60 @@ class SearchCubit extends Cubit<SearchState> {
       addError(error, stackTrace);
     }
   }
+
+  static String _serverSort(SearchSort sort) => switch (sort) {
+    SearchSort.priceLowHigh => 'priceLowHigh',
+    SearchSort.priceHighLow => 'priceHighLow',
+    SearchSort.nameAsc => 'nameAsc',
+    SearchSort.relevance => 'relevance',
+  };
+
+  static List<ProductModel> _visibleResults(
+    List<ProductModel> source, {
+    required String? category,
+    required double? minPrice,
+    required double? maxPrice,
+    required SearchSort sort,
+  }) {
+    final results = source.where((p) {
+      if (category != null && p.categoryId != category) return false;
+      if (minPrice != null && p.price < minPrice) return false;
+      if (maxPrice != null && p.price > maxPrice) return false;
+      return true;
+    }).toList();
+    switch (sort) {
+      case SearchSort.priceLowHigh:
+        results.sort((a, b) => a.price.compareTo(b.price));
+      case SearchSort.priceHighLow:
+        results.sort((a, b) => b.price.compareTo(a.price));
+      case SearchSort.nameAsc:
+        results.sort((a, b) => a.name.compareTo(b.name));
+      case SearchSort.relevance:
+        break;
+    }
+    return results;
+  }
+
+  SearchState _copyState(
+    SearchState source, {
+    List<ProductModel>? results,
+    bool? isLoadingMore,
+    bool? hasMore,
+    String? error,
+  }) => SearchState(
+    query: source.query,
+    sort: source.sort,
+    categories: source.categories,
+    category: source.category,
+    minPrice: source.minPrice,
+    maxPrice: source.maxPrice,
+    results: results ?? source.results,
+    isLoading: source.isLoading,
+    isLoadingMore: isLoadingMore ?? source.isLoadingMore,
+    hasMore: hasMore ?? source.hasMore,
+    error: error,
+    hasSearched: source.hasSearched,
+  );
 
   @override
   Future<void> close() async {

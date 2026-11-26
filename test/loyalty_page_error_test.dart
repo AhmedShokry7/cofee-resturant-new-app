@@ -3,7 +3,7 @@
 // A wallet that could not be read looks identical to a customer with no points
 // unless the page says otherwise, and the reward list is public reference data
 // that a failed wallet read must not throw away.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';

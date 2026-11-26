@@ -5,7 +5,7 @@ import '../domain/offboarding_models.dart';
 import '../domain/offboarding_repository.dart';
 
 class SupabaseHrOffboardingRepository implements HrOffboardingRepository {
-  SupabaseHrOffboardingRepository({SupabaseClient? client}) : _client = client;
+  SupabaseHrOffboardingRepository({this._client});
 
   final SupabaseClient? _client;
   SupabaseClient get client => _client ?? SupabaseService.client;

@@ -278,6 +278,7 @@ class _PublishDetailsDialogState extends State<_PublishDetailsDialog> {
     PublishScope.wholeDocument => S.visualEditorPublishWholePreview,
   };
 
+  @override
   Widget build(BuildContext context) => AlertDialog(
     title: Text(S.visualEditorPublishTitle),
     content: SizedBox(

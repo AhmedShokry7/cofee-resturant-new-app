@@ -54,6 +54,14 @@ class StubRpcResult<T> implements PostgrestFilterBuilder<T> {
   }
 
   @override
+  Future<T> timeout(Duration timeLimit, {FutureOr<T> Function()? onTimeout}) =>
+      Future<T>.sync(() {
+        final thrown = error;
+        if (thrown != null) throw thrown;
+        return payload as T;
+      }).timeout(timeLimit, onTimeout: onTimeout);
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 

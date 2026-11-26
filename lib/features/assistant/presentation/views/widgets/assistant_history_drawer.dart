@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -65,7 +66,7 @@ class AssistantHistoryDrawer extends StatelessWidget {
                 ),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                  child: OutlinedButton.icon(
+                  child: CustomOutlinedButton.icon(
                     onPressed: () async {
                       Navigator.of(context).pop();
                       await cubit.newChat();
@@ -145,7 +146,7 @@ class AssistantChatRow extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-      trailing: IconButton(
+      trailing: CustomIconButton(
         onPressed: onDelete,
         icon: const Icon(AppIcons.delete),
         color: AppColor.greyColor,

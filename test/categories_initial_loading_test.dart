@@ -9,7 +9,7 @@
 // loaded-with-data, loaded-empty, and failed.
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -22,6 +22,7 @@ import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
 import 'package:new_coffee/features/categories/presentation/views/categories_page.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
+
 import 'support/fake_design_repository.dart';
 
 import 'package:new_coffee/features/categories/presentation/views/widgets/category_scoped_header.dart';
@@ -177,11 +178,8 @@ Future<void> _pumpPage(
                 // شاشة التصنيفات تقرأ مستند التصميم المنشور أيضًا؛ بلا مستند
                 // ترسم نفسها كما كانت قبل الاستوديو حرفيًا.
                 BlocProvider<DesignCubit>(
-                  create: (_) => DesignCubit(
-                    repository: FakeDesignRepository(
-                      null,
-                    ),
-                  ),
+                  create: (_) =>
+                      DesignCubit(repository: FakeDesignRepository(null)),
                 ),
               ],
               child: CategoriesPage(initialCategoryId: initialCategoryId),
@@ -223,11 +221,8 @@ class _PushedPage extends StatelessWidget {
                   BlocProvider<CartCubit>.value(value: cart),
                   BlocProvider<FavoritesCubit>.value(value: favorites),
                   BlocProvider<DesignCubit>(
-                    create: (_) => DesignCubit(
-                      repository: FakeDesignRepository(
-                        null,
-                      ),
-                    ),
+                    create: (_) =>
+                        DesignCubit(repository: FakeDesignRepository(null)),
                   ),
                 ],
                 child: page,

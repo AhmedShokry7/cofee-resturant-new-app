@@ -51,6 +51,7 @@ class DiningDirectory extends StatefulWidget {
     required this.onOpenReservation,
     required this.onToggleTable,
     required this.onDeleteTable,
+    required this.onMoveTable,
     required this.onEditReservation,
     required this.onSeatReservation,
     required this.onCompleteReservation,
@@ -83,6 +84,7 @@ class DiningDirectory extends StatefulWidget {
   final ValueChanged<DiningTable> onOpenReservation;
   final ValueChanged<DiningTable> onToggleTable;
   final ValueChanged<DiningTable> onDeleteTable;
+  final Future<void> Function(DiningTable table, double x, double y) onMoveTable;
   final ValueChanged<DiningReservation> onEditReservation;
   final ValueChanged<DiningReservation> onSeatReservation;
   final ValueChanged<DiningReservation> onCompleteReservation;
@@ -95,6 +97,7 @@ class DiningDirectory extends StatefulWidget {
 
 class _DiningDirectoryState extends State<DiningDirectory> {
   static const double _splitBreakpoint = 980;
+  bool _showFloorPlan = false;
 
   late final TextEditingController _searchController;
 
@@ -234,6 +237,30 @@ class _DiningDirectoryState extends State<DiningDirectory> {
           selected: widget.area,
           onChanged: widget.onAreaChanged,
         ),
+        if (widget.allTables.isNotEmpty) ...[
+          const SizedBox(height: AppSizes.px8),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(
+                  value: false,
+                  icon: AppIcon(AppIcons.table01, size: 14),
+                  label: Text('بطاقات الأماكن'),
+                ),
+                ButtonSegment(
+                  value: true,
+                  icon: AppIcon(AppIcons.mapPin, size: 14),
+                  label: Text('مخطط 2D'),
+                ),
+              ],
+              selected: {_showFloorPlan},
+              showSelectedIcon: false,
+              onSelectionChanged: (value) =>
+                  setState(() => _showFloorPlan = value.first),
+            ),
+          ),
+        ],
         if (widget.hasActiveFilters) ...[
           const SizedBox(height: AppSizes.px6),
           Align(
@@ -273,6 +300,25 @@ class _DiningDirectoryState extends State<DiningDirectory> {
   }
 
   Widget _tablesContent() {
+    if (_showFloorPlan) {
+      if (widget.tables.isEmpty) {
+        return AdminEmptyState(
+          icon: AppIcons.search01,
+          message: S.tablesNoMatches,
+          hint: S.tablesNoMatchesHint,
+          action: TextButton(
+            onPressed: widget.onClearFilters,
+            child: Text(S.clearFilters),
+          ),
+        );
+      }
+      return _DiningFloorPlan(
+        tables: widget.tables,
+        canManage: widget.canManage,
+        onMove: widget.onMoveTable,
+        onEdit: widget.onEditTable,
+      );
+    }
     if (widget.allTables.isEmpty) {
       return AdminEmptyState(
         icon: AppIcons.table01,
@@ -349,6 +395,258 @@ class _DiningDirectoryState extends State<DiningDirectory> {
           : S.tablesReservationsEmptyHint,
     );
   }
+}
+
+class _DiningFloorPlan extends StatefulWidget {
+  const _DiningFloorPlan({
+    required this.tables,
+    required this.canManage,
+    required this.onMove,
+    required this.onEdit,
+  });
+
+  final List<DiningTable> tables;
+  final bool canManage;
+  final Future<void> Function(DiningTable, double, double) onMove;
+  final ValueChanged<DiningTable> onEdit;
+
+  @override
+  State<_DiningFloorPlan> createState() => _DiningFloorPlanState();
+}
+
+class _DiningFloorPlanState extends State<_DiningFloorPlan> {
+  final Map<String, Offset> _positions = {};
+
+  @override
+  void didUpdateWidget(covariant _DiningFloorPlan oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    for (final table in widget.tables) {
+      if (table.layoutX != null && table.layoutY != null) {
+        _positions[table.id] = Offset(table.layoutX!, table.layoutY!);
+      }
+    }
+    final ids = widget.tables.map((table) => table.id).toSet();
+    _positions.removeWhere((id, _) => !ids.contains(id));
+  }
+
+  Offset _position(DiningTable table, int index) => _positions[table.id] ??
+      Offset(
+        .07 + (index % 4) * .28,
+        (.22 + (index ~/ 4) * .2).clamp(.22, .86).toDouble(),
+      );
+
+  void _move(DiningTable table, Offset delta, double maxLeft, double maxTop) {
+    final index = widget.tables.indexWhere((item) => item.id == table.id);
+    final current = _position(table, index < 0 ? 0 : index);
+    setState(() {
+      _positions[table.id] = Offset(
+        (current.dx + delta.dx / maxLeft).clamp(0, 1).toDouble(),
+        (current.dy + delta.dy / maxTop).clamp(0, 1).toDouble(),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const mapHeight = 480.0;
+        const nodeWidth = 126.0;
+        const nodeHeight = 78.0;
+        final width = constraints.maxWidth;
+        final maxLeft = (width - nodeWidth).clamp(1, double.infinity).toDouble();
+        const maxTop = mapHeight - nodeHeight;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(4, 0, 4, 8),
+              child: Row(
+                children: [
+                  const AppIcon(AppIcons.mapPin, size: 16),
+                  const SizedBox(width: 7),
+                  Expanded(
+                    child: Text(
+                      widget.canManage
+                          ? 'اسحب كل مكان لتحديد موقعه على مخطط المقهى.'
+                          : 'مخطط أماكن الجلوس في المقهى.',
+                      style: TextStyle(
+                        color: adminMutedColor(theme),
+                        fontSize: AppFontSizes.size10,
+                      ),
+                    ),
+                  ),
+                  Text('${widget.tables.length} مكان'),
+                ],
+              ),
+            ),
+            Container(
+              height: mapHeight,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: adminCardBorderColor(theme)),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Stack(
+                children: [
+                  Positioned.fill(child: CustomPaint(painter: _FloorGridPainter(
+                    color: theme.colorScheme.outlineVariant.withValues(alpha: .5),
+                  ))),
+                  PositionedDirectional(
+                    top: 16,
+                    start: 18,
+                    end: 18,
+                    child: Container(
+                      height: 54,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: adminTintedSurfaceColor(theme),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: adminControlBorderColor(theme)),
+                      ),
+                      child: const Text('منطقة التحضير والكاشير'),
+                    ),
+                  ),
+                  PositionedDirectional(
+                    bottom: 8,
+                    start: 16,
+                    end: 16,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const AppIcon(AppIcons.door01, size: 15),
+                        const SizedBox(width: 6),
+                        Text('المدخل', style: TextStyle(color: adminMutedColor(theme))),
+                      ],
+                    ),
+                  ),
+                  for (var index = 0; index < widget.tables.length; index++)
+                    _tableNode(
+                      context,
+                      widget.tables[index],
+                      _position(widget.tables[index], index),
+                      index,
+                      maxLeft,
+                      maxTop,
+                      nodeWidth,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _tableNode(
+    BuildContext context,
+    DiningTable table,
+    Offset position,
+    int index,
+    double maxLeft,
+    double maxTop,
+    double nodeWidth,
+  ) {
+    final theme = Theme.of(context);
+    final busy = table.status == DiningTableStatus.occupied ||
+        table.status == DiningTableStatus.reserved;
+    final accent = busy ? AppColor.adminWarning : AppColor.adminAccent;
+    return Positioned(
+      left: position.dx * maxLeft,
+      top: position.dy * maxTop,
+      child: GestureDetector(
+        onPanUpdate: widget.canManage
+            ? (details) => _move(table, details.delta, maxLeft, maxTop)
+            : null,
+        onPanEnd: widget.canManage
+            ? (_) {
+                final saved = _position(table, index);
+                widget.onMove(table, saved.dx, saved.dy);
+              }
+            : null,
+        child: Material(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(
+            table.area == DiningArea.privateRoom ? 14 : 28,
+          ),
+          elevation: 2,
+          child: InkWell(
+            onTap: widget.canManage ? () => widget.onEdit(table) : null,
+            borderRadius: BorderRadius.circular(
+              table.area == DiningArea.privateRoom ? 14 : 28,
+            ),
+            child: Container(
+              width: nodeWidth,
+              height: 70,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(
+                  table.area == DiningArea.privateRoom ? 14 : 28,
+                ),
+                border: Border.all(color: accent.withValues(alpha: .7), width: 1.5),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AppIcon(
+                    table.area == DiningArea.privateRoom
+                        ? AppIcons.door01
+                        : AppIcons.table01,
+                    size: 18,
+                    color: accent,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    table.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: adminHeadingColor(theme),
+                      fontSize: AppFontSizes.size9_5,
+                      fontWeight: AppFontWeights.bold,
+                    ),
+                  ),
+                  Text(
+                    '${table.capacity} مقعد',
+                    style: TextStyle(
+                      color: adminMutedColor(theme),
+                      fontSize: AppFontSizes.size8_5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FloorGridPainter extends CustomPainter {
+  const _FloorGridPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = .6;
+    for (var x = 24.0; x < size.width; x += 32) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (var y = 24.0; y < size.height; y += 32) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _FloorGridPainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 class _ViewSwitch extends StatelessWidget {

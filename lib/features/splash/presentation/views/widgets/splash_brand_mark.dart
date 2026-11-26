@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/constant/app_images.dart';
@@ -76,14 +78,14 @@ class SplashBrandMark extends StatelessWidget {
                   style: TextStyle(
                     color: SplashSettings.colorFromHex(
                       settings.textColor,
-                      fallback: const Color(0xFF1A1A1A),
+                      fallback: AppColor.inkDefault,
                     ),
                     fontSize: settings.textSize,
                     fontWeight: switch (settings.textWeight) {
-                      'light' => FontWeight.w300,
-                      'medium' => FontWeight.w500,
-                      'bold' => FontWeight.bold,
-                      _ => FontWeight.normal,
+                      'light' => AppFontWeights.regular,
+                      'medium' => AppFontWeights.medium,
+                      'bold' => AppFontWeights.bold,
+                      _ => AppFontWeights.regular,
                     },
                   ),
                 ),

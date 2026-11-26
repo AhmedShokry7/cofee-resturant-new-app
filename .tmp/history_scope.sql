@@ -1,0 +1,4 @@
+select version, count(*) as rows, max(name) as name
+from supabase_migrations.schema_migrations
+where version in ('211','255','256','257','258','259','260','261','262','263','264','265','266','267','268','269')
+group by version order by version;

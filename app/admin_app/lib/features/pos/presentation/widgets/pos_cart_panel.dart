@@ -500,6 +500,7 @@ InputDecoration _posFieldDecoration(
       color: adminMutedColor(theme),
       fontSize: AppFontSizes.size10,
     ),
+    constraints: const BoxConstraints(minHeight: AppSizes.px48),
     contentPadding: const EdgeInsets.symmetric(
       horizontal: AppSpacing.md,
       vertical: AppSpacing.md,
@@ -1843,26 +1844,32 @@ class _PaymentSelector extends StatelessWidget {
         if (usesCash) ...[
           const SizedBox(height: AppSizes.px10),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: TextField(
-                  key: const Key('pos-cash-received'),
-                  controller: cashReceivedController,
-                  focusNode: cashReceivedFocus,
-                  enabled: enabled,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  onChanged: onCashReceivedChanged,
-                  style: TextStyle(
-                    color: adminBodyColor(theme),
-                    fontSize: AppFontSizes.size11,
-                  ),
-                  decoration: _posFieldDecoration(
-                    context,
-                    label: S.posCashReceivedLabel,
-                    hint: '0',
+                child: CurrencyInputRow(
+                  iconSize: 12,
+                  child: SizedBox(
+                    height: AppSizes.px48,
+                    child: TextField(
+                      key: const Key('pos-cash-received'),
+                      controller: cashReceivedController,
+                      focusNode: cashReceivedFocus,
+                      enabled: enabled,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      onChanged: onCashReceivedChanged,
+                      style: TextStyle(
+                        color: adminBodyColor(theme),
+                        fontSize: AppFontSizes.size11,
+                      ),
+                      decoration: _posFieldDecoration(
+                        context,
+                        label: S.posCashReceivedLabel,
+                        hint: '0',
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -2315,10 +2322,8 @@ class _CashChangeBox extends StatelessWidget {
 
     return Container(
       key: const Key('pos-cash-change-box'),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
+      height: AppSizes.px48,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       decoration: BoxDecoration(
         color: hasChange || hasRemaining
             ? adminFlagBackground(theme, accent, surface)

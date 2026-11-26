@@ -102,6 +102,7 @@ export type ConversationPattern = {
   user_message_ar: string;
   response_variants: Array<{
     text_ar: string;
+    text_en?: string;
     variant_id: string;
     style_markers?: string[];
   }>;
@@ -1110,6 +1111,10 @@ export async function handleRequest(
   if (totalChars > MAX_TOTAL_CHARS) {
     return jsonResponse({ error: "Request too large" }, 413);
   }
+  // This mode isolates the admin chat from customer memory, prompt settings,
+  // reviewed examples, web search, and training. It grants no business-data
+  // access or tool execution; those need a separately permission-checked layer.
+  const adminChat = body?.assistantMode === "admin_chat";
 
   // Authentication is optional: a guest is answered, but a token that is
   // present has to be a real one. The function is deployed with
@@ -1123,6 +1128,9 @@ export async function handleRequest(
     }
     userId = user.id;
   }
+  if (adminChat && userId === null) {
+    return jsonResponse({ error: "Unauthorized" }, 401);
+  }
 
   // Who is asking. A signed-in customer is counted under their verified id;
   // a guest under a hash of the address the platform reported.
@@ -1131,15 +1139,15 @@ export async function handleRequest(
   // The memory comes before the limiter. A question the assistant already
   // knows costs the provider nothing, so it must not spend the customer's
   // hourly allowance either.
-  const questionKey = typeof body?.questionKey === "string"
+  const questionKey = !adminChat && typeof body?.questionKey === "string"
     ? body.questionKey.trim()
     : "";
   // Whose answer this is. A reply written with one customer's memories in the
   // prompt is theirs alone: it must not be read out of the shared cache, and it
   // must not join it. The app already says this, and the function does not take
   // a client's word for a rule about other people's data.
-  const personal = body?.personal === true;
-  const mayLearn = body?.learn !== false && !personal;
+  const personal = adminChat || body?.personal === true;
+  const mayLearn = !adminChat && body?.learn !== false && !personal;
   if (questionKey && body?.learn !== false && !personal) {
     // The memory is an optimisation, never a dependency: if it is down the
     // assistant still answers.
@@ -1211,7 +1219,7 @@ export async function handleRequest(
   const adminProvider = providerFromAdminConfig(runtimeConfig);
   const providers = runtimeConfig && !runtimeConfig.enabled ? [] : adminProvider ? [adminProvider] : deps.providers();
   if (providers.length === 0) {
-    if (runtimeConfig?.fallback_reply?.trim()) {
+    if (!adminChat && runtimeConfig?.fallback_reply?.trim()) {
       return jsonResponse(
         { text: limitAssistantReply(runtimeConfig.fallback_reply, runtimeConfig.max_reply_chars), topic: "fallback", provider: "fallback" },
         200,
@@ -1224,7 +1232,7 @@ export async function handleRequest(
   // not answer. A guest is refused the tool even if the body asks for it: the
   // consent lives in their account, and an anonymous request to browse the web
   // with this project's key is not a thing the shop should pay for.
-  const wantWeb = body?.webSearch === true && userId !== null;
+  const wantWeb = !adminChat && body?.webSearch === true && userId !== null;
   if (wantWeb) {
     let searched: WebAnswer | null = null;
     try {
@@ -1265,7 +1273,7 @@ export async function handleRequest(
   // Only opt-in, cafe-related questions from the client enter the knowledge
   // gap queue. Strip common identifiers before storage; the queue is for
   // improving shop knowledge, not building customer profiles.
-  if (body?.captureKnowledgeGap === true && userId !== null) {
+  if (!adminChat && body?.captureKnowledgeGap === true && userId !== null) {
     const lastUserText = [...rawMessages]
       .reverse()
       .find((message: Message) => message.role === "user")?.content ?? "";
@@ -1286,12 +1294,19 @@ export async function handleRequest(
   }
 
   const failures: Array<{ provider: string; status: number }> = [];
-  const configuredMessages = applyAdminInstructions(rawMessages, runtimeConfig);
-  const modelMessages = await addConversationExamples(configuredMessages);
+  const configuredMessages = adminChat
+    ? rawMessages
+    : applyAdminInstructions(rawMessages, runtimeConfig);
+  const modelMessages = adminChat
+    ? configuredMessages
+    : await addConversationExamples(configuredMessages);
   for (const provider of providers) {
     const result = await deps.askProvider(provider, modelMessages);
     if ("text" in result) {
-      const answerText = limitAssistantReply(result.text, runtimeConfig?.max_reply_chars ?? 0);
+      const answerText = limitAssistantReply(
+        result.text,
+        adminChat ? 0 : runtimeConfig?.max_reply_chars ?? 0,
+      );
       // The answer is remembered so the next customer who asks the same
       // question gets it without a model call. A question about the
       // customer's own order is never learned: its answer goes stale.

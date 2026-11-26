@@ -3489,6 +3489,30 @@ class S {
       _ar ? 'مواقع العملاء' : 'Customer websites';
   static String get aiKnowledge =>
       _ar ? 'معرفة المساعد الذكي' : 'Assistant knowledge';
+  static String get adminAssistantTitle =>
+      _ar ? 'المساعد الذكي' : 'AI assistant';
+  static String get adminAssistantSubtitle =>
+      _ar ? 'محادثة سريعة' : 'Quick chat';
+  static String get adminAssistantOpen =>
+      _ar ? 'افتح المساعد الذكي' : 'Open AI assistant';
+  static String get adminAssistantScopeNotice => _ar
+      ? 'اسأل عن المنتجات والطلبات والعملاء والمبيعات والمخزون. أستخدم البيانات التي تسمح بها صلاحياتك وفروعك، وأعرض عليك أي تغيير لمراجعته قبل التأكيد.'
+      : 'Ask about products, orders, customers, sales, and stock. I use data allowed by your permissions and branches, and show changes for review before confirmation.';
+  static String get adminAssistantWelcome => _ar
+      ? 'أهلًا! اسألني بطريقتك عن شغل الكافيه. أقدر أبحث في بيانات النظام، وأراجع معك أي عملية قبل تنفيذها.'
+      : 'Hi! Ask naturally about cafe operations. I can look up system data and review an action with you before it runs.';
+  static String get adminAssistantInputHint =>
+      _ar ? 'اكتب رسالتك...' : 'Message the assistant...';
+  static String get adminAssistantSend => _ar ? 'إرسال' : 'Send';
+  static String get adminAssistantFailure => _ar
+      ? 'حدثت مشكلة أثناء الاتصال. حاول مرة أخرى.'
+      : 'There was a connection problem. Please try again.';
+  static String get adminAssistantProviderFailure => _ar
+      ? 'خدمة الذكاء الاصطناعي غير متاحة حاليًا. راجع إعداد مزوّد الذكاء الاصطناعي ومفتاحه من مركز المعرفة.'
+      : 'The AI service is unavailable. Check the provider and API key in AI Knowledge settings.';
+  static String get adminAssistantSessionFailure => _ar
+      ? 'انتهت جلسة الدخول. سجّل الدخول مرة أخرى ثم أعد المحاولة.'
+      : 'Your session has expired. Sign in again and retry.';
   static String get aiKnowledgeSubtitle => _ar
       ? 'إعداد مزوّد الذكاء الاصطناعي، أسلوب الرد، ومعلومات الكافيه التي يعتمد عليها المساعد.'
       : 'Configure the AI provider, response style, and the café knowledge used by the assistant.';
@@ -4160,6 +4184,16 @@ class S {
   static String get tablesSubtitle => _ar
       ? 'رتّب الطاولات والغرف الخاصة، وسجّل حجوزات الضيوف، وتابع الإشغال لحظة بلحظة.'
       : 'Arrange tables and private rooms, book guests and follow occupancy live.';
+  static String get eventRequests => _ar ? 'طلبات المناسبات' : 'Event requests';
+  static String get eventRequestsSubtitle => _ar
+      ? 'راجع طلبات الحجز للمناسبات، وأرسل عرض السعر والموعد المقترح للعميل.'
+      : 'Review event booking requests and send the price and time to the customer.';
+  static String get eventRequestsEmpty => _ar
+      ? 'لا توجد طلبات مناسبات بانتظار المراجعة.'
+      : 'No event requests are waiting for review.';
+  static String get eventRequestsReadOnly => _ar
+      ? 'يمكنك عرض الطلبات، لكن الرد عليها يتطلب صلاحية إدارة الطاولات.'
+      : 'You can view requests, but replying needs the manage-tables permission.';
   static String get tablesReadOnly => _ar
       ? 'يمكنك عرض الصالة والحجوزات، لكن التعديل يتطلب صلاحية إدارة الطاولات.'
       : 'You can view the floor and bookings, but changes need the manage-tables permission.';

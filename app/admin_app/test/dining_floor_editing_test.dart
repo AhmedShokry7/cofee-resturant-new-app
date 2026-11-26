@@ -70,6 +70,13 @@ class _FakeFloorRepository implements DiningTableRepository {
   }
 
   @override
+  Future<DiningTableMutationOutcome> setTableLayoutPosition(
+    String tableId,
+    double x,
+    double y,
+  ) async => DiningTableMutationOutcome.success;
+
+  @override
   Future<DiningTableMutationOutcome> setTableActive(
     String tableId,
     bool active,

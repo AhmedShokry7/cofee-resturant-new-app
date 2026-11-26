@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
@@ -89,7 +89,7 @@ class _SignInRequired extends StatelessWidget {
           child: CustomBtn(text: S.signIn, onPressed: onSignIn),
         ),
         SizedBox(height: AppSpacing.sm),
-        TextButton(onPressed: onRetry, child: Text(S.retry)),
+        CustomTextButton(onPressed: onRetry, child: Text(S.retry)),
       ],
     );
   }

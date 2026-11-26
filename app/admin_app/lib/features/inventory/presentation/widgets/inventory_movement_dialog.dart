@@ -19,7 +19,7 @@ import 'package:admin_app/features/inventory/domain/entities/inventory_movement_
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_format.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
-import 'package:admin_app/shared/widgets/currency_icon.dart';
+import 'package:admin_app/shared/widgets/currency_input_row.dart';
 
 typedef MaterialSearchCallback =
     Future<List<AdminInventoryMaterialOption>> Function({
@@ -448,7 +448,7 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
                                           decimal: true,
                                         ),
                                     inputFormatters: [_quantityFormatter],
-                                    suffixIcon: const CurrencyIcon(size: 10),
+                                    currencyIconOutside: true,
                                   ),
                                 ],
                               )
@@ -467,7 +467,7 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
                                             decimal: true,
                                           ),
                                       inputFormatters: [_quantityFormatter],
-                                      suffixIcon: const CurrencyIcon(size: 10),
+                                      currencyIconOutside: true,
                                     ),
                                   ),
                                 ],
@@ -789,7 +789,7 @@ class _MovementField extends StatelessWidget {
     this.keyboardType,
     this.inputFormatters,
     this.suffixText,
-    this.suffixIcon,
+    this.currencyIconOutside = false,
     this.maxLines = 1,
     this.maxLength,
     this.onChanged,
@@ -801,26 +801,29 @@ class _MovementField extends StatelessWidget {
   final TextInputType? keyboardType;
   final List<TextInputFormatter>? inputFormatters;
   final String? suffixText;
-  final Widget? suffixIcon;
+  final bool currencyIconOutside;
   final int maxLines;
   final int? maxLength;
   final ValueChanged<String>? onChanged;
 
   @override
-  Widget build(BuildContext context) => TextField(
-    controller: controller,
-    keyboardType: keyboardType,
-    inputFormatters: inputFormatters,
-    maxLines: maxLines,
-    maxLength: maxLength,
-    onChanged: onChanged,
-    decoration: InputDecoration(
-      labelText: label,
-      hintText: hint,
-      suffixText: suffixText,
-      suffixIcon: suffixIcon,
-      alignLabelWithHint: maxLines > 1,
-      counterText: '',
-    ),
-  );
+  Widget build(BuildContext context) {
+    final field = TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      maxLines: maxLines,
+      maxLength: maxLength,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        suffixText: suffixText,
+        alignLabelWithHint: maxLines > 1,
+        counterText: '',
+        constraints: const BoxConstraints(minHeight: AppSizes.px48),
+      ),
+    );
+    return currencyIconOutside ? CurrencyInputRow(child: field) : field;
+  }
 }

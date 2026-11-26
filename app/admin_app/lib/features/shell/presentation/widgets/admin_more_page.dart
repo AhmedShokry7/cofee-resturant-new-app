@@ -20,6 +20,7 @@ const _primaryDestinationIds = <String>{
   'payments',
   'visualEditor',
   'notifications',
+  'eventRequests',
 };
 
 /// صفحة «المزيد»: كل الصفحات التي خرجت من الشريط الجانبي، مقسّمة
@@ -93,11 +94,7 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsetsDirectional.only(
-        start: 4,
-        bottom: 10,
-        top: 4,
-      ),
+      padding: const EdgeInsetsDirectional.only(start: 4, bottom: 10, top: 4),
       child: Text(
         title,
         style: TextStyle(
@@ -128,7 +125,13 @@ class _SectionGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final columns = width >= 1100 ? 4 : width >= 760 ? 3 : width >= 480 ? 2 : 1;
+        final columns = width >= 1100
+            ? 4
+            : width >= 760
+            ? 3
+            : width >= 480
+            ? 2
+            : 1;
         final cardWidth = (width - _spacing * (columns - 1)) / columns;
         return Wrap(
           spacing: _spacing,
@@ -231,18 +234,16 @@ class _DestinationCard extends StatelessWidget {
     return switch (id) {
       'categories' => ar ? 'تنظيم قائمة المنتجات' : 'Organize the catalog',
       'bundles' => ar ? 'باقات المنتجات والعروض' : 'Product bundles & offers',
-      'optionGroups' => ar
-          ? 'الأحجام والإضافات وأسعارها'
-          : 'Sizes, addons & pricing',
+      'optionGroups' =>
+        ar ? 'الأحجام والإضافات وأسعارها' : 'Sizes, addons & pricing',
       'carts' => ar ? 'سلات الشراء المعلّقة' : 'Pending customer carts',
       'tables' => ar ? 'الطاولات والحجوزات' : 'Tables & reservations',
       'stockMovements' => ar ? 'سجل حركة المخزون' : 'Stock movement log',
       'customers' => ar ? 'قاعدة عملاء المتجر' : 'Customer directory',
       'roles' => ar ? 'الصلاحيات والأدوار' : 'Roles & permissions',
       'auditLog' => ar ? 'سجل نشاط اللوحة' : 'Activity log',
-      'branches' => ar
-          ? 'الفروع وأسعار المنتجات لكل فرع'
-          : 'Branches & branch pricing',
+      'branches' =>
+        ar ? 'الفروع وأسعار المنتجات لكل فرع' : 'Branches & branch pricing',
       'staff' => ar ? 'حسابات الموظفين وصلاحياتهم' : 'Staff accounts',
       'hrDashboard' => ar ? 'نظرة شاملة على الموارد البشرية' : 'HR overview',
       'hrAttendance' => ar ? 'الحضور والانصراف' : 'Attendance',
@@ -254,21 +255,18 @@ class _DestinationCard extends StatelessWidget {
       'hrCompensation' => ar ? 'البدلات والخصومات' : 'Compensation',
       'hrSettings' => ar ? 'إعدادات الموارد البشرية' : 'HR settings',
       'content' => ar ? 'محتوى التطبيق' : 'App content',
-      'appSettings' => ar
-          ? 'الرابط، الشعار، النسهم، العملة'
-          : 'Links, logo, currency & tax',
+      'appSettings' =>
+        ar ? 'الرابط، الشعار، النسهم، العملة' : 'Links, logo, currency & tax',
       'coupons' => ar ? 'كوبونات الخصم' : 'Discount coupons',
       'banners' => ar ? 'بانرات تطبيق العميل' : 'Customer app banners',
       'loyalty' => ar ? 'نقاط الولاء والبرامج' : 'Loyalty program',
       'subscriptions' => ar ? 'إدارة اشتراك المتجر' : 'Store subscription',
-      'subscriptionPlans' => ar
-          ? 'خطط الاشتراك ومزاياها'
-          : 'Subscription plans',
+      'subscriptionPlans' =>
+        ar ? 'خطط الاشتراك ومزاياها' : 'Subscription plans',
       'reviews' => ar ? 'تقييمات العملاء والرد عليها' : 'Customer reviews',
       'websites' => ar ? 'مواقع الدومين' : 'Customer websites',
-      'aiKnowledge' => ar
-          ? 'معرفة المساعد الذكي للمتجر'
-          : 'AI assistant knowledge',
+      'aiKnowledge' =>
+        ar ? 'معرفة المساعد الذكي للمتجر' : 'AI assistant knowledge',
       _ => destination.searchHint,
     };
   }

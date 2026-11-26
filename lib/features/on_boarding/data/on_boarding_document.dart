@@ -10,18 +10,17 @@ import 'package:new_coffee/features/on_boarding/data/on_boarding_list.dart';
 /// فارغة أو غائبة تسقط على شريحة المصدر بالمكان نفسه — فالشريحة ناقصة
 /// النص لا تصبح شريحة فارغة. لا شرائح في المستند يعني شرائح المصدر.
 /// العقدة المخفية تسقط من الترتيب لا تُرسم فراغًا.
-List<OnBoardingModel> onboardingSlidesFrom(
-  List<PublishedSection> sections,
-) {
+List<OnBoardingModel> onboardingSlidesFrom(List<PublishedSection> sections) {
   final slideNodes = sections
       .where(
         (section) =>
-            section.visible && section.type == DesignWidgetTypes.onboardingSlide,
+            section.visible &&
+            section.type == DesignWidgetTypes.onboardingSlide,
       )
       .toList();
   if (slideNodes.isEmpty) return onBoardingSlides();
   final fallback = onBoardingSlides();
-  String _value(String? published, String source) {
+  String value(String? published, String source) {
     final text = published?.trim() ?? '';
     return text.isEmpty ? source : text;
   }
@@ -29,15 +28,15 @@ List<OnBoardingModel> onboardingSlidesFrom(
   return [
     for (var index = 0; index < slideNodes.length; index++)
       OnBoardingModel(
-        image: _value(
+        image: value(
           slideNodes[index].property('imageUrl'),
           fallback[index % fallback.length].image,
         ),
-        title: _value(
+        title: value(
           slideNodes[index].localizedText('title'),
           fallback[index % fallback.length].title,
         ),
-        body: _value(
+        body: value(
           slideNodes[index].localizedText('body'),
           fallback[index % fallback.length].body,
         ),
@@ -51,17 +50,12 @@ List<OnBoardingModel> onboardingSlidesFrom(
 ({Duration? autoAdvance, Duration? slideDuration}) onboardingTransitionFrom(
   List<PublishedSection> sections,
 ) {
-  final node = nativeSection(
-    sections,
-    DesignWidgetTypes.onboardingTransition,
-  );
+  final node = nativeSection(sections, DesignWidgetTypes.onboardingTransition);
   final ms = node?.numberProperty('durationMs');
   final slideDuration = ms != null && ms >= 150
       ? Duration(milliseconds: ms.round())
       : null;
   final seconds = node?.numberProperty('seconds') ?? 0;
-  final autoAdvance = seconds >= 1
-      ? Duration(seconds: seconds.round())
-      : null;
+  final autoAdvance = seconds >= 1 ? Duration(seconds: seconds.round()) : null;
   return (autoAdvance: autoAdvance, slideDuration: slideDuration);
 }

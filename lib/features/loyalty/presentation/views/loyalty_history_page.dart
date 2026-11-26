@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -9,13 +10,14 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/loyalty/data/model/loyalty_transaction.dart';
 import 'package:new_coffee/features/loyalty/presentation/manager/loyalty/loyalty_cubit.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 class LoyaltyHistoryPage extends StatelessWidget {
   const LoyaltyHistoryPage({super.key});
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(S.history)),
+    appBar: AppBar(leading: const AppBackButton(), title: Text(S.history)),
     body: BlocBuilder<LoyaltyCubit, LoyaltyState>(
       builder: (context, state) {
         if (state.isLoading && state.transactions.isEmpty) {
@@ -44,7 +46,7 @@ class LoyaltyHistoryPage extends StatelessWidget {
               if (index == state.transactions.length) {
                 return Padding(
                   padding: EdgeInsets.only(top: AppSpacing.sm),
-                  child: OutlinedButton.icon(
+                  child: CustomOutlinedButton.icon(
                     onPressed: state.isLoadingMoreTransactions
                         ? null
                         : () => context
@@ -53,9 +55,11 @@ class LoyaltyHistoryPage extends StatelessWidget {
                     icon: state.isLoadingMoreTransactions
                         ? SizedBox.square(
                             dimension: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              strokeWidth: AppSizes.px2,
+                            ),
                           )
-                        : const Icon(Icons.expand_more),
+                        : const Icon(AppIcons.arrowDown),
                     label: Text(S.loyaltyLoadMoreHistory),
                   ),
                 );
@@ -95,7 +99,7 @@ class _HistoryEntry extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.r12),
             ),
             child: Icon(
-              earned ? Icons.south_west_rounded : Icons.north_east_rounded,
+              earned ? AppIcons.back : AppIcons.forward,
               color: earned ? AppColor.greenColor : AppColor.primaryColor,
             ),
           ),

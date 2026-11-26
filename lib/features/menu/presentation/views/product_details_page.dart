@@ -1,5 +1,6 @@
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
@@ -14,7 +15,6 @@ import 'package:new_coffee/features/menu/presentation/manager/product_details/pr
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_details_body.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_details_bottom_bar.dart';
 import 'package:new_coffee/shared/utils/direction_aware_icons.dart';
-import 'package:new_coffee/shared/widgets/design_page_sections.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 class ProductDetailsPage extends StatefulWidget {
@@ -109,7 +109,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                       // Active: the heart itself is coloured — a filled red
                       // heart (hugeicons ships no filled heart, hence the
                       // Material icon) on the same glassy circle as inactive.
-                      icon: isFavorite ? Icons.favorite : AppIcons.favourite,
+                      icon: isFavorite
+                          ? AppIcons.favouriteFilled
+                          : AppIcons.favourite,
                       color: isFavorite
                           ? AppColor.errorColor
                           : AppColor.greyColor,
@@ -122,10 +124,10 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                 ),
               ],
             ),
-            body: DesignPageSectionsAbove(
-              pageId: 'product_details',
-              child: ProductDetailsBody(controller: _scrollController),
-            ),
+            // Keep the product hero as the first body pixel so it reaches the
+            // top edge behind the transparent app bar without a blank section
+            // inserted above the image.
+            body: ProductDetailsBody(controller: _scrollController),
             bottomNavigationBar: const ProductDetailsBottomBar(),
           ),
         ),
@@ -254,7 +256,7 @@ class _HeaderIconButton extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         elevation: AppElevation.raised,
         shadowColor: AppColor.shadowStrong,
-        child: IconButton(
+        child: CustomIconButton(
           onPressed: onPressed,
           tooltip: tooltip,
           iconSize: AppSizes.px20,

@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/features/content/presentation/views/widgets/content_failure_view.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 /// The frame every content screen shares: app bar, and the choice between the
 /// skeleton, the failure state and the loaded body.
@@ -36,7 +37,7 @@ class ContentPageShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final String? error = failureMessage;
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(leading: const AppBackButton(), title: Text(title)),
       body: isLoading
           ? loadingView
           : error != null

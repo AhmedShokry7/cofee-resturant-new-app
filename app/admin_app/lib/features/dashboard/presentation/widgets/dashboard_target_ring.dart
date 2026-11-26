@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
@@ -31,6 +32,8 @@ class DashboardTargetRing extends StatelessWidget {
     final ink = reached ? AppColor.trendPositive : AppColor.adminAccent;
     return AdminProgressRing(
       value: progress,
+      size: 184,
+      strokeWidth: AppSizes.px10,
       color: ink,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -40,7 +43,7 @@ class DashboardTargetRing extends StatelessWidget {
             maxLines: 1,
             style: TextStyle(
               color: adminHeadingColor(theme),
-              fontSize: AppFontSizes.size24,
+              fontSize: AppFontSizes.size31,
               fontWeight: AppFontWeights.bold,
               height: AppTextHeights.line1_2,
             ),
@@ -50,7 +53,7 @@ class DashboardTargetRing extends StatelessWidget {
             maxLines: 1,
             style: TextStyle(
               color: adminMutedColor(theme),
-              fontSize: AppFontSizes.size9,
+              fontSize: AppFontSizes.size11,
               height: AppTextHeights.line1_3,
             ),
           ),

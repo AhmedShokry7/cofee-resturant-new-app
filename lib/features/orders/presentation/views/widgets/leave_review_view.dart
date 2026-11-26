@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -10,6 +10,7 @@ import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/presentation/manager/review/review_cubit.dart';
 import 'package:new_coffee/features/orders/presentation/views/widgets/order_action_bottom_bar.dart';
 import 'package:new_coffee/features/orders/presentation/views/widgets/star_rating.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 /// The rating draft for one purchased product, and the write that stores it.
 ///
@@ -73,7 +74,10 @@ class _LeaveReviewViewState extends State<LeaveReviewView> {
         messenger.showSnackBar(SnackBar(content: Text(state.errorCopy!)));
       },
       child: Scaffold(
-        appBar: AppBar(title: Text(S.leaveReview)),
+        appBar: AppBar(
+          leading: const AppBackButton(),
+          title: Text(S.leaveReview),
+        ),
         body: ListView(
           padding: AppLayout.pageBody,
           children: [

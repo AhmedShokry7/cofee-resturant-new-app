@@ -76,6 +76,12 @@ abstract interface class DiningTableRepository {
   /// ينشئ طاولة أو يحدّثها ويعيد نتيجة الحفظ.
   Future<DiningTableSaveOutcome> saveTable(DiningTableDraft draft);
 
+  Future<DiningTableMutationOutcome> setTableLayoutPosition(
+    String tableId,
+    double x,
+    double y,
+  );
+
   /// يفعّل الطاولة أو يعطّلها بعد فحص القاعدة.
   Future<DiningTableMutationOutcome> setTableActive(
     String tableId,

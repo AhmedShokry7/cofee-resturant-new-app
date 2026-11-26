@@ -14,7 +14,7 @@ import 'package:admin_app/features/inventory/domain/entities/inventory_material_
 import 'package:admin_app/features/inventory/presentation/manager/admin_inventory_cubit.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_format.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
-import 'package:admin_app/shared/widgets/currency_icon.dart';
+import 'package:admin_app/shared/widgets/currency_input_row.dart';
 
 Future<bool?> showInventoryMaterialCreateDialog({
   required BuildContext context,
@@ -356,7 +356,7 @@ class _InventoryMaterialDialogState extends State<InventoryMaterialDialog> {
                             decimal: true,
                           ),
                           inputFormatters: [_decimalFormatter],
-                          suffixIcon: const CurrencyIcon(size: 10),
+                          currencyIconOutside: true,
                         );
                         final reorder = _MaterialField(
                           controller: _reorderController,
@@ -426,7 +426,7 @@ class _MaterialField extends StatelessWidget {
     this.textCapitalization = TextCapitalization.none,
     this.maxLines = 1,
     this.suffixText,
-    this.suffixIcon,
+    this.currencyIconOutside = false,
   });
 
   final TextEditingController controller;
@@ -438,22 +438,25 @@ class _MaterialField extends StatelessWidget {
   final TextCapitalization textCapitalization;
   final int maxLines;
   final String? suffixText;
-  final Widget? suffixIcon;
+  final bool currencyIconOutside;
 
   @override
-  Widget build(BuildContext context) => TextField(
-    controller: controller,
-    keyboardType: keyboardType,
-    inputFormatters: inputFormatters,
-    textDirection: textDirection,
-    textCapitalization: textCapitalization,
-    maxLines: maxLines,
-    decoration: InputDecoration(
-      labelText: label,
-      hintText: hint,
-      suffixText: suffixText,
-      suffixIcon: suffixIcon,
-      alignLabelWithHint: maxLines > 1,
-    ),
-  );
+  Widget build(BuildContext context) {
+    final field = TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      textDirection: textDirection,
+      textCapitalization: textCapitalization,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        suffixText: suffixText,
+        alignLabelWithHint: maxLines > 1,
+        constraints: const BoxConstraints(minHeight: AppSizes.px48),
+      ),
+    );
+    return currencyIconOutside ? CurrencyInputRow(child: field) : field;
+  }
 }

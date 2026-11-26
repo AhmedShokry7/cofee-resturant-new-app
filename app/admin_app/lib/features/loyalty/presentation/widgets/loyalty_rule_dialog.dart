@@ -15,7 +15,6 @@ import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_money_bi
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/shared/widgets/admin_help_button.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
-import 'package:admin_app/shared/widgets/currency_icon.dart';
 import 'package:admin_app/shared/widgets/custom_text_form_field.dart';
 
 Future<void> showLoyaltyRuleDialog({
@@ -142,7 +141,7 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
                         helper: S.loyaltyProgramValueHelp,
                         helpMessage: S.loyaltyProgramValueTooltip,
                         validator: _validateValue,
-                        suffixIcon: const CurrencyIcon(size: 10),
+                        currencyIconOutside: true,
                       ),
                       _previewAmountField(),
                       _preview(),
@@ -228,6 +227,7 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
     String? helpMessage,
     required String? Function(String?) validator,
     Widget? suffixIcon,
+    bool currencyIconOutside = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -243,6 +243,7 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           validator: validator,
           suffixIcon: suffixIcon,
+          currencyIconOutside: currencyIconOutside,
           bottomPadding: 4,
         ),
         if (helper != null && helper.isNotEmpty)
@@ -308,7 +309,7 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
     hint: S.loyaltyProgramPreviewAmountHint,
     helper: null,
     validator: (_) => null,
-    suffixIcon: const CurrencyIcon(size: 10),
+    currencyIconOutside: true,
   );
 
   Widget _changeImpact() {

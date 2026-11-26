@@ -82,6 +82,13 @@ const _featureGroups = [
       'subscription_plans',
       'subscription_details',
       'cashier_subscription',
+      'my_bundles',
+      'customer_bundle_editor',
+      'my_reservations',
+      'reservation_form',
+      'event_request_form',
+      'my_product_subscriptions',
+      'product_subscription_form',
     ],
   ),
   _FeaturePagesGroup(

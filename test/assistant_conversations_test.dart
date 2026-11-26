@@ -342,8 +342,8 @@ void main() {
 
       expect(cubit.state.activeChatId, older);
       expect(cubit.state.messages.map((message) => message.text), [
-        // The Saudi greeting asks what the customer wants.
-        contains('وش تبغى'),
+        // The test locale is Arabic; reopening the chat keeps that greeting.
+        contains('كيف أقدر أخدمك'),
         'الموكا بكام؟',
         isNot(isEmpty),
       ]);

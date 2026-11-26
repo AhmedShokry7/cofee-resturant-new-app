@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -9,6 +9,7 @@ import 'package:new_coffee/features/orders/presentation/views/orders_page.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 /// What the customer sees while, and after, the named order is read.
 ///
@@ -33,7 +34,10 @@ class OrderDetailsByIdBody extends StatelessWidget {
           return OrderDetailsPage(order: group.header, lines: group.lines);
         }
         return Scaffold(
-          appBar: AppBar(title: Text(S.orderDetails)),
+          appBar: AppBar(
+            leading: const AppBackButton(),
+            title: Text(S.orderDetails),
+          ),
           body: Builder(
             builder: (context) {
               if (state.isLoading) return const OrdersSkeleton();

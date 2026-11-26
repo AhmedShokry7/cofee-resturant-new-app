@@ -19,6 +19,8 @@ class _SearchCall {
     this.query,
     this.branchId,
     this.categoryId,
+    this.minPrice,
+    this.maxPrice,
     this.sort,
   );
 
@@ -26,6 +28,8 @@ class _SearchCall {
   final String query;
   final String? branchId;
   final String? categoryId;
+  final double? minPrice;
+  final double? maxPrice;
   final String sort;
 }
 
@@ -53,12 +57,16 @@ class _ControlledCatalog implements CatalogRepository {
     String query, {
     String? branchId,
     String? categoryId,
+    double? minPrice,
+    double? maxPrice,
     String sort = 'relevance',
     int limit = 20,
     int offset = 0,
   }) {
     final index = calls.length;
-    calls.add(_SearchCall(index, query, branchId, categoryId, sort));
+    calls.add(
+      _SearchCall(index, query, branchId, categoryId, minPrice, maxPrice, sort),
+    );
     if (!hold) {
       final failure = failNext;
       if (failure != null) {
@@ -461,7 +469,7 @@ void main() {
     expect(cubit.state.results, isEmpty);
   });
 
-  testWidgets('filters use the loaded results without another query', (
+  testWidgets('filters are sent to the server and update results', (
     tester,
   ) async {
     final catalog = _ControlledCatalog();
@@ -477,11 +485,13 @@ void main() {
     final countBefore = catalog.calls.length;
     expect(countBefore, 1);
 
-    // Category, price and sort changes only filter the loaded result set.
+    // Filter changes fetch the matching page from the server.
     cubit.applyFilters(sort: SearchSort.priceLowHigh, category: 'cat-1');
     await tester.pump();
 
-    expect(catalog.calls.length, countBefore);
+    expect(catalog.calls.length, countBefore + 1);
+    expect(catalog.calls.last.categoryId, 'cat-1');
+    expect(catalog.calls.last.sort, 'priceLowHigh');
     expect(cubit.state.query, 'mocha');
     expect(cubit.state.sort, SearchSort.priceLowHigh);
     expect(cubit.state.results.map((p) => p.id), ['hit-mocha']);

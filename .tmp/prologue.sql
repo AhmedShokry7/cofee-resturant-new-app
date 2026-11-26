@@ -1,0 +1,1 @@
+select substring(pg_get_functiondef('public.admin_customer_details(uuid)'::regprocedure) from 'begin(.*?)return \(\s*select' ) as prologue;

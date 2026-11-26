@@ -29,16 +29,18 @@ class HrPayrollCubit extends Cubit<HrPayrollState> {
     emit(state.copyWith(status: HrPayrollStatus.loading, clearError: true));
     try {
       final runs = await _repository.loadRuns();
-      if (!isClosed)
+      if (!isClosed) {
         emit(state.copyWith(status: HrPayrollStatus.ready, runs: runs));
+      }
     } catch (error) {
-      if (!isClosed)
+      if (!isClosed) {
         emit(
           state.copyWith(
             status: HrPayrollStatus.failure,
             error: adminErrorMessage(error),
           ),
         );
+      }
     }
   }
 
@@ -48,10 +50,11 @@ class HrPayrollCubit extends Cubit<HrPayrollState> {
       final detail = await _repository.loadRun(id);
       if (!isClosed) emit(state.copyWith(detail: detail, actionBusy: false));
     } catch (error) {
-      if (!isClosed)
+      if (!isClosed) {
         emit(
           state.copyWith(actionBusy: false, error: adminErrorMessage(error)),
         );
+      }
     }
   }
 
@@ -64,10 +67,11 @@ class HrPayrollCubit extends Cubit<HrPayrollState> {
       );
       if (!isClosed) emit(state.copyWith(preview: preview, actionBusy: false));
     } catch (error) {
-      if (!isClosed)
+      if (!isClosed) {
         emit(
           state.copyWith(actionBusy: false, error: adminErrorMessage(error)),
         );
+      }
     }
   }
 
@@ -89,10 +93,11 @@ class HrPayrollCubit extends Cubit<HrPayrollState> {
       }
       return true;
     } catch (error) {
-      if (!isClosed)
+      if (!isClosed) {
         emit(
           state.copyWith(actionBusy: false, error: adminErrorMessage(error)),
         );
+      }
       return false;
     }
   }

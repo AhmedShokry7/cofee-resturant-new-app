@@ -97,6 +97,10 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
   List<AdminProduct> _products = const <AdminProduct>[];
   List<AdminCategory> _categories = const <AdminCategory>[];
   List<AdminBundle> _bundles = const <AdminBundle>[];
+  final Set<String> _linkedProductIds = <String>{};
+  final Set<String> _linkedCategoryIds = <String>{};
+  String _productCategoryFilter = '';
+  String _productQuery = '';
   bool _loadingTargets = true;
 
   /// قراءة الكتالوج رُفضت، لا أن صفوفها صفر.
@@ -133,6 +137,8 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
     );
     _imageUrl = b?.imageUrl;
     _isPublished = b?.isPublished ?? true;
+    _linkedProductIds.addAll(b?.linkedProductIds ?? const <String>[]);
+    _linkedCategoryIds.addAll(b?.linkedCategoryIds ?? const <String>[]);
     _loadTargets();
   }
 
@@ -325,6 +331,8 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
               displayLocation: _displayLocationController.text.trim(),
               sortOrder: sort ?? 0,
               isPublished: _isPublished,
+              linkedProductIds: _linkedProductIds.toList(growable: false),
+              linkedCategoryIds: _linkedCategoryIds.toList(growable: false),
             );
 
     try {
@@ -554,6 +562,8 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                       ),
                   ],
                 ),
+              const SizedBox(height: AppSpacing.md),
+              _bannerProductsPicker(),
               if (_targetTypeController.text == 'url') ...[
                 const SizedBox(height: AppSpacing.md),
                 TextField(
@@ -599,6 +609,156 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                   ),
                 )
               : Text(S.save),
+        ),
+      ],
+    );
+  }
+
+  Widget _bannerProductsPicker() {
+    final language = AppLocale.instance.language;
+    final arabic = AppLocale.instance.isArabic;
+    final categoryItems = _categories.where((item) => item.isActive).toList();
+    final query = _productQuery.trim().toLowerCase();
+    final products = _products.where((product) {
+      if (!product.isActive) return false;
+      if (_productCategoryFilter.isNotEmpty &&
+          product.categoryId != _productCategoryFilter) {
+        return false;
+      }
+      if (query.isEmpty) return true;
+      return product.nameAr.toLowerCase().contains(query) ||
+          product.nameEn.toLowerCase().contains(query) ||
+          product.sku.toLowerCase().contains(query);
+    }).toList(growable: false);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          arabic ? 'محتوى صفحة البانر' : 'Banner page content',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          arabic
+              ? 'اختاري «بدون وجهة» في نوع الهدف لعرض هذه المنتجات عند الضغط على البانر. يمكنك تصفية المنتجات بالتصنيف ثم تحديد منتجات بعينها.'
+              : 'Choose “None” as the target to open this selected collection when the banner is tapped. Filter by category, then pick specific products.',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: AppColor.greyColor,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          arabic ? 'تصنيفات كاملة (اختياري)' : 'Include whole categories (optional)',
+          style: Theme.of(context).textTheme.labelLarge,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        if (categoryItems.isEmpty)
+          Text(
+            _targetsFailed ? S.couldNotLoadCategories : S.noCategoriesFound,
+            style: Theme.of(context).textTheme.bodySmall,
+          )
+        else
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              for (final category in categoryItems)
+                FilterChip(
+                  label: Text(category.nameFor(language)),
+                  selected: _linkedCategoryIds.contains(category.id),
+                  onSelected: (selected) => setState(() {
+                    if (selected) {
+                      _linkedCategoryIds.add(category.id);
+                    } else {
+                      _linkedCategoryIds.remove(category.id);
+                    }
+                  }),
+                ),
+            ],
+          ),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          arabic
+              ? 'اختاري تصنيفًا لتصفية قائمة المنتجات'
+              : 'Filter the product list by category',
+          style: Theme.of(context).textTheme.labelLarge,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        DropdownButtonFormField<String>(
+          initialValue: _productCategoryFilter,
+          decoration: InputDecoration(
+            labelText: arabic ? 'تصنيف المنتجات' : 'Product category',
+          ),
+          items: [
+            DropdownMenuItem(
+              value: '',
+              child: Text(arabic ? 'كل التصنيفات' : 'All categories'),
+            ),
+            for (final category in categoryItems)
+              DropdownMenuItem(
+                value: category.id,
+                child: Text(category.nameFor(language)),
+              ),
+          ],
+          onChanged: (value) =>
+              setState(() => _productCategoryFilter = value ?? ''),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        TextField(
+          decoration: InputDecoration(
+            labelText: arabic ? 'ابحثي عن منتج' : 'Search products',
+            prefixIcon: const Icon(Icons.search),
+          ),
+          onChanged: (value) => setState(() => _productQuery = value),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Container(
+          height: 180,
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColor.borderColor),
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          child: _loadingTargets
+              ? const Center(child: CircularProgressIndicator())
+              : _targetsFailed
+              ? Center(child: Text(S.couldNotLoadProducts))
+              : products.isEmpty
+              ? Center(child: Text(S.noProductsFound))
+              : ListView.builder(
+                  itemCount: products.length,
+                  itemBuilder: (context, index) {
+                    final product = products[index];
+                    return CheckboxListTile(
+                      dense: true,
+                      value: _linkedProductIds.contains(product.id),
+                      title: Text(
+                        product.nameFor(language),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(
+                        product.categoryNameFor(language),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onChanged: (selected) => setState(() {
+                        if (selected == true) {
+                          _linkedProductIds.add(product.id);
+                        } else {
+                          _linkedProductIds.remove(product.id);
+                        }
+                      }),
+                    );
+                  },
+                ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          arabic
+              ? 'تم اختيار ${_linkedProductIds.length} منتج و${_linkedCategoryIds.length} تصنيف'
+              : '${_linkedProductIds.length} products and ${_linkedCategoryIds.length} categories selected',
+          style: Theme.of(context).textTheme.bodySmall,
         ),
       ],
     );

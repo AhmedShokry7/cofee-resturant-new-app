@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/preview/preview_bridge.dart';
@@ -95,7 +95,7 @@ class _SplashViewState extends State<SplashView> {
           return Scaffold(
             backgroundColor: SplashSettings.colorFromHex(
               settings.backgroundColor,
-              fallback: AppColor.whiteColor,
+              fallback: AppColor.background,
             ),
             body: SafeArea(
               child: LayoutBuilder(

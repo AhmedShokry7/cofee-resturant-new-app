@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/preview/preview_section.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -15,7 +15,6 @@ import 'package:new_coffee/features/home/presentation/views/widgets/design_secti
 import 'package:new_coffee/features/home/presentation/views/widgets/design_sections.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_search_bar.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_section.dart';
-import 'package:new_coffee/features/home/presentation/views/widgets/home_single_banner_section.dart';
 
 /// أقسام المستند بترتيبها المنشور، وسقط منها ما لا يعرف الهاتف رسمه.
 ///
@@ -94,10 +93,13 @@ Widget? buildHomeDocumentSection(PublishedSection section) {
       // الشريط أيضًا عند تغيّر عدد العناصر أو ارتفاعه.
       HomeBannerSection(
         key: ValueKey(
-          'banner_${section.id}_${section.flagProperty('autoplay', fallback: true)}_${section.numberProperty('height')}_${section.numberProperty('bannerDraftCount')}',
+          'banner_${section.id}_${section.property('displayLocation')}_${section.flagProperty('autoplay', fallback: true)}_${section.numberProperty('height')}_${section.numberProperty('bannerDraftCount')}',
         ),
         autoplay: section.flagProperty('autoplay', fallback: true),
         height: section.numberProperty('height'),
+        placement: BannerPlacement.fromStorage(
+          section.property('displayLocation'),
+        ),
         previewBanners: _draftBanners(section),
         radius: _radius(section.property('radius')),
         showDots: section.flagProperty('showDots', fallback: true),
@@ -110,10 +112,16 @@ Widget? buildHomeDocumentSection(PublishedSection section) {
       ),
     ),
     DesignWidgetTypes.promoBanner => HomeSection(
-      child: HomeSingleBannerSection(
-        bannerIndex: section.numberProperty('bannerIndex')?.round() ?? 0,
+      child: HomeBannerSection(
+        key: ValueKey(
+          'inline_banner_${section.id}_${section.flagProperty('autoplay', fallback: true)}_${section.numberProperty('height')}_${section.numberProperty('bannerDraftCount')}',
+        ),
+        placement: BannerPlacement.inline,
+        autoplay: section.flagProperty('autoplay', fallback: true),
         height: section.numberProperty('height'),
         radius: _radius(section.property('radius')),
+        showDots: section.flagProperty('showDots', fallback: true),
+        previewBanners: _draftBanners(section),
       ),
     ),
     DesignWidgetTypes.bundleList => HomeSection(
@@ -216,7 +224,7 @@ TextStyle? _titleStyle(PublishedSection section) {
   if (size == null && color == null) return null;
   return TextStyle(
     fontSize: size ?? 18,
-    fontWeight: FontWeight.w600,
+    fontWeight: AppFontWeights.semiBold,
     color: color,
   );
 }

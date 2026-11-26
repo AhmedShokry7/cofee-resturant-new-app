@@ -1,12 +1,13 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:admin_app/core/auth/admin_session.dart';
 import 'package:admin_app/core/error/failure.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/result/result.dart';
+import 'package:admin_app/core/services/admin_avatar_links.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/auth/data/models/admin_session_model.dart';
 import 'package:admin_app/features/auth/domain/entities/invitation_accept_outcome.dart';
-import 'package:admin_app/core/auth/admin_session.dart';
 import 'package:admin_app/features/auth/domain/repositories/auth_repository.dart';
 
 /// تنفيذ [AuthRepository] فوق Supabase Auth ووظيفة سجل الموظف.
@@ -277,7 +278,11 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<AdminSession> _loadStaffRecord() async {
     // الدالة التي تنشئها سلسلة الترحيلات وتمنحها للموظف المسجّل.
     final raw = await _supabase.rpc('admin_get_my_staff_record');
-    return AdminSessionModel.fromRpc(raw).toEntity();
+    final displayable = await AdminAvatarLinks.signTree(
+      raw,
+      client: _supabase,
+    );
+    return AdminSessionModel.fromRpc(displayable).toEntity();
   }
 
   Future<void> _signOutQuietly() async {

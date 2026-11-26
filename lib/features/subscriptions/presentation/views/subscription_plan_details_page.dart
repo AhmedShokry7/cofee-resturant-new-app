@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -12,6 +13,7 @@ import 'package:new_coffee/features/subscriptions/presentation/views/widgets/sub
 import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/db_image.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 class SubscriptionPlanDetailsPage extends StatelessWidget {
   const SubscriptionPlanDetailsPage({super.key, required this.plan});
@@ -71,6 +73,7 @@ class _PlanDetailsView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: const AppBackButton(),
         title: Text(plan.name.isEmpty ? S.planDetails : plan.name),
       ),
       body: BlocBuilder<SubscriptionCubit, SubscriptionState>(
@@ -135,7 +138,7 @@ class _PlanDetailsView extends StatelessWidget {
                 ),
               ],
               SizedBox(height: AppSpacing.lg),
-              FilledButton(
+              CustomFilledButton(
                 // A second tap cannot tell whether the first created a
                 // subscription, and paying twice is the worse answer.
                 onPressed: state.isMutating ? null : () => _subscribe(context),
@@ -171,7 +174,7 @@ class _IncludedProducts extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(S.couldNotLoadPlanProducts, style: AppFonts.regular14(context)),
-          TextButton(onPressed: onRetry, child: Text(S.retry)),
+          CustomTextButton(onPressed: onRetry, child: Text(S.retry)),
         ],
       );
     }

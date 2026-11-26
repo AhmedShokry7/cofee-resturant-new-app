@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -59,7 +59,12 @@ class _OrderInvoiceCardState extends State<OrderInvoiceCard> {
       launchUrl(uri, mode: LaunchMode.externalApplication);
 
   Future<void> _download(Uri uri) async {
-    final opened = await _open(uri);
+    var opened = false;
+    try {
+      opened = await _open(uri);
+    } catch (_) {
+      // Platform launch failures use the same recoverable UI as a refusal.
+    }
     if (!mounted || opened) return;
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(S.invoiceDownloadFailed)));
@@ -73,7 +78,7 @@ class _OrderInvoiceCardState extends State<OrderInvoiceCard> {
         if (snapshot.hasError) {
           return _InvoicePanel(
             message: S.invoiceLoadFailed,
-            action: TextButton(
+            action: CustomTextButton(
               onPressed: () => setState(() {
                 _invoiceFuture = widget.repository.invoiceForOrder(
                   widget.orderId,
@@ -113,8 +118,10 @@ class _OrderInvoiceCardState extends State<OrderInvoiceCard> {
           title: S.invoiceNumber,
           value: currentOrder?.invoiceNumber ?? invoice.invoiceNumber,
           details: [
-            Text('${S.invoiceStatus}: ${invoice.status}'),
-            Text('${S.invoiceDocumentStatus}: ${invoice.documentStatus}'),
+            Text('${S.invoiceStatus}: ${S.invoiceStateLabel(invoice.status)}'),
+            Text(
+              '${S.invoiceDocumentStatus}: ${S.invoiceStateLabel(invoice.documentStatus)}',
+            ),
             if (invoice.issuedAt != null)
               Text(
                 '${S.invoiceIssueDate}: ${invoice.issuedAt!.toLocal().toIso8601String().replaceFirst('T', ' ').substring(0, 16)}',
@@ -132,7 +139,7 @@ class _OrderInvoiceCardState extends State<OrderInvoiceCard> {
           ],
           message: uri == null ? S.invoiceDocumentUnavailable : null,
           action: uri == null
-              ? TextButton(
+              ? CustomTextButton(
                   onPressed: () => setState(() {
                     _invoiceFuture = widget.repository.invoiceForOrder(
                       widget.orderId,

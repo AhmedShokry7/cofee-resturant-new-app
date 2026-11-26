@@ -21,7 +21,7 @@ abstract interface class HrAttendanceRepository {
 }
 
 class SupabaseHrAttendanceRepository implements HrAttendanceRepository {
-  SupabaseHrAttendanceRepository({SupabaseClient? client}) : _client = client;
+  SupabaseHrAttendanceRepository({this._client});
 
   final SupabaseClient? _client;
   SupabaseClient get client => _client ?? SupabaseService.client;

@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/constant/app_images.dart';
@@ -179,7 +180,7 @@ class _AssistantViewState extends State<_AssistantView> {
           backgroundColor: AppColor.background,
           surfaceTintColor: AppColor.transparent,
           leading: Builder(
-            builder: (context) => IconButton(
+            builder: (context) => CustomIconButton(
               onPressed: () => Scaffold.of(context).openDrawer(),
               icon: const Icon(AppIcons.menu),
               tooltip: S.assistantChatsTooltip,
@@ -208,13 +209,13 @@ class _AssistantViewState extends State<_AssistantView> {
             BlocBuilder<AssistantCubit, AssistantState>(
               buildWhen: (previous, current) =>
                   previous.messages.length != current.messages.length,
-              builder: (context, state) => IconButton(
+              builder: (context, state) => CustomIconButton(
                 onPressed: () => context.read<AssistantCubit>().newChat(),
                 icon: const Icon(AppIcons.add),
                 tooltip: S.assistantNewChat,
               ),
             ),
-            IconButton(
+            CustomIconButton(
               onPressed: () => rootNavigatorKey.currentState?.pushNamed(
                 AssistantMemoryPage.routeName,
               ),
@@ -325,12 +326,12 @@ class _AssistantConversationSavedNotice extends StatelessWidget {
             style: AppFonts.regular12(context),
           ),
         ),
-        IconButton(
+        CustomIconButton(
           tooltip: S.assistantMemoryTitle,
           onPressed: onManageMemory,
           icon: const Icon(AppIcons.memory),
         ),
-        IconButton(
+        CustomIconButton(
           tooltip: S.assistantDismissNotice,
           onPressed: onDismiss,
           icon: const Icon(AppIcons.close),

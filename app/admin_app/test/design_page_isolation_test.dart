@@ -129,8 +129,8 @@ class _ServerDesignStore {
       'id': 'version-${versionRows.length + 1}',
       'version_number': versionRows.length + 1,
       'document': document,
-      if (name != null) 'name': name,
-      if (note != null) 'note': note,
+      'name': ?name,
+      'note': ?note,
     });
     auditLog.add('publish:${pageIds.toList()..sort()}');
     return document;

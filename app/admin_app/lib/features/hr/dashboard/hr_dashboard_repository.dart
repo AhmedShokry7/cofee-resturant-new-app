@@ -7,7 +7,7 @@ abstract interface class HrDashboardRepository {
 }
 
 class SupabaseHrDashboardRepository implements HrDashboardRepository {
-  SupabaseHrDashboardRepository({SupabaseClient? client}) : _client = client;
+  SupabaseHrDashboardRepository({this._client});
   final SupabaseClient? _client;
   SupabaseClient get client => _client ?? SupabaseService.client;
 

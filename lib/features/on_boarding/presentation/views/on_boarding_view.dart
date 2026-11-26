@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
@@ -24,8 +24,9 @@ class OnBoardingView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) {
-        final sections =
-            context.read<DesignCubit>().state.pageSections('onboarding');
+        final sections = context.read<DesignCubit>().state.pageSections(
+          'onboarding',
+        );
         final transition = onboardingTransitionFrom(sections);
         return OnBoardingCubit(
           slides: onboardingSlidesFrom(sections),

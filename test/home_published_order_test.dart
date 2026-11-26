@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -38,8 +38,8 @@ void main() {
     expect(find.byType(HomeBannerSection), findsOneWidget);
     // البحث تحت الترويسة، كما اليوم.
     expect(
-      _top(tester,find.byType(HomeSearchBar)),
-      greaterThan(_top(tester,find.byType(HomeHeader))),
+      _top(tester, find.byType(HomeSearchBar)),
+      greaterThan(_top(tester, find.byType(HomeHeader))),
     );
   });
 
@@ -49,8 +49,8 @@ void main() {
     expect(find.byType(HomeHeader), findsOneWidget);
     expect(find.byType(HomeSearchBar), findsOneWidget);
     expect(
-      _top(tester,find.byType(HomeSearchBar)),
-      lessThan(_top(tester,find.byType(HomeHeader))),
+      _top(tester, find.byType(HomeSearchBar)),
+      lessThan(_top(tester, find.byType(HomeHeader))),
     );
     // قسمان خارج المستند لم يُرسما: الصفحة تعرض ما نشر لا ترتيب اليوم.
     expect(find.byType(HomeBannerSection), findsNothing);

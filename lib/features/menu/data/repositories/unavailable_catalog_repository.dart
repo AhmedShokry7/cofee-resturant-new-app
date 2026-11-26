@@ -42,6 +42,8 @@ class UnavailableCatalogRepository implements CatalogRepository {
     String query, {
     String? branchId,
     String? categoryId,
+    double? minPrice,
+    double? maxPrice,
     String sort = 'relevance',
     int limit = CatalogLimits.search,
     int offset = 0,

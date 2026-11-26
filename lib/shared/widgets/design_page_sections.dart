@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/preview/preview_section.dart';
@@ -43,10 +43,14 @@ class DesignPageSectionsAbove extends StatelessWidget {
       pageId: pageId,
       sections: pageSections,
     );
-    final body = sections.where((node) => node.type == 'native.body').firstOrNull;
+    final body = sections
+        .where((node) => node.type == 'native.body')
+        .firstOrNull;
     final content = body == null
         ? child
-        : body.visible ? DesignSectionChrome(section: body, child: child) : const SizedBox.shrink();
+        : body.visible
+        ? DesignSectionChrome(section: body, child: child)
+        : const SizedBox.shrink();
     if (built.isEmpty) return content;
     // Other published sections may be tall. Keep the search UI usable and let
     // them scroll within a bounded area.

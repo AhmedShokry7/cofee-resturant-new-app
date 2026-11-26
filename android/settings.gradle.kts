@@ -25,7 +25,8 @@ plugins {
     // values (google_app_id, gcm_defaultSenderId, google_api_key, ...). The
     // plugin marker is published on Google's Maven repository, so the google()
     // repository in pluginManagement below is what resolves it.
-    id("com.google.gms.google-services") version "4.5.0" apply false
+    id("com.google.gms.google-services") version "4.6.0" apply false
+    id("com.google.firebase.crashlytics") version "3.0.8" apply false
 }
 
 include(":app")

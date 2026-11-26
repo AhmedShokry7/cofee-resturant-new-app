@@ -17,9 +17,14 @@ import 'package:admin_app/shared/widgets/admin_surface.dart';
 /// أسفل بعضِها، لأن خمسة أعمدة متجاورة هي الشكل الذي تُقارَن به الأرقام عينها،
 /// وسطرٌ يتفكّك إلى أربعة أسطر يحوّل الجدول قائمة.
 class DashboardOrdersTable extends StatelessWidget {
-  const DashboardOrdersTable({super.key, required this.orders});
+  const DashboardOrdersTable({
+    super.key,
+    required this.orders,
+    this.onOpenOrder,
+  });
 
   final List<AdminDashboardRecentOrder> orders;
+  final ValueChanged<String>? onOpenOrder;
 
   /// أدنى عرض يبقى الأعمدة الخمسة عنده متجاورة، على هاتفٍ أو في عمود جانبي.
   static const double _minWidth = 720;
@@ -45,7 +50,8 @@ class DashboardOrdersTable extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _header(theme),
-              for (final order in orders) DashboardOrderRow(order: order),
+              for (final order in orders)
+                DashboardOrderRow(order: order, onOpen: onOpenOrder),
             ],
           ),
         ),

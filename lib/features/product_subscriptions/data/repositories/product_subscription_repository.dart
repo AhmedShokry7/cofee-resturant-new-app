@@ -20,4 +20,12 @@ class ProductSubscriptionRepository {
   Future<void> pause(String id) async => _db.rpc('pause_my_customer_product_subscription', params: {'p_id': id});
   Future<void> resume(String id) async => _db.rpc('resume_my_customer_product_subscription', params: {'p_id': id});
   Future<void> cancel(String id) async => _db.rpc('cancel_my_customer_product_subscription', params: {'p_id': id});
+
+  Future<bool> skipRun(String runId) async {
+    final result = await _db.rpc(
+      'skip_my_customer_product_subscription_run',
+      params: {'p_run_id': runId},
+    );
+    return result == true;
+  }
 }

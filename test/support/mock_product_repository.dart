@@ -228,6 +228,8 @@ class MockProductRepository implements CatalogRepository {
     String query, {
     String? branchId,
     String? categoryId,
+    double? minPrice,
+    double? maxPrice,
     String sort = 'relevance',
     int limit = CatalogLimits.search,
     int offset = 0,
@@ -239,6 +241,12 @@ class MockProductRepository implements CatalogRepository {
     }
     if (q.isNotEmpty) {
       items = items.where((p) => p.matches(q)).toList();
+    }
+    if (minPrice != null) {
+      items = items.where((p) => p.price >= minPrice).toList();
+    }
+    if (maxPrice != null) {
+      items = items.where((p) => p.price <= maxPrice).toList();
     }
     switch (sort) {
       case 'priceLowHigh':

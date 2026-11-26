@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -8,6 +8,7 @@ import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/products_grid_view.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 class SeeAllProductsArgs {
   const SeeAllProductsArgs({
@@ -31,7 +32,7 @@ class SeeAllProductsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(args.title)),
+      appBar: AppBar(leading: const AppBackButton(), title: Text(args.title)),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -41,7 +42,7 @@ class SeeAllProductsPage extends StatelessWidget {
                 AppSpacing.lg,
                 AppSpacing.sm,
                 AppSpacing.lg,
-                0,
+                AppSpacing.none,
               ),
               child: Text(
                 args.subtitle!,

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/preview/preview_section.dart';
@@ -136,7 +136,7 @@ TextStyle? _titleStyle(PublishedSection section) {
   if (size == null && color == null) return null;
   return TextStyle(
     fontSize: size ?? 18,
-    fontWeight: FontWeight.w600,
+    fontWeight: AppFontWeights.semiBold,
     color: color,
   );
 }
@@ -250,7 +250,7 @@ class _DesignButton extends StatelessWidget {
         (style == 'primary' ? AppColor.whiteColor : AppColor.textPrimary);
     final radius = _radius(section.property('borderRadius'));
     return Material(
-      color: style == 'primary' ? background : Colors.transparent,
+      color: style == 'primary' ? background : AppColor.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(radius),
         side: style == 'outline'

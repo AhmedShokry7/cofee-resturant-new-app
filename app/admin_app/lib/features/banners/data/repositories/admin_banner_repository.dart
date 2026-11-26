@@ -19,9 +19,46 @@ class AdminBannerRepository implements BannerRepository {
   @override
   Future<List<AdminBanner>> loadBanners() async {
     final rows = await _supabase.from('banners').select().order('sort_order');
-    return (rows as List)
+    final banners = (rows as List)
         .whereType<Map>()
         .map((row) => AdminBanner.fromJson(Map<String, dynamic>.from(row)))
+        .toList(growable: false);
+    if (banners.isEmpty) return banners;
+    final ids = banners.map((banner) => banner.id).toList(growable: false);
+    final links = await Future.wait([
+      _supabase
+          .schema('marketing')
+          .from('banner_products')
+          .select('banner_id,product_id,sort_order')
+          .inFilter('banner_id', ids)
+          .order('sort_order'),
+      _supabase
+          .schema('marketing')
+          .from('banner_categories')
+          .select('banner_id,category_id,sort_order')
+          .inFilter('banner_id', ids)
+          .order('sort_order'),
+    ]);
+    final productsByBanner = <String, List<String>>{};
+    final categoriesByBanner = <String, List<String>>{};
+    for (final row in links[0]) {
+      productsByBanner
+          .putIfAbsent(row['banner_id'].toString(), () => <String>[])
+          .add(row['product_id'].toString());
+    }
+    for (final row in links[1]) {
+      categoriesByBanner
+          .putIfAbsent(row['banner_id'].toString(), () => <String>[])
+          .add(row['category_id'].toString());
+    }
+    return banners
+        .map(
+          (banner) => banner.copyWith(
+            linkedProductIds: productsByBanner[banner.id] ?? const <String>[],
+            linkedCategoryIds:
+                categoriesByBanner[banner.id] ?? const <String>[],
+          ),
+        )
         .toList(growable: false);
   }
 
@@ -32,12 +69,61 @@ class AdminBannerRepository implements BannerRepository {
         .insert(banner.toJson())
         .select()
         .single();
-    return AdminBanner.fromJson(Map<String, dynamic>.from(response));
+    final created = AdminBanner.fromJson(Map<String, dynamic>.from(response));
+    if (banner.linkedProductIds.isNotEmpty ||
+        banner.linkedCategoryIds.isNotEmpty) {
+      await saveBannerLinks(
+        bannerId: created.id,
+        productIds: banner.linkedProductIds,
+        categoryIds: banner.linkedCategoryIds,
+      );
+    }
+    return created.copyWith(
+      linkedProductIds: banner.linkedProductIds,
+      linkedCategoryIds: banner.linkedCategoryIds,
+    );
   }
 
   @override
   Future<void> updateBanner(AdminBanner banner) async {
     await _supabase.from('banners').update(banner.toJson()).eq('id', banner.id);
+    await saveBannerLinks(
+      bannerId: banner.id,
+      productIds: banner.linkedProductIds,
+      categoryIds: banner.linkedCategoryIds,
+    );
+  }
+
+  @override
+  Future<void> saveBannerLinks({
+    required String bannerId,
+    required List<String> productIds,
+    required List<String> categoryIds,
+  }) async {
+    await Future.wait([
+      _supabase
+          .schema('marketing')
+          .from('banner_products')
+          .delete()
+          .eq('banner_id', bannerId),
+      _supabase
+          .schema('marketing')
+          .from('banner_categories')
+          .delete()
+          .eq('banner_id', bannerId),
+    ]);
+    if (productIds.isNotEmpty) {
+      await _supabase.schema('marketing').from('banner_products').insert([
+        for (var i = 0; i < productIds.length; i++)
+          {'banner_id': bannerId, 'product_id': productIds[i], 'sort_order': i},
+      ]);
+    }
+    if (categoryIds.isNotEmpty) {
+      await _supabase.schema('marketing').from('banner_categories').insert([
+        for (var i = 0; i < categoryIds.length; i++)
+          {'banner_id': bannerId, 'category_id': categoryIds[i], 'sort_order': i},
+      ]);
+    }
   }
 
   @override

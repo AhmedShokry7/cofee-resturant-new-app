@@ -207,6 +207,7 @@ begin
     ),
     top_products as (
       select coalesce(jsonb_agg(jsonb_build_object(
+        'product_id', p.product_id,
         'product_name_ar', p.product_name_ar,
         'product_name_en', p.product_name_en,
         'image_url', p.image_url,
@@ -215,6 +216,8 @@ begin
       ) order by p.quantity desc, p.revenue desc), '[]'::jsonb) as items
       from (
         select
+          (array_agg(oi.product_id order by oi.created_at desc)
+            filter (where oi.product_id is not null))[1] as product_id,
           oi.product_name_ar,
           oi.product_name_en,
           -- max لا arbitrary: منتج باعه طلبان بصورة قديمة وواحد بصورة جديدة

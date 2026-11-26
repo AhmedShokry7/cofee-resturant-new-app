@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/shared/utils/direction_aware_icons.dart';
@@ -97,7 +97,7 @@ class ProfileMenuTile extends StatelessWidget {
             ),
           ),
         ),
-        const Divider(height: 1),
+        const Divider(height: AppSizes.px1),
       ],
     );
   }

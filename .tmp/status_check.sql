@@ -1,0 +1,1 @@
+select pg_get_constraintdef(oid) as def from pg_constraint where conrelid='identity.staff_members'::regclass and conname='staff_members_status_check';

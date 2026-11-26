@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -37,12 +37,17 @@ class HomeRecommendationsSection extends StatelessWidget {
             : null;
         final hasWeather =
             weather != null && home.recommendationPool.isNotEmpty;
+        final hasPurchaseHistory = home.purchaseCategoryCounts.isNotEmpty;
 
         return HomeProductsCarousel(
           title: title?.trim().isNotEmpty == true
               ? title!.trim()
               : S.recommendations,
-          subtitle: !hasWeather
+          subtitle: hasPurchaseHistory && hasWeather
+              ? S.purchaseAndWeatherPicks
+              : hasPurchaseHistory
+              ? S.purchaseBasedPicks
+              : !hasWeather
               ? null
               : weather.isHot
               ? S.hotDayPicks
@@ -50,6 +55,7 @@ class HomeRecommendationsSection extends StatelessWidget {
           products: home.recommendations(
             weather: weather,
             favoriteIds: favoriteIds,
+            purchaseCategoryCounts: home.purchaseCategoryCounts,
           ),
           maxItems: maxItems,
           showPrice: showPrice,

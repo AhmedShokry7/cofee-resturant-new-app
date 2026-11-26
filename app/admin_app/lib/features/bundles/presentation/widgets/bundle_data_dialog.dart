@@ -11,6 +11,7 @@ import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
+import 'package:admin_app/shared/widgets/currency_input_row.dart';
 import 'package:admin_app/shared/widgets/admin_create_button.dart';
 import 'package:admin_app/features/bundles/domain/entities/admin_bundle.dart';
 import 'package:admin_app/features/bundles/presentation/manager/admin_bundle_cubit.dart';
@@ -457,15 +458,19 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
               Row(
                 children: [
                   Expanded(
-                    child: TextField(
-                      controller: _priceController,
-                      decoration: InputDecoration(
-                        labelText: S.bundlePrice,
-                        hintText: S.bundlePriceHint,
-                        suffixIcon: const CurrencyIcon(size: 10),
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
+                    child: CurrencyInputRow(
+                      child: TextField(
+                        controller: _priceController,
+                        decoration: InputDecoration(
+                          labelText: S.bundlePrice,
+                          hintText: S.bundlePriceHint,
+                          constraints: const BoxConstraints(
+                            minHeight: AppSizes.px48,
+                          ),
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                       ),
                     ),
                   ),

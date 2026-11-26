@@ -51,6 +51,7 @@ class AdminSidebar extends StatelessWidget {
       'payments',
       'visualEditor',
       'notifications',
+      'eventRequests',
       'more',
     };
     final visible = destinations

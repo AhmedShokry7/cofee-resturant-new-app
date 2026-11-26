@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -6,6 +6,7 @@ import 'package:new_coffee/features/addresses/presentation/manager/addresses/add
 import 'package:new_coffee/features/addresses/presentation/views/widgets/address_form_body.dart';
 import 'package:new_coffee/features/addresses/data/model/address_model.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 /// Add or edit one saved address.
 ///
@@ -23,6 +24,7 @@ class AddressFormPage extends StatelessWidget {
     return AuthGuard(
       child: Scaffold(
         appBar: AppBar(
+          leading: const AppBackButton(),
           title: Text(existing == null ? S.enterLocation : S.editAddress),
         ),
         body: AddressFormBody(

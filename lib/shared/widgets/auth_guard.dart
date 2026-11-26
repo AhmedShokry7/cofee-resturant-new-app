@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -43,13 +44,13 @@ class AuthRequiredView extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm),
               Text(S.signInOrCreateAccount),
               const SizedBox(height: AppSpacing.lg),
-              ElevatedButton(
+              CustomFilledButton(
                 onPressed: () =>
                     Navigator.of(context)
                         .pushNamed(AuthPage.routeName, arguments: originRoute),
                 child: Text(S.signIn),
               ),
-              TextButton(
+              CustomTextButton(
                 onPressed: () => Navigator.of(context)
                     .pushNamed(SignUpPage.routeName, arguments: originRoute),
                 child: Text(S.createAccount),

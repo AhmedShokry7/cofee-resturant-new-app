@@ -9,6 +9,7 @@ class DiningTableDraft {
     this.area = 'hall',
     this.capacity = 2,
     this.note = '',
+    this.imageUrl,
     this.sortOrder = 0,
     this.isActive = true,
   });
@@ -19,6 +20,7 @@ class DiningTableDraft {
   final String area;
   final int capacity;
   final String note;
+  final String? imageUrl;
   final int sortOrder;
   final bool isActive;
 
@@ -30,6 +32,7 @@ class DiningTableDraft {
       'area': area,
       'capacity': capacity,
       'note': note.trim(),
+      'image_url': imageUrl?.trim(),
       'sort_order': sortOrder,
       'is_active': isActive,
     };
@@ -43,6 +46,7 @@ class DiningTableDraft {
       area: table.area.value,
       capacity: table.capacity,
       note: table.note,
+      imageUrl: table.imageUrl,
       sortOrder: table.sortOrder,
       isActive: table.isActive,
     );

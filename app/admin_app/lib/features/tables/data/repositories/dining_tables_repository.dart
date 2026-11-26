@@ -30,7 +30,44 @@ class DiningTablesRepository implements DiningTableRepository {
         if (overview.branchId == null) {
           throw const DiningLoadException(DiningLoadFailure.noBranch);
         }
-        return overview;
+        final imageRows = await _supabase.rpc(
+          'admin_list_dining_table_images',
+          params: {'p_branch_id': overview.branchId},
+        );
+        final layoutRows = await _supabase.rpc(
+          'admin_list_dining_table_layout',
+          params: {'p_branch_id': overview.branchId},
+        );
+        final imageUrls = <String, String>{
+          for (final row in (imageRows as List? ?? const []).whereType<Map>())
+            if (row['image_url'] is String &&
+                (row['image_url'] as String).trim().isNotEmpty)
+              '${row['id']}': (row['image_url'] as String).trim(),
+        };
+        final positions = <String, (double, double)>{
+          for (final row in (layoutRows as List? ?? const []).whereType<Map>())
+            if (row['layout_x'] is num && row['layout_y'] is num)
+              '${row['id']}': (
+                (row['layout_x'] as num).toDouble(),
+                (row['layout_y'] as num).toDouble(),
+              ),
+        };
+        return DiningOverview(
+          branchId: overview.branchId,
+          branches: overview.branches,
+          tables: overview.tables
+              .map(
+                (table) => table.copyWith(
+                  imageUrl: imageUrls[table.id],
+                  clearImageUrl: !imageUrls.containsKey(table.id),
+                  layoutX: positions[table.id]?.$1,
+                  layoutY: positions[table.id]?.$2,
+                ),
+              )
+              .toList(growable: false),
+          reservations: overview.reservations,
+          metrics: overview.metrics,
+        );
       }
       throw const DiningLoadException(DiningLoadFailure.failed);
     } on DiningLoadException {
@@ -49,7 +86,19 @@ class DiningTablesRepository implements DiningTableRepository {
         'admin_save_dining_table',
         params: {'p_table': draft.toJson()},
       );
-      if (_isOk(response)) return DiningTableSaveOutcome.saved;
+      if (_isOk(response)) {
+        final image = await _supabase.rpc(
+          'admin_set_dining_table_image',
+          params: {
+            'p_branch_id': draft.branchId,
+            'p_name': draft.name.trim(),
+            'p_image_url': draft.imageUrl,
+          },
+        );
+        return _isOk(image)
+            ? DiningTableSaveOutcome.saved
+            : DiningTableSaveOutcome.failed;
+      }
       return switch (_reason(response)) {
         'invalid_name' => DiningTableSaveOutcome.invalidName,
         'invalid_area' => DiningTableSaveOutcome.invalidArea,
@@ -66,6 +115,35 @@ class DiningTablesRepository implements DiningTableRepository {
           : DiningTableSaveOutcome.failed;
     } catch (_) {
       return DiningTableSaveOutcome.failed;
+    }
+  }
+
+  @override
+  Future<DiningTableMutationOutcome> setTableLayoutPosition(
+    String tableId,
+    double x,
+    double y,
+  ) async {
+    try {
+      final response = await _supabase.rpc(
+        'admin_set_dining_table_layout_position',
+        params: {
+          'p_table_id': tableId,
+          'p_layout_x': x,
+          'p_layout_y': y,
+        },
+      );
+      if (_isOk(response)) return DiningTableMutationOutcome.success;
+      return switch (_reason(response)) {
+        'not_found' => DiningTableMutationOutcome.notFound,
+        _ => DiningTableMutationOutcome.failed,
+      };
+    } on PostgrestException catch (error) {
+      return error.code == '42501'
+          ? DiningTableMutationOutcome.permissionDenied
+          : DiningTableMutationOutcome.failed;
+    } catch (_) {
+      return DiningTableMutationOutcome.failed;
     }
   }
 

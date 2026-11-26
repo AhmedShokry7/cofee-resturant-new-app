@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -17,15 +18,21 @@ class HomeSectionLink extends StatelessWidget {
       label: label,
       child: Material(
         color: AppColor.transparent,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadius.r6),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(AppRadius.r6),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xs,
+              vertical: AppSpacing.px3,
+            ),
             decoration: BoxDecoration(
-              border: Border.all(color: AppColor.greyColor, width: 1),
-              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: AppColor.greyColor,
+                width: AppSizes.px1,
+              ),
+              borderRadius: BorderRadius.circular(AppRadius.r6),
             ),
             child: Text(
               label,

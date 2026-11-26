@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 
 /// Every colour in the app, and the only file allowed to write one.
 ///
@@ -37,6 +37,8 @@ class AppColor {
   static const _grey = Color(0xff797979);
   static const _lightGrey = Color(0xffF5F5F5);
   static const _black = Color(0xff000000);
+  static const blackDefault = _black;
+  static const inkDefault = Color(0xff1A1A1A);
   static Color get greyColor => isDarkMode ? darkTextSecondary : _grey;
   static Color get lightGreyColor => isDarkMode ? darkCard : _lightGrey;
   static Color get blackColor => isDarkMode ? darkText : _black;
@@ -95,6 +97,7 @@ class AppColor {
 
   /// The veil over a photo that carries text or a mark on top of it.
   static const Color photoScrim = Color(0x59000000);
+  static const Color subtleOverlay = Color(0x11000000);
 
   // State
   static const greenColor = Color.fromARGB(255, 1, 116, 1);

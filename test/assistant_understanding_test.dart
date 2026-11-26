@@ -160,6 +160,25 @@ void main() {
       }
     });
 
+    test('general coffee education never becomes a menu order', () {
+      for (final question in [
+        'مين اخترع الإسبريسو؟',
+        'إزاي أعمل كابتشينو في البيت؟',
+      ]) {
+        final reading = read(question);
+        expect(
+          reading.deviceIntent,
+          isNot(AssistantIntent.placeOrder),
+          reason: 'an informational question is not an order: $question',
+        );
+        expect(
+          reading.owner,
+          isNot(AnswerOwner.liveData),
+          reason: 'the menu is not a source for general information: $question',
+        );
+      }
+    });
+
     test('a price complaint is answered by the app', () {
       expect(read('السعر غالي شوية').owner, AnswerOwner.liveData);
     });

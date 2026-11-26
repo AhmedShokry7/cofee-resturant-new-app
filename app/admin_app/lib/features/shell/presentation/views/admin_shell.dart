@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:admin_app/core/auth/admin_session.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
@@ -10,6 +12,9 @@ import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/audit/presentation/pages/audit_log_page.dart';
 import 'package:admin_app/features/ai_knowledge/presentation/pages/ai_knowledge_page.dart';
+import 'package:admin_app/features/admin_assistant/presentation/manager/admin_assistant_cubit.dart';
+import 'package:admin_app/features/admin_assistant/presentation/widgets/admin_assistant_panel.dart';
+import 'package:admin_app/features/admin_assistant/presentation/widgets/assistant_launcher_button.dart';
 import 'package:admin_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:admin_app/features/auth/presentation/bloc/auth_event.dart';
 import 'package:admin_app/features/banners/presentation/pages/banner_page.dart';
@@ -58,6 +63,7 @@ import 'package:admin_app/features/staff/presentation/pages/staff_page.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/pages/subscription_plan_page.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/pages/subscription_admin_page.dart';
 import 'package:admin_app/features/tables/presentation/pages/tables_page.dart';
+import 'package:admin_app/features/tables/presentation/pages/event_requests_page.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_feature_placeholder.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
@@ -96,6 +102,8 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
   /// widget only when it becomes the visible one again.
   final Set<String> _visitedIds = <String>{};
 
+  bool _assistantOpen = false;
+
   /// The page a destination built last, and the locale it was built under.
   /// A cached page is reused untouched while its locale stands, so counter
   /// updates and language-independent shell rebuilds never re-walk a page.
@@ -110,6 +118,10 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
       watchOrders: widget.session.hasPermission('orders.read'),
       watchKitchen: widget.session.hasPermission('kitchen.read'),
       watchNotifications: widget.session.hasPermission('notifications.read'),
+      watchEventRequests:
+          widget.session.hasPermission('tables.read') ||
+          widget.session.hasPermission('tables.manage') ||
+          widget.session.isOwner,
     );
   }
 
@@ -169,6 +181,23 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
       _searchTextController.clear();
     });
     _navCubit.refresh();
+  }
+
+  /// يختار قسمًا بعد التأكد أن المستخدم مخوّل لرؤيته.
+  bool _canSelect(String id) => _destinations.any((item) => item.id == id);
+
+  /// يفتح قسم الطلبات مفلترًا بالطلب الذي اختاره المشرف من لوحة التحكم.
+  void _openDashboardOrder(String orderNumber) {
+    if (!_canSelect('orders')) return;
+    _select('orders');
+    _searchController.update(orderNumber);
+  }
+
+  /// يفتح قسم المنتجات مفلترًا باسم المنتج الذي اختاره المشرف من لوحة التحكم.
+  void _openDashboardProduct(String query) {
+    if (!_canSelect('products')) return;
+    _select('products');
+    _searchController.update(query);
   }
 
   /// يفتح حوار أحجام مشروب واحد وإضافاته من أي بطاقة منتج.
@@ -342,6 +371,12 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
               widget.session.hasPermission('tables.manage') ||
               widget.session.isOwner,
         );
+      case 'eventRequests':
+        return EventRequestsPage(
+          canManage:
+              widget.session.hasPermission('tables.manage') ||
+              widget.session.isOwner,
+        );
       case 'inventory':
         return InventoryPage(
           searchController: _searchController,
@@ -500,6 +535,7 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
         if (counts.unreadKitchen > 0) 'kitchen': counts.unreadKitchen,
         if (counts.unreadNotifications > 0)
           'notifications': counts.unreadNotifications,
+        if (counts.eventRequests > 0) 'eventRequests': counts.eventRequests,
       },
     );
   }
@@ -535,20 +571,67 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
     );
     final content = AdminProductOptionsHost(
       onOpen: canPriceProducts ? _openProductOptions : null,
-      child: AdminNavigator(onSelect: _select, child: _buildContent()),
+      child: AdminNavigator(
+        onSelect: _select,
+        onOpenOrder: _openDashboardOrder,
+        onOpenProduct: _openDashboardProduct,
+        child: _buildContent(),
+      ),
     );
 
+    final Widget layout;
     if (isWide) {
-      return AdminDesktopLayout(
+      layout = AdminDesktopLayout(
         data: data,
         content: content,
         collapseSidebar:
             _selected?.immersive == true && width < _immersiveMinWidth,
         fullWidthContent: _selected?.immersive == true,
       );
+    } else {
+      layout = AdminMobileLayout(data: data, content: content);
     }
 
-    return AdminMobileLayout(data: data, content: content);
+    final size = MediaQuery.sizeOf(context);
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    final panelWidth = math
+        .min(size.width - 24, 420.0)
+        .clamp(0.0, 420.0)
+        .toDouble();
+    final panelHeight = math
+        .min(size.height - keyboardInset - 112, 620.0)
+        .clamp(120.0, 620.0)
+        .toDouble();
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        layout,
+        if (_assistantOpen)
+          PositionedDirectional(
+            end: 16,
+            bottom: 78 + keyboardInset,
+            child: SizedBox(
+              width: panelWidth,
+              height: panelHeight,
+              child: BlocProvider(
+                create: (_) => AdminAssistantCubit(session: widget.session),
+                child: AdminAssistantPanel(
+                  session: widget.session,
+                  onClose: () => setState(() => _assistantOpen = false),
+                ),
+              ),
+            ),
+          ),
+        PositionedDirectional(
+          end: 20,
+          bottom: 20,
+          child: AssistantLauncherButton(
+            tooltip: S.adminAssistantOpen,
+            onPressed: () => setState(() => _assistantOpen = !_assistantOpen),
+          ),
+        ),
+      ],
+    );
   }
 }
 

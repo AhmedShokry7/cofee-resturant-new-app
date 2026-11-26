@@ -1,16 +1,14 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
 import 'package:new_coffee/features/categories/presentation/views/categories_page.dart';
 import 'package:new_coffee/features/categories/presentation/views/widgets/categories_document_sections.dart';
 import 'package:new_coffee/features/categories/presentation/views/widgets/category_tabs.dart';
 import 'package:new_coffee/features/design/data/model/published_design.dart';
-import 'package:new_coffee/features/design/data/repositories/design_repository.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
-import 'package:new_coffee/features/design/presentation/manager/design/design_state.dart';
+
 import 'support/fake_design_repository.dart';
 import 'support/mock_product_repository.dart';
 
@@ -49,9 +47,7 @@ Future<void> _pump(
   final catalog = MockProductRepository();
   final categories = CategoriesCubit(repository: catalog);
   addTearDown(categories.close);
-  final designCubit = DesignCubit(
-    repository: FakeDesignRepository(design),
-  );
+  final designCubit = DesignCubit(repository: FakeDesignRepository(design));
   addTearDown(designCubit.close);
 
   await tester.pumpWidget(
@@ -91,16 +87,15 @@ void main() {
     },
   );
 
-  testWidgets(
-    'no categories page in the document keeps the screen as it was',
-    (tester) async {
-      await _pump(tester, design: PublishedDesign.none);
+  testWidgets('no categories page in the document keeps the screen as it was', (
+    tester,
+  ) async {
+    await _pump(tester, design: PublishedDesign.none);
 
-      // لا محتوى من المستند، والشاشة ترسم متصفّحها وحده.
-      expect(find.text('اختر ما يعجبك'), findsNothing);
-      expect(find.byType(CategoryTabs), findsOneWidget);
-    },
-  );
+    // لا محتوى من المستند، والشاشة ترسم متصفّحها وحده.
+    expect(find.text('اختر ما يعجبك'), findsNothing);
+    expect(find.byType(CategoryTabs), findsOneWidget);
+  });
 
   test('a document without a browser node still counts one', () {
     const document = <PublishedSection>[
@@ -108,16 +103,22 @@ void main() {
     ];
     // المتصفّح عنصر الشاشة الثابت: غيابه من المستند لا يعني حذفه من الشاشة.
     expect(categoriesDocumentHasBrowser(document), isFalse);
-    expect(categoriesDocumentHasBrowser(const [
-      PublishedSection(
-        id: 'b1',
-        type: 'section.category_list',
-        visible: false,
-      ),
-    ]), isFalse);
-    expect(categoriesDocumentHasBrowser(const [
-      PublishedSection(id: 'b2', type: 'section.category_list'),
-    ]), isTrue);
+    expect(
+      categoriesDocumentHasBrowser(const [
+        PublishedSection(
+          id: 'b1',
+          type: 'section.category_list',
+          visible: false,
+        ),
+      ]),
+      isFalse,
+    );
+    expect(
+      categoriesDocumentHasBrowser(const [
+        PublishedSection(id: 'b2', type: 'section.category_list'),
+      ]),
+      isTrue,
+    );
   });
 
   test('PublishedDesign reads and rewrites both pages', () {

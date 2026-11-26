@@ -12,6 +12,7 @@ class AdminSession extends Equatable {
     required this.fullName,
     required this.email,
     required this.status,
+    this.avatarUrl,
     required this.roles,
     required this.permissionScopes,
     required this.canManageAllBranches,
@@ -21,6 +22,7 @@ class AdminSession extends Equatable {
   final String fullName;
   final String email;
   final String status;
+  final String? avatarUrl;
   final List<AdminRoleScope> roles;
   final List<AdminPermissionScope> permissionScopes;
   final bool canManageAllBranches;
@@ -42,6 +44,7 @@ class AdminSession extends Equatable {
     fullName,
     email,
     status,
+    avatarUrl,
     roles,
     permissionScopes,
     canManageAllBranches,

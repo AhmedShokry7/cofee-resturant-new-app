@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
@@ -398,7 +398,9 @@ class _OptionGroupSection extends StatelessWidget {
                       child: _ValueChip(
                         label: _label(value),
                         hint: _delta(value),
-                        selected: selection.inGroup(group.id).contains(value.id),
+                        selected: selection
+                            .inGroup(group.id)
+                            .contains(value.id),
                         icon: showCupArt
                             ? CupIcon(
                                 size: CupSize.fromCode(value.code),
@@ -459,7 +461,7 @@ class _ValueChip extends StatelessWidget {
         ? AppColor.darkSurface
         : AppColor.whiteColor;
     return Material(
-      color: Colors.transparent,
+      color: AppColor.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
@@ -529,7 +531,7 @@ class _ValueTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.transparent,
+      color: AppColor.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppDimensions.cardRadius),

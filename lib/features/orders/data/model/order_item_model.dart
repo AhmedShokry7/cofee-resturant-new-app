@@ -31,6 +31,7 @@ class OrderItemModel {
     this.deliveryZoneNameEn,
     this.deliveryAddressLabel,
     this.deliveryAddressDetails,
+    this.deliveryEstimatedMinutes,
     this.currencyCode = 'SAR',
     this.subtotal,
     this.discountTotal,
@@ -106,6 +107,7 @@ class OrderItemModel {
   /// address book, so editing or archiving an address cannot rewrite history.
   final String? deliveryAddressLabel;
   final String? deliveryAddressDetails;
+  final int? deliveryEstimatedMinutes;
 
   /// Whether this order is delivered rather than collected.
   bool get isDelivery => fulfillmentType == 'delivery';
@@ -197,6 +199,9 @@ class OrderItemModel {
       deliveryZoneNameEn: Db.textOrNull(snapshot['zone_name_en']),
       deliveryAddressLabel: Db.textOrNull(snapshot['label']),
       deliveryAddressDetails: Db.textOrNull(snapshot['details']),
+      deliveryEstimatedMinutes: Db.asIntOrNull(
+        snapshot['estimated_delivery_minutes'],
+      ),
       currencyCode: Db.text(orderMap['currency_code'], 'SAR'),
       subtotal: Db.asDoubleOrNull(orderMap['subtotal']),
       discountTotal: Db.asDoubleOrNull(orderMap['discount_total']),

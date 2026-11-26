@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
@@ -131,14 +131,39 @@ class ProductCard extends StatelessWidget {
                       style: AppFonts.semiBold16(context),
                     ),
                     SizedBox(height: AppSpacing.xs),
-                    Text(
-                      product.category.trim().isEmpty
-                          ? product.description
-                          : product.category,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppFonts.regular12(context)
-                          .copyWith(color: AppColor.textSecondary),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            product.category.trim().isEmpty
+                                ? product.description
+                                : product.category,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppFonts.regular12(context)
+                                .copyWith(color: AppColor.textSecondary),
+                          ),
+                        ),
+                        if (product.reviewCount > 0) ...[
+                          SizedBox(width: AppSpacing.xs),
+                          Icon(
+                            AppIcons.star,
+                            size: AppSizes.px14,
+                            color: AppColor.primaryColor,
+                          ),
+                          SizedBox(width: AppSizes.px2),
+                          Text(
+                            product.averageRating.toStringAsFixed(1),
+                            style: AppFonts.medium12(context)
+                                .copyWith(color: AppColor.textPrimary),
+                          ),
+                          Text(
+                            ' (${product.reviewCount})',
+                            style: AppFonts.regular12(context)
+                                .copyWith(color: AppColor.textSecondary),
+                          ),
+                        ],
+                      ],
                     ),
                     SizedBox(height: AppSizes.px6),
                     Row(

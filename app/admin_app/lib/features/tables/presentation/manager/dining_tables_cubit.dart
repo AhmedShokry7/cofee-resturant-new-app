@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:admin_app/core/services/supabase_service.dart';
 
 import 'package:admin_app/core/models/dining_enums.dart';
 import 'package:admin_app/features/tables/di/tables_dependencies.dart';
@@ -19,7 +20,8 @@ class DiningTablesCubit extends Cubit<DiningTablesState> {
     : this._withUseCases(repository ?? TablesDependencies.repository);
 
   DiningTablesCubit._withUseCases(DiningTableRepository repository)
-    : _loadOverview = LoadOverviewUseCase(repository),
+    : _repository = repository,
+      _loadOverview = LoadOverviewUseCase(repository),
       _saveTable = SaveTableUseCase(repository),
       _setTableActive = SetTableActiveUseCase(repository),
       _deleteTable = DeleteTableUseCase(repository),
@@ -27,6 +29,7 @@ class DiningTablesCubit extends Cubit<DiningTablesState> {
       _setReservationStatus = SetReservationStatusUseCase(repository),
       super(const DiningTablesState());
 
+  final DiningTableRepository _repository;
   final LoadOverviewUseCase _loadOverview;
   final SaveTableUseCase _saveTable;
   final SetTableActiveUseCase _setTableActive;
@@ -79,6 +82,16 @@ class DiningTablesCubit extends Cubit<DiningTablesState> {
     return outcome;
   }
 
+  Future<DiningTableMutationOutcome> setTableLayoutPosition(
+    String tableId,
+    double x,
+    double y,
+  ) async {
+    final outcome = await _repository.setTableLayoutPosition(tableId, x, y);
+    if (outcome == DiningTableMutationOutcome.success) await _fetch();
+    return outcome;
+  }
+
   Future<DiningTableMutationOutcome> setTableActive(
     String tableId,
     bool active,
@@ -128,12 +141,30 @@ class DiningTablesCubit extends Cubit<DiningTablesState> {
     try {
       final overview = await _loadOverview(branchId: state.branchId);
       if (isClosed || request != _requestId) return;
+      List<Map<String, dynamic>> eventRequests = const [];
+      try {
+        final rows = await SupabaseService.client.rpc(
+          'admin_list_customer_event_requests',
+          // On the first load state.branchId is null; the overview resolves
+          // the staff's default branch. Use that resolved id or the RPC rejects
+          // the request and the catch below makes the list look empty.
+          params: {'p_branch_id': overview.branchId},
+        );
+        eventRequests = (rows as List? ?? const [])
+            .whereType<Map>()
+            .map((row) => Map<String, dynamic>.from(row))
+            .toList();
+      } catch (_) {
+        // The floor stays usable when event-request permission is not granted.
+      }
+      if (isClosed || request != _requestId) return;
 
       emit(
         state.copyWith(
           status: DiningStatus.ready,
           tables: overview.tables,
           reservations: overview.reservations,
+          eventRequests: eventRequests,
           branches: overview.branches,
           metrics: overview.metrics,
           branchId: overview.branchId,
@@ -145,6 +176,68 @@ class DiningTablesCubit extends Cubit<DiningTablesState> {
       _failFetch(request, error.failure);
     } catch (_) {
       _failFetch(request, DiningLoadFailure.failed);
+    }
+  }
+
+  Future<bool> offerEventRequest({
+    required String id,
+    required double amount,
+    required List<String> spaceIds,
+    required DateTime startAt,
+    required DateTime endAt,
+    String? note,
+  }) async {
+    try {
+      final result = await SupabaseService.client.rpc(
+        'admin_offer_customer_event_request_options',
+        params: {
+          'p_id': id,
+          'p_quote_amount': amount,
+          'p_space_ids': spaceIds,
+          'p_quoted_start_at': startAt.toUtc().toIso8601String(),
+          'p_quoted_end_at': endAt.toUtc().toIso8601String(),
+          'p_quote_note': note,
+        },
+      );
+      if (result is Map && result['ok'] == true) {
+        await _fetch();
+        return true;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> rejectEventRequest(String id, {String? note}) async {
+    try {
+      final result = await SupabaseService.client.rpc(
+        'admin_reject_customer_event_request',
+        params: {'p_id': id, 'p_note': note},
+      );
+      if (result is Map && result['ok'] == true) {
+        await _fetch();
+        return true;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteEventRequest(String id) async {
+    try {
+      final result = await SupabaseService.client.rpc(
+        'admin_delete_customer_event_request',
+        params: {'p_id': id},
+      );
+      if (result is Map && result['ok'] == true) {
+        await _fetch();
+        return true;
+      }
+      return false;
+    } catch (_) {
+      return false;
     }
   }
 

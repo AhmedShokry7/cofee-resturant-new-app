@@ -271,6 +271,36 @@ class AssistantUnderstanding {
     'cannot find',
   ];
 
+  /// Questions about the origin, history, or preparation of a named drink are
+  /// informational even though the drink is also a menu item. Without this
+  /// distinction, the order parser's default quantity of one turns a question
+  /// such as "who invented espresso?" into a fabricated order draft.
+  static const List<String> generalInformationPhrases = [
+    'مين اخترع',
+    'من اخترع',
+    'من هو',
+    'من هي',
+    'تاريخ',
+    'اصل',
+    'معنى',
+    'اشرح',
+    'علمني',
+    'طريقة عمل',
+    'طريقة تحضير',
+    'كيف اعمل',
+    'كيف اسوي',
+    'ازاي اعمل',
+    'ازاي اسوي',
+    'في البيت',
+    'who invented',
+    'who created',
+    'history of',
+    'origin of',
+    'how to make',
+    'recipe',
+    'at home',
+  ];
+
   final AssistantIntent intent;
   final SentenceSubject subject;
   final AnswerOwner owner;
@@ -428,6 +458,7 @@ class AssistantUnderstanding {
       return decide(AnswerOwner.liveData, 'recommendation');
     }
     if (intent == AssistantIntent.placeOrder &&
+        !mentionsFragment(query, generalInformationPhrases) &&
         !mentionsWord(query, interrogativeWords)) {
       return decide(AnswerOwner.liveData, 'order-flow');
     }
@@ -595,6 +626,9 @@ class AssistantUnderstanding {
       return SentenceSubject.cart;
     }
     if (menuLacksIngredient) return SentenceSubject.ingredient;
+    if (namesMenuItem && mentionsFragment(query, generalInformationPhrases)) {
+      return matchesFact ? SentenceSubject.shopFact : SentenceSubject.none;
+    }
     if (namesMenuItem) return SentenceSubject.menuItem;
     // A search and a fact question share their words ("حاجة باردة" matches the
     // iced-coffee article but asks for a pick), so the ask is checked first.

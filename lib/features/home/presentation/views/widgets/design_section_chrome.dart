@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/features/design/data/model/published_design.dart';
 
@@ -15,20 +17,44 @@ import 'package:new_coffee/features/design/data/model/published_design.dart';
 /// خطأ تخطيطي — موضعه الوحيد الصفّ (`section.row`) الذي يغلّف أبناءه بـ
 /// `Expanded` عند طلب المرونة.
 class DesignSectionChrome extends StatelessWidget {
-  const DesignSectionChrome({super.key, required this.section, required this.child});
+  const DesignSectionChrome({
+    super.key,
+    required this.section,
+    required this.child,
+  });
 
   final PublishedSection section;
   final Widget child;
 
   static bool needsChrome(PublishedSection section) {
     const keys = [
-      'width', 'minWidth', 'maxWidth', 'height', 'minHeight', 'maxHeight',
-      'padTop', 'padBottom', 'padLeft', 'padRight',
-      'marginTop', 'marginBottom', 'marginLeft', 'marginRight',
-      'backgroundColor', 'borderColor', 'borderWidth',
-      'radiusTL', 'radiusTR', 'radiusBL', 'radiusBR',
-      'shadowColor', 'shadowOffsetX', 'shadowOffsetY', 'shadowBlur',
-      'opacity', 'aspectRatio',
+      'width',
+      'minWidth',
+      'maxWidth',
+      'height',
+      'minHeight',
+      'maxHeight',
+      'padTop',
+      'padBottom',
+      'padLeft',
+      'padRight',
+      'marginTop',
+      'marginBottom',
+      'marginLeft',
+      'marginRight',
+      'backgroundColor',
+      'borderColor',
+      'borderWidth',
+      'radiusTL',
+      'radiusTR',
+      'radiusBL',
+      'radiusBR',
+      'shadowColor',
+      'shadowOffsetX',
+      'shadowOffsetY',
+      'shadowBlur',
+      'opacity',
+      'aspectRatio',
     ];
     for (final key in keys) {
       final value = section.properties[key];
@@ -71,13 +97,16 @@ class DesignSectionChrome extends StatelessWidget {
     final padRight = section.numberProperty('padRight');
     final padTop = section.numberProperty('padTop');
     final padBottom = section.numberProperty('padBottom');
-    if (padLeft != null || padRight != null || padTop != null || padBottom != null) {
+    if (padLeft != null ||
+        padRight != null ||
+        padTop != null ||
+        padBottom != null) {
       current = Padding(
         padding: EdgeInsets.only(
-          left: padLeft ?? 0,
-          right: padRight ?? 0,
-          top: padTop ?? 0,
-          bottom: padBottom ?? 0,
+          left: padLeft ?? AppSpacing.none,
+          right: padRight ?? AppSpacing.none,
+          top: padTop ?? AppSpacing.none,
+          bottom: padBottom ?? AppSpacing.none,
         ),
         child: current,
       );
@@ -86,11 +115,15 @@ class DesignSectionChrome extends StatelessWidget {
     final background = _hexColor(section.property('backgroundColor'));
     final borderColor = _hexColor(section.property('borderColor'));
     final borderWidth = section.numberProperty('borderWidth');
-    final hasRadius = section.properties.containsKey('radiusTL') ||
+    final hasRadius =
+        section.properties.containsKey('radiusTL') ||
         section.properties.containsKey('radiusTR') ||
         section.properties.containsKey('radiusBL') ||
         section.properties.containsKey('radiusBR');
-    if (background != null || borderColor != null || hasRadius || section.properties.containsKey('shadowColor')) {
+    if (background != null ||
+        borderColor != null ||
+        hasRadius ||
+        section.properties.containsKey('shadowColor')) {
       final tl = section.numberProperty('radiusTL') ?? 0;
       final tr = section.numberProperty('radiusTR') ?? 0;
       final bl = section.numberProperty('radiusBL') ?? 0;
@@ -107,7 +140,7 @@ class DesignSectionChrome extends StatelessWidget {
         borderRadius: radius,
         border: (borderColor != null || borderWidth != null)
             ? Border.all(
-                color: borderColor ?? const Color(0xFF000000),
+                color: borderColor ?? AppColor.blackDefault,
                 width: borderWidth ?? 1,
               )
             : null,
@@ -134,17 +167,21 @@ class DesignSectionChrome extends StatelessWidget {
 
     // البانران يملكان ارتفاعًا ذاتيًا (ارتفاع الشرائح) يُدار من خاصية
     // `height` نفسها: تكبيره هنا يضاعف الارتفاع ويخرج النقاط من الإطار.
-    final structuralHeight = section.type == 'section.banner_carousel' ||
+    final structuralHeight =
+        section.type == 'section.banner_carousel' ||
         section.type == 'section.promo_banner';
     final width = section.numberProperty('width');
-    final height = structuralHeight
-        ? null
-        : section.numberProperty('height');
+    final height = structuralHeight ? null : section.numberProperty('height');
     final minWidth = section.numberProperty('minWidth');
     final maxWidth = section.numberProperty('maxWidth');
     final minHeight = section.numberProperty('minHeight');
     final maxHeight = section.numberProperty('maxHeight');
-    if (width != null || height != null || minWidth != null || maxWidth != null || minHeight != null || maxHeight != null) {
+    if (width != null ||
+        height != null ||
+        minWidth != null ||
+        maxWidth != null ||
+        minHeight != null ||
+        maxHeight != null) {
       current = ConstrainedBox(
         constraints: BoxConstraints(
           minWidth: minWidth ?? 0,
@@ -163,10 +200,10 @@ class DesignSectionChrome extends StatelessWidget {
     if (mLeft != null || mRight != null || mTop != null || mBottom != null) {
       current = Padding(
         padding: EdgeInsets.only(
-          left: mLeft ?? 0,
-          right: mRight ?? 0,
-          top: mTop ?? 0,
-          bottom: mBottom ?? 0,
+          left: mLeft ?? AppSpacing.none,
+          right: mRight ?? AppSpacing.none,
+          top: mTop ?? AppSpacing.none,
+          bottom: mBottom ?? AppSpacing.none,
         ),
         child: current,
       );

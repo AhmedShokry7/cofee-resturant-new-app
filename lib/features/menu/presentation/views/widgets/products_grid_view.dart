@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_card.dart';
@@ -13,6 +13,10 @@ class ProductsGridView extends StatefulWidget {
     this.shrinkWrap = false,
     this.physics,
     this.pageSize = 10,
+    this.hasMore = false,
+    this.isLoadingMore = false,
+    this.onLoadMore,
+    this.resetKey,
   });
 
   final List<ProductModel> products;
@@ -20,6 +24,10 @@ class ProductsGridView extends StatefulWidget {
   final bool shrinkWrap;
   final ScrollPhysics? physics;
   final int pageSize;
+  final bool hasMore;
+  final bool isLoadingMore;
+  final VoidCallback? onLoadMore;
+  final String? resetKey;
 
   @override
   State<ProductsGridView> createState() => _ProductsGridViewState();
@@ -28,6 +36,7 @@ class ProductsGridView extends StatefulWidget {
 class _ProductsGridViewState extends State<ProductsGridView> {
   late int _shown;
   late final ScrollController _controller;
+  bool _requestedMore = false;
 
   int get _total => widget.products.length;
   bool get _hasMore => _shown < _total;
@@ -53,9 +62,17 @@ class _ProductsGridViewState extends State<ProductsGridView> {
   @override
   void didUpdateWidget(covariant ProductsGridView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!_sameProducts(oldWidget.products, widget.products)) {
+    if (oldWidget.resetKey != widget.resetKey ||
+        !_isAppendOnly(oldWidget.products, widget.products)) {
       _shown = widget.pageSize;
+      _requestedMore = false;
       if (_controller.hasClients) _controller.jumpTo(0);
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _loadMoreIfContentTooShort(),
+      );
+    } else if (widget.products.length > oldWidget.products.length) {
+      _shown += widget.products.length - oldWidget.products.length;
+      _requestedMore = false;
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => _loadMoreIfContentTooShort(),
       );
@@ -63,23 +80,28 @@ class _ProductsGridViewState extends State<ProductsGridView> {
   }
 
   void _onScroll() {
-    if (!_controller.hasClients || !_hasMore) return;
+    if (!_controller.hasClients) return;
     final position = _controller.position;
     if (!position.hasViewportDimension ||
         !position.hasContentDimensions ||
         position.maxScrollExtent <= 0) {
       return;
     }
-    if (position.pixels >=
+    if (position.pixels <
         position.maxScrollExtent - AppDimensions.gridLoadMoreAhead) {
+      return;
+    }
+    if (_hasMore) {
       setState(() {
         _shown = (_shown + widget.pageSize).clamp(0, _total);
       });
+    } else {
+      _requestServerPage();
     }
   }
 
   void _loadMoreIfContentTooShort() {
-    if (!_controller.hasClients || !_hasMore) return;
+    if (!_controller.hasClients || (!_hasMore && !widget.hasMore)) return;
     final position = _controller.position;
     if (!position.hasViewportDimension || !position.hasContentDimensions) {
       WidgetsBinding.instance.addPostFrameCallback(
@@ -87,18 +109,31 @@ class _ProductsGridViewState extends State<ProductsGridView> {
       );
       return;
     }
-    if (position.maxScrollExtent <= 0) {
+    if (position.maxScrollExtent <= 0 && _hasMore) {
       setState(() {
         _shown = (_shown + widget.pageSize).clamp(0, _total);
       });
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => _loadMoreIfContentTooShort(),
       );
+    } else if (position.maxScrollExtent <= 0) {
+      _requestServerPage();
     }
   }
 
-  bool _sameProducts(List<ProductModel> a, List<ProductModel> b) {
-    if (a.length != b.length) return false;
+  void _requestServerPage() {
+    if (!widget.hasMore ||
+        widget.isLoadingMore ||
+        _requestedMore ||
+        widget.onLoadMore == null) {
+      return;
+    }
+    _requestedMore = true;
+    widget.onLoadMore!.call();
+  }
+
+  bool _isAppendOnly(List<ProductModel> a, List<ProductModel> b) {
+    if (b.length < a.length) return false;
     for (var i = 0; i < a.length; i++) {
       if (a[i].id != b[i].id) return false;
     }
@@ -138,12 +173,12 @@ class _ProductsGridViewState extends State<ProductsGridView> {
             ),
           ),
         ),
-        if (_hasMore)
+        if (_hasMore || widget.hasMore || widget.isLoadingMore)
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(
                 AppSpacing.lg,
-                0,
+                AppSpacing.none,
                 AppSpacing.lg,
                 AppSpacing.lg,
               ),

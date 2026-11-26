@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 
@@ -12,7 +12,7 @@ class WavyContainer extends StatelessWidget {
     super.key,
     required this.child,
     required this.curveHeight,
-    this.color = AppColor.whiteColor,
+    this.color,
     this.padding,
   });
 
@@ -28,7 +28,11 @@ class WavyContainer extends StatelessWidget {
 
   /// [curveHeight] is the depth this instance is drawn at.
   final double curveHeight;
-  final Color color;
+
+  /// The fill colour of the panel. When omitted, the panel matches the role
+  /// surface for the current theme (light → cardSurface, dark → darkCard),
+  /// so a missing value doesn't paint a bright card on top of a dark page.
+  final Color? color;
   final EdgeInsetsGeometry? padding;
 
   @override
@@ -36,7 +40,7 @@ class WavyContainer extends StatelessWidget {
     return ClipPath(
       clipper: WavyTopClipper(curveHeight: curveHeight),
       child: ColoredBox(
-        color: color,
+        color: color ?? AppColor.cardSurface,
         child: Padding(padding: padding ?? EdgeInsets.zero, child: child),
       ),
     );

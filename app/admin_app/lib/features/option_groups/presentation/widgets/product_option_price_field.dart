@@ -1,10 +1,11 @@
 import 'package:material_ui/material_ui.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
-import 'package:admin_app/shared/widgets/currency_icon.dart';
+import 'package:admin_app/shared/widgets/currency_input_row.dart';
 
 /// حقل زيادة خيار واحد لهذا المشروب وحده.
 ///
@@ -25,16 +26,18 @@ class ProductOptionPriceField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      key: ValueKey('product-option-price-$valueId'),
-      controller: controller,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      textAlign: TextAlign.start,
-      decoration: adminDialogFieldDecoration(
-        context,
-        label: S.ownDeltaLabel,
-        hint: localizeDigits(formatDelta(groupDelta)),
-      ).copyWith(suffix: const CurrencyIcon(size: 10)),
+    return CurrencyInputRow(
+      child: TextFormField(
+        key: ValueKey('product-option-price-$valueId'),
+        controller: controller,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        textAlign: TextAlign.start,
+        decoration: adminDialogFieldDecoration(
+          context,
+          label: S.ownDeltaLabel,
+          hint: localizeDigits(formatDelta(groupDelta)),
+        ).copyWith(constraints: const BoxConstraints(minHeight: AppSizes.px48)),
+      ),
     );
   }
 }

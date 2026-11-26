@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/addresses/presentation/views/widgets/address_form_body.dart';
 import 'package:new_coffee/features/addresses/data/model/address_model.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 /// The address editor reached from checkout.
 ///
@@ -22,6 +23,7 @@ class AddAddressPage extends StatelessWidget {
     final existing = argument is AddressModel ? argument : null;
     return Scaffold(
       appBar: AppBar(
+        leading: const AppBackButton(),
         title: Text(existing == null ? S.enterLocation : S.editAddress),
       ),
       body: AddressFormBody(

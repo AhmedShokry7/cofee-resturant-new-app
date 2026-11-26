@@ -33,7 +33,9 @@ List<CartLine> serverLinesForEntries(List<Map<String, dynamic>> entries) => [
         (entry['optionValueIds'] as List?)?.map((e) => e.toString()) ??
             const <String>[],
       ),
-      bundleId: entry['bundleId']?.toString(),
+      bundleId: entry['customerBundleId'] == null
+          ? entry['bundleId']?.toString()
+          : null,
       isBundle: entry['isBundle'] == true,
       productId: entry['productId']?.toString(),
       components: bundleComponentsOf(entry),
@@ -130,6 +132,67 @@ List<Map<String, dynamic>> mergeServerLines(
       (entry['optionValueIds'] as List?)?.map((e) => e.toString()) ??
           const <String>[],
     );
+    final customerBundleId = entry['customerBundleId']?.toString();
+    if (customerBundleId != null && customerBundleId.isNotEmpty) {
+      final requestedQuantity =
+          (entry['quantity'] as num?)?.toInt().clamp(
+            1,
+            CartLimits.maxQuantity,
+          ) ??
+          1;
+      final indexes = <int>[];
+      var complete = true;
+      for (final component in components) {
+        final index = remaining.indexWhere(
+          (line) =>
+              line.productId == component.productId &&
+              line.bundleId == null &&
+              line.note == note &&
+              sameOptionIds(line.optionValueIds, optionIds),
+        );
+        if (index == -1 ||
+            remaining[index].quantity <
+                component.quantity * requestedQuantity) {
+          complete = false;
+          break;
+        }
+        indexes.add(index);
+      }
+      if (!complete) continue;
+
+      final matched = [
+        for (var i = 0; i < components.length; i++)
+          remaining[indexes[i]].copyWith(
+            quantity: components[i].quantity * requestedQuantity,
+          ),
+      ];
+      final descending = List<int>.generate(indexes.length, (i) => i)
+        ..sort((a, b) => indexes[b].compareTo(indexes[a]));
+      for (final componentIndex in descending) {
+        final cartIndex = indexes[componentIndex];
+        final line = remaining.removeAt(cartIndex);
+        final used = components[componentIndex].quantity * requestedQuantity;
+        if (line.quantity > used) {
+          remaining.insert(
+            cartIndex,
+            line.copyWith(quantity: line.quantity - used),
+          );
+        }
+      }
+      var bundlePrice = 0.0;
+      for (var i = 0; i < matched.length; i++) {
+        bundlePrice +=
+            (matched[i].unitPrice ?? components[i].unitPrice) *
+            components[i].quantity;
+      }
+      merged.add({
+        ...entry,
+        'quantity': requestedQuantity,
+        'bundlePrice': bundlePrice,
+        'unitPrice': bundlePrice,
+      });
+      continue;
+    }
     final matched = <CartLine>[];
     var complete = true;
     for (final component in components) {

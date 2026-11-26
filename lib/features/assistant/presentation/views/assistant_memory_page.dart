@@ -1,5 +1,6 @@
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/design_text.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -12,6 +13,7 @@ import 'package:new_coffee/features/assistant/data/assistant_server_memory.dart'
 import 'package:new_coffee/features/assistant/presentation/manager/assistant_memory/assistant_memory_cubit.dart';
 import 'package:new_coffee/features/assistant/presentation/views/widgets/assistant_memory_row.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 /// What the assistant has been allowed to keep about this customer.
 ///
@@ -45,7 +47,14 @@ class _AssistantMemoryView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: DesignText(S.assistantMemoryTitle, page: 'assistant_memory', label: 'assistantMemoryTitle')),
+      appBar: AppBar(
+        leading: const AppBackButton(),
+        title: DesignText(
+          S.assistantMemoryTitle,
+          page: 'assistant_memory',
+          label: 'assistantMemoryTitle',
+        ),
+      ),
       body: BlocBuilder<AssistantMemoryCubit, AssistantMemoryViewState>(
         builder: (context, state) {
           if (state.loading) {
@@ -109,10 +118,14 @@ class _AssistantMemoryView extends StatelessWidget {
                   ),
               SizedBox(height: AppSpacing.lg),
               if (state.memories.isNotEmpty)
-                TextButton.icon(
+                CustomTextButton.icon(
                   onPressed: () => _confirmErase(context, cubit),
                   icon: const Icon(AppIcons.delete),
-                  label: DesignText(S.assistantMemoryDeleteAll, page: 'assistant_memory', label: 'assistantMemoryDeleteAll'),
+                  label: DesignText(
+                    S.assistantMemoryDeleteAll,
+                    page: 'assistant_memory',
+                    label: 'assistantMemoryDeleteAll',
+                  ),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColor.errorColor,
                   ),
@@ -134,16 +147,32 @@ class _AssistantMemoryView extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: DesignText(S.assistantMemoryDeleteAll, page: 'assistant_memory', label: 'assistantMemoryDeleteAll'),
-        content: DesignText(S.assistantMemoryOffWarning, page: 'assistant_memory', label: 'assistantMemoryOffWarning'),
+        title: DesignText(
+          S.assistantMemoryDeleteAll,
+          page: 'assistant_memory',
+          label: 'assistantMemoryDeleteAll',
+        ),
+        content: DesignText(
+          S.assistantMemoryOffWarning,
+          page: 'assistant_memory',
+          label: 'assistantMemoryOffWarning',
+        ),
         actions: [
-          TextButton(
+          CustomTextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: DesignText(S.cancel, page: 'assistant_memory', label: 'cancel'),
+            child: DesignText(
+              S.cancel,
+              page: 'assistant_memory',
+              label: 'cancel',
+            ),
           ),
-          TextButton(
+          CustomTextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: DesignText(S.confirm, page: 'assistant_memory', label: 'confirm'),
+            child: DesignText(
+              S.confirm,
+              page: 'assistant_memory',
+              label: 'confirm',
+            ),
           ),
         ],
       ),
@@ -151,7 +180,13 @@ class _AssistantMemoryView extends StatelessWidget {
     if (confirmed != true) return;
     await cubit.eraseAll();
     messenger.showSnackBar(
-      SnackBar(content: DesignText(S.assistantMemoryDeletedAll, page: 'assistant_memory', label: 'assistantMemoryDeletedAll')),
+      SnackBar(
+        content: DesignText(
+          S.assistantMemoryDeletedAll,
+          page: 'assistant_memory',
+          label: 'assistantMemoryDeletedAll',
+        ),
+      ),
     );
   }
 }

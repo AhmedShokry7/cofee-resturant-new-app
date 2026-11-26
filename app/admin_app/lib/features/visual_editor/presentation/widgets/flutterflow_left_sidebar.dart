@@ -1,6 +1,5 @@
 import 'package:material_ui/material_ui.dart';
 
-import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
@@ -9,21 +8,12 @@ import 'package:admin_app/features/visual_editor/domain/component_registry.dart'
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 import 'package:admin_app/features/visual_editor/presentation/manager/visual_editor_cubit.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/component_tree_panel.dart';
-import 'package:admin_app/features/visual_editor/presentation/widgets/templates_dialog.dart';
-import 'package:admin_app/features/visual_editor/presentation/widgets/theme_studio_dialog.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_image_asset_picker.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_theme_tokens.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_toolbar.dart';
 
 /// تبويبات الشريط الجانبي الأيسر بأسلوب FlutterFlow
-enum FlutterFlowLeftTab {
-  layers,
-  pages,
-  components,
-  theme,
-  assets,
-  templates,
-}
+enum FlutterFlowLeftTab { layers, pages, components, theme, assets, templates }
 
 /// الشريط الجانبي الأيسر المتكامل بنمط FlutterFlow:
 /// يجمع بين شريط التنقل الرأسي (Icon Rail) ومساحة العمل المتغيرة
@@ -90,15 +80,10 @@ class _FlutterFlowLeftSidebarState extends State<FlutterFlowLeftSidebar> {
             _buildNavigationRail(context),
 
             // فاصل خفيف
-            Container(
-              width: 1,
-              color: VisualEditorTokens.border(context),
-            ),
+            Container(width: 1, color: VisualEditorTokens.border(context)),
 
             // 2. مساحة محتوى الأداة النشطة (Layers / Pages / Components)
-            Expanded(
-              child: _buildActiveWorkspace(context),
-            ),
+            Expanded(child: _buildActiveWorkspace(context)),
           ],
         ),
       ),
@@ -366,7 +351,9 @@ class _FlutterFlowLeftSidebarState extends State<FlutterFlowLeftSidebar> {
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: VisualEditorTokens.primaryOliveGreen.withValues(alpha: 0.15),
+                  color: VisualEditorTokens.primaryOliveGreen.withValues(
+                    alpha: 0.15,
+                  ),
                   borderRadius: BorderRadius.circular(7),
                 ),
                 child: const Icon(
@@ -426,21 +413,27 @@ class _FlutterFlowLeftSidebarState extends State<FlutterFlowLeftSidebar> {
                 vertical: 8,
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
+                borderRadius: BorderRadius.circular(
+                  VisualEditorTokens.radiusSm,
+                ),
                 borderSide: BorderSide(
                   color: VisualEditorTokens.border(context),
                   width: 0.8,
                 ),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
+                borderRadius: BorderRadius.circular(
+                  VisualEditorTokens.radiusSm,
+                ),
                 borderSide: BorderSide(
                   color: VisualEditorTokens.border(context),
                   width: 0.8,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
+                borderRadius: BorderRadius.circular(
+                  VisualEditorTokens.radiusSm,
+                ),
                 borderSide: const BorderSide(
                   color: VisualEditorTokens.primaryOliveGreen,
                   width: 1.2,
@@ -456,16 +449,19 @@ class _FlutterFlowLeftSidebarState extends State<FlutterFlowLeftSidebar> {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             children: [
-              for (final (catTitle, catIcon, pageIds) in editorPageCategories) ...[
+              for (final (catTitle, catIcon, pageIds)
+                  in editorPageCategories) ...[
                 () {
                   final filtered = pageIds
                       .map(EditorPages.findById)
                       .whereType<EditorPage>()
-                      .where((p) =>
-                          query.isEmpty ||
-                          p.label.toLowerCase().contains(query) ||
-                          p.pageId.toLowerCase().contains(query) ||
-                          p.routeName.toLowerCase().contains(query))
+                      .where(
+                        (p) =>
+                            query.isEmpty ||
+                            p.label.toLowerCase().contains(query) ||
+                            p.pageId.toLowerCase().contains(query) ||
+                            p.routeName.toLowerCase().contains(query),
+                      )
                       .toList();
 
                   if (filtered.isEmpty) return const SizedBox.shrink();
@@ -474,7 +470,12 @@ class _FlutterFlowLeftSidebarState extends State<FlutterFlowLeftSidebar> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
-                        padding: const EdgeInsetsDirectional.fromSTEB(4, 10, 4, 6),
+                        padding: const EdgeInsetsDirectional.fromSTEB(
+                          4,
+                          10,
+                          4,
+                          6,
+                        ),
                         child: Row(
                           children: [
                             Icon(
@@ -499,7 +500,9 @@ class _FlutterFlowLeftSidebarState extends State<FlutterFlowLeftSidebar> {
                                 vertical: 1.5,
                               ),
                               decoration: BoxDecoration(
-                                color: VisualEditorTokens.surfaceSecondary(context),
+                                color: VisualEditorTokens.surfaceSecondary(
+                                  context,
+                                ),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
                                   color: VisualEditorTokens.border(context),
@@ -560,7 +563,9 @@ class _FlutterFlowLeftSidebarState extends State<FlutterFlowLeftSidebar> {
             child: Row(
               children: [
                 Icon(
-                  isSelected ? Icons.phone_android_rounded : Icons.smartphone_outlined,
+                  isSelected
+                      ? Icons.phone_android_rounded
+                      : Icons.smartphone_outlined,
                   size: 16,
                   color: isSelected
                       ? VisualEditorTokens.primaryOliveGreen
@@ -609,7 +614,10 @@ class _FlutterFlowLeftSidebarState extends State<FlutterFlowLeftSidebar> {
                 ),
                 if (isSelected)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: VisualEditorTokens.primaryOliveGreen,
                       borderRadius: BorderRadius.circular(8),
@@ -641,7 +649,8 @@ class _FlutterFlowLeftSidebarState extends State<FlutterFlowLeftSidebar> {
 
     final filtered = allEntries.where((entry) {
       if (query.isNotEmpty) {
-        final match = entry.displayName.toLowerCase().contains(query) ||
+        final match =
+            entry.displayName.toLowerCase().contains(query) ||
             entry.componentType.toLowerCase().contains(query) ||
             entry.description.toLowerCase().contains(query);
         if (!match) return false;
@@ -670,7 +679,9 @@ class _FlutterFlowLeftSidebarState extends State<FlutterFlowLeftSidebar> {
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: VisualEditorTokens.primaryOliveGreen.withValues(alpha: 0.15),
+                  color: VisualEditorTokens.primaryOliveGreen.withValues(
+                    alpha: 0.15,
+                  ),
                   borderRadius: BorderRadius.circular(7),
                 ),
                 child: const Icon(
@@ -734,14 +745,18 @@ class _FlutterFlowLeftSidebarState extends State<FlutterFlowLeftSidebar> {
                     vertical: 8,
                   ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
+                    borderRadius: BorderRadius.circular(
+                      VisualEditorTokens.radiusSm,
+                    ),
                     borderSide: BorderSide(
                       color: VisualEditorTokens.border(context),
                       width: 0.8,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
+                    borderRadius: BorderRadius.circular(
+                      VisualEditorTokens.radiusSm,
+                    ),
                     borderSide: BorderSide(
                       color: VisualEditorTokens.border(context),
                       width: 0.8,
@@ -787,11 +802,15 @@ class _FlutterFlowLeftSidebarState extends State<FlutterFlowLeftSidebar> {
                   ),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
                     final entry = filtered[index];
-                    final isAllowed = allowedTypes.isEmpty ||
+                    final isAllowed =
+                        allowedTypes.isEmpty ||
                         allowedTypes.contains(entry.componentType);
 
                     return _buildComponentCard(context, entry, isAllowed);
@@ -825,7 +844,9 @@ class _FlutterFlowLeftSidebarState extends State<FlutterFlowLeftSidebar> {
           label,
           style: TextStyle(
             fontSize: 10.5,
-            fontWeight: isSelected ? AppFontWeights.bold : AppFontWeights.regular,
+            fontWeight: isSelected
+                ? AppFontWeights.bold
+                : AppFontWeights.regular,
             color: isSelected ? Colors.white : VisualEditorTokens.text(context),
           ),
         ),
@@ -858,7 +879,9 @@ class _FlutterFlowLeftSidebarState extends State<FlutterFlowLeftSidebar> {
               width: 34,
               height: 34,
               decoration: BoxDecoration(
-                color: VisualEditorTokens.primaryOliveGreen.withValues(alpha: 0.12),
+                color: VisualEditorTokens.primaryOliveGreen.withValues(
+                  alpha: 0.12,
+                ),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -904,11 +927,16 @@ class _FlutterFlowLeftSidebarState extends State<FlutterFlowLeftSidebar> {
                     }
                   : null,
               style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 0,
+                ),
                 minimumSize: const Size(0, 30),
                 visualDensity: VisualDensity.compact,
                 backgroundColor: isAllowed
-                    ? VisualEditorTokens.primaryOliveGreen.withValues(alpha: 0.15)
+                    ? VisualEditorTokens.primaryOliveGreen.withValues(
+                        alpha: 0.15,
+                      )
                     : Colors.transparent,
                 foregroundColor: VisualEditorTokens.primaryOliveGreen,
               ),
@@ -919,7 +947,10 @@ class _FlutterFlowLeftSidebarState extends State<FlutterFlowLeftSidebar> {
                   SizedBox(width: 2),
                   Text(
                     'إضافة',
-                    style: TextStyle(fontSize: 10.5, fontWeight: AppFontWeights.bold),
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: AppFontWeights.bold,
+                    ),
                   ),
                 ],
               ),

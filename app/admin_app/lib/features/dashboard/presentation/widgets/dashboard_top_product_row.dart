@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/navigation/admin_navigator.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/dashboard/domain/entities/admin_dashboard_top_product.dart';
@@ -32,34 +33,44 @@ class DashboardTopProductRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: AppSizes.px10),
-      decoration: BoxDecoration(
-        border: rank == 1
-            ? null
-            : Border(top: BorderSide(color: adminRowBorderColor(theme))),
-      ),
-      child: Row(
-        children: [
-          Text(
-            localizeDigits(rank.toString().padLeft(2, '0')),
-            style: TextStyle(
-              color: adminSubtleColor(theme),
-              fontSize: AppFontSizes.size9,
-              height: AppTextHeights.line1_5,
-            ),
+    final openProduct = AdminNavigator.maybeOpenProduct(context);
+    final productName = dashboardProductName(product).trim();
+    final canOpenProduct = openProduct != null && productName.isNotEmpty;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: Key('dashboard-product-${product.productId ?? product.nameEn}'),
+        onTap: canOpenProduct ? () => openProduct(productName) : null,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: AppSizes.px10),
+          decoration: BoxDecoration(
+            border: rank == 1
+                ? null
+                : Border(top: BorderSide(color: adminRowBorderColor(theme))),
           ),
-          const SizedBox(width: AppSizes.px10),
-          AdminNetworkThumb(
-            imageUrl: product.imageUrl,
-            size: AppSizes.px36,
-            borderRadius: BorderRadius.circular(AppRadius.md),
+          child: Row(
+            children: [
+              Text(
+                localizeDigits(rank.toString().padLeft(2, '0')),
+                style: TextStyle(
+                  color: adminSubtleColor(theme),
+                  fontSize: AppFontSizes.size9,
+                  height: AppTextHeights.line1_5,
+                ),
+              ),
+              const SizedBox(width: AppSizes.px10),
+              AdminNetworkThumb(
+                imageUrl: product.imageUrl,
+                size: AppSizes.px36,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              const SizedBox(width: AppSizes.px10),
+              Expanded(child: _identity(theme)),
+              const SizedBox(width: AppSpacing.md),
+              DashboardTopProductFigure(revenue: product.revenue, share: share),
+            ],
           ),
-          const SizedBox(width: AppSizes.px10),
-          Expanded(child: _identity(theme)),
-          const SizedBox(width: AppSpacing.md),
-          DashboardTopProductFigure(revenue: product.revenue, share: share),
-        ],
+        ),
       ),
     );
   }
