@@ -71,19 +71,28 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
     try {
       final results = await Future.wait([
         _repository.plans(branchId: _selectedBranchId),
-        _repository.mySubscription(),
+        _repository.mySubscriptions(),
       ]);
       if (isClosed || generation != _loadGeneration) return;
-      final subscription = results[1] as CustomerSubscription?;
+      final subscriptions = results[1] as List<CustomerSubscription>;
+      // A new pending-payment row can be newer than the customer's usable
+      // active subscription. Keep the current entitlement selected first.
+      final subscription =
+          subscriptions.where((item) => item.isActive).firstOrNull ??
+          subscriptions.where((item) => item.isPendingPayment).firstOrNull ??
+          subscriptions.firstOrNull;
       emit(
         state.copyWith(
           loading: false,
           plans: results[0] as List<SubscriptionPlan>,
+          subscriptions: subscriptions,
           subscription: subscription,
           clearSubscription: subscription == null,
           // A fresh read makes whatever pass is on screen unknown again.
           clearQr: true,
           clearQrError: true,
+          clearUsage: true,
+          clearUsageError: true,
         ),
       );
       // The history belongs to the subscription the customer just opened the
@@ -95,6 +104,23 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
       emit(state.copyWith(loading: false, loadError: error.toString()));
       addError(error, stackTrace);
     }
+  }
+
+  Future<void> selectSubscription(String id) async {
+    final selected = state.subscriptions
+        .where((item) => item.id == id)
+        .firstOrNull;
+    if (selected == null || selected.id == state.subscription?.id) return;
+    ++_loadGeneration;
+    emit(
+      state.copyWith(
+        subscription: selected,
+        clearUsage: true,
+        clearUsageError: true,
+        clearQr: true,
+      ),
+    );
+    await loadUsage(selected.id);
   }
 
   /// The cups already spent, read apart from the subscription so a failed
@@ -181,6 +207,10 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
         state.copyWith(
           isMutating: false,
           subscription: subscription,
+          subscriptions: [
+            subscription,
+            ...state.subscriptions.where((item) => item.id != subscription.id),
+          ],
           clearQr: true,
         ),
       );
@@ -216,6 +246,10 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
         state.copyWith(
           isMutating: false,
           subscription: subscription,
+          subscriptions: [
+            subscription,
+            ...state.subscriptions.where((item) => item.id != subscription.id),
+          ],
           clearQr: true,
         ),
       );
@@ -260,10 +294,15 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
       await _repository.cancel(subscriptionId: current.id);
       _idempotencyKeys.remove('renew:${current.id}');
       if (isClosed) return false;
+      final cancelled = current.copyWith(status: 'cancelled');
       emit(
         state.copyWith(
           isMutating: false,
-          clearSubscription: true,
+          subscriptions: [
+            for (final item in state.subscriptions)
+              if (item.id == current.id) cancelled else item,
+          ],
+          subscription: cancelled,
           // A cancelled subscription has no pass to show.
           clearQr: true,
         ),

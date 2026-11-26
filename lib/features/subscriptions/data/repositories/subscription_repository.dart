@@ -10,6 +10,8 @@ abstract class SubscriptionRepository {
   Future<List<SubscriptionPlan>> plans({String? branchId});
   Future<List<SubscriptionPlanProduct>> planProducts(String planId);
   Future<CustomerSubscription?> mySubscription();
+  Future<List<CustomerSubscription>> mySubscriptions();
+
   Future<CustomerSubscription> subscribe({
     required String planId,
     required String idempotencyKey,
@@ -98,6 +100,18 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
     return CustomerSubscription.fromDatabase(
       rows.first as Map<String, dynamic>,
     );
+  }
+
+  @override
+  Future<List<CustomerSubscription>> mySubscriptions() async {
+    final client = _client;
+    if (client == null || client.auth.currentUser == null) return const [];
+    final rows = await client.rpc('list_my_subscriptions');
+    if (rows is! List) return const [];
+    return [
+      for (final row in rows)
+        if (row is Map<String, dynamic>) CustomerSubscription.fromDatabase(row),
+    ];
   }
 
   @override

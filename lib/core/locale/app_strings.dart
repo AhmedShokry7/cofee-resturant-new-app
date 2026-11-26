@@ -9,10 +9,93 @@ import 'package:new_coffee/core/locale/app_locale.dart';
 /// around it lives here.
 class S {
   S._();
+  static String get issueTitle => _ar ? 'مشكلة في الطلب' : 'Order issue';
+  static String get issueNew => _ar ? 'عندي مشكلة في الطلب' : 'Report an issue';
+  static String get issueMissing => _ar ? 'صنف ناقص' : 'Missing item';
+  static String get issueIncorrect => _ar ? 'صنف غير صحيح' : 'Incorrect item';
+  static String get issueDelay => _ar ? 'الطلب متأخر' : 'Delayed order';
+  static String get issueOther => _ar ? 'مشكلة أخرى' : 'Other issue';
+  static String get issueNotes => _ar ? 'تفاصيل المشكلة' : 'Issue details';
+  static String get issueEntire => _ar ? 'الطلب بالكامل' : 'Entire order';
+  static String get issuePhoto => _ar ? 'إرفاق صورة' : 'Attach photo';
+  static String get issuePhotoReady =>
+      _ar ? 'تم إرفاق الصورة' : 'Photo attached';
+  static String get issuePhotoLarge =>
+      _ar ? 'اختر صورة أصغر' : 'Choose a smaller photo';
+  static String get issuePending =>
+      _ar ? 'بانتظار رد الفرع' : 'Awaiting branch reply';
+  static String get issueReply => _ar ? 'رد الفرع' : 'Branch reply';
+  static String get issueRetry => _ar
+      ? 'تعذر تنفيذ العملية. حاول مرة أخرى.'
+      : 'Could not complete this action. Try again.';
+  static String get issueSend => _ar ? 'إرسال' : 'Send';
+
+  static String get eventFormNameRequired =>
+      _ar ? 'اكتب اسم المناسبة أولاً.' : 'Enter the occasion name first.';
+  static String get eventFormInvalidTime => _ar
+      ? 'اختر موعداً مستقبلياً ومدة بين 30 دقيقة و8 ساعات.'
+      : 'Choose a future time and a duration between 30 minutes and 8 hours.';
+  static String get eventFormSubmitted => _ar
+      ? 'تم إرسال طلب المناسبة. سيظهر الحجز بعد قبول عرض الفرع.'
+      : 'Request sent. Your booking will appear once you accept the branch offer.';
+  static String get eventFormSubmitFailed => _ar
+      ? 'تعذر إرسال الطلب. تحقق من البيانات وحاول مرة أخرى.'
+      : 'Could not send the request. Check the details and try again.';
+  static String get eventFormTitle =>
+      _ar ? 'طلب مناسبة خاصة' : 'Private event request';
+  static String get eventFormRetryBranches => _ar
+      ? 'تعذر تحميل الفروع · إعادة المحاولة'
+      : 'Could not load branches · Retry';
+  static String get eventFormNoBranches => _ar
+      ? 'لا توجد فروع متاحة لطلب المناسبة.'
+      : 'No branches are available for event requests.';
+  static String get eventFormDescription => _ar
+      ? 'أرسل تفاصيل مناسبتك، وسيراجعها الفرع ويرسل لك السعر والمكان والموعد المقترح. لن يصبح الحجز مؤكداً إلا بعد موافقتك على العرض.'
+      : 'Send the event details to get a proposed space, time and price from the branch. Your booking is confirmed when you accept the offer.';
+  static String get eventFormBranch => _ar ? 'الفرع' : 'Branch';
+  static String get eventFormOccasion => _ar ? 'نوع المناسبة' : 'Occasion type';
+  static String get eventFormBirthday => _ar ? 'عيد ميلاد' : 'Birthday';
+  static String get eventFormGraduation => _ar ? 'حفل تخرج' : 'Graduation';
+  static String get eventFormFamily => _ar ? 'تجمع عائلي' : 'Family gathering';
+  static String get eventFormOther => _ar ? 'مناسبة أخرى' : 'Other occasion';
+  static String get eventFormOccasionName =>
+      _ar ? 'اسم المناسبة' : 'Occasion name';
+  static String get eventFormOccasionHint =>
+      _ar ? 'مثال: حفل زفاف أو افتتاح' : 'For example, a wedding or opening';
+  static String get eventFormSpace =>
+      _ar ? 'المكان المطلوب' : 'Preferred space';
+  static String get eventFormAny => _ar
+      ? 'غرفة أو طاولة حسب المتاح'
+      : 'Room or table, subject to availability';
+  static String get eventFormRoom => _ar ? 'غرفة خاصة' : 'Private room';
+  static String get eventFormTable => _ar ? 'طاولة' : 'Table';
+  static String get eventFormReminder =>
+      _ar ? 'ذكرني قبل المناسبة' : 'Remind me before the event';
+  static String get eventFormHour => _ar ? 'بساعة' : '1 hour';
+  static String get eventFormThreeHours => _ar ? 'بـ 3 ساعات' : '3 hours';
+  static String get eventFormDay => _ar ? 'بيوم' : '1 day';
+  static String get eventFormReminderHint => _ar
+      ? 'سيصلك التذكير بعد تأكيد الحجز، ويظهر أيضًا في الصفحة الرئيسية.'
+      : 'After confirmation, you will receive a reminder and see it on the home page.';
+  static String get eventFormEventDate => _ar ? 'تاريخ المناسبة' : 'Event date';
+  static String get eventFormFrom => _ar ? 'من' : 'From';
+  static String get eventFormTo => _ar ? 'إلى' : 'To';
+  static String get eventFormGuests => _ar ? 'عدد الضيوف' : 'Number of guests';
+  static String eventFormGuestCount(int n) => _ar ? '$n ضيف' : '$n guests';
+  static String get eventFormServices =>
+      _ar ? 'الخدمات المطلوبة (اختياري)' : 'Requested services (optional)';
+  static String get eventFormServicesHint => _ar
+      ? 'مثل: تزيين، كيكة، تجهيزات خاصة'
+      : 'For example, decorations or a cake';
+  static String get eventFormNote =>
+      _ar ? 'ملاحظات للفرع (اختياري)' : 'Notes for the branch (optional)';
+  static String get eventFormSendRequest =>
+      _ar ? 'إرسال طلب المناسبة' : 'Send event request';
 
   static bool get _ar => AppLocale.instance.isArabic;
 
   static String get appName => _ar ? 'غيم وسحب' : 'Ghaim & Sohob';
+  static String get productAllergens => _ar ? 'مسببات الحساسية' : 'Allergens';
 
   // ---------- Common ----------
   static String get retry => _ar ? 'إعادة المحاولة' : 'Retry';
@@ -97,6 +180,9 @@ class S {
 
   /// Same label as the bottom-nav tab; defined once there.
   static String get categories => navCategories;
+
+  /// The page "See all" opens: every main category, from the top of the tree.
+  static String get allCategories => _ar ? 'كل الفئات' : 'All categories';
   static String get category => _ar ? 'التصنيف' : 'Category';
   static String get seeAll => _ar ? 'عرض الكل' : 'See all';
   static String get viewMore => _ar ? 'عرض المزيد' : 'View more';
@@ -305,6 +391,45 @@ class S {
   static String get fulfillmentMethod =>
       _ar ? 'طريقة الاستلام' : 'Fulfillment Method';
   static String get pickupMethod => _ar ? 'استلام من الفرع' : 'Pickup';
+  static String get pickupImmediate =>
+      _ar ? 'استلام فوري' : 'As soon as possible';
+  static String get pickupSchedule =>
+      _ar ? 'جدولة الاستلام' : 'Schedule pickup';
+  static String get pickupNoSlots => _ar
+      ? 'لا توجد مواعيد متاحة في هذا اليوم'
+      : 'No pickup times available for this day';
+  static String get pickupNoDays => _ar
+      ? 'لا توجد أيام متاحة للاستلام خلال الأسبوعين القادمين'
+      : 'No pickup days are available in the next two weeks';
+  static String get pickupScheduleRequired => _ar
+      ? 'اختر موعد الاستلام المجدول أو اختر الاستلام الفوري'
+      : 'Choose a scheduled pickup time or select immediate pickup';
+  static String get reorderOptionsUnavailable => _ar
+      ? 'بعض اختيارات المنتجات تغيرت أو لم تعد متاحة؛ لن نضيفها حتى تراجعها من صفحة المنتج.'
+      : 'Some product options changed or are unavailable. Those items were skipped so you can review them on the product page.';
+  static String get deleteAccountTitle =>
+      _ar ? 'طلب حذف الحساب' : 'Request account deletion';
+  static String get deleteAccountConfirmation => _ar
+      ? 'سيتم تعطيل الوصول إلى حسابك وإخفاء بياناتك الشخصية بعد مراجعة الطلب. ستبقى سجلات الطلبات والفواتير اللازمة محفوظة.'
+      : 'Your account access will be revoked and personal profile data anonymized after review. Order and invoice records required for retention will remain.';
+  static String get deleteAccountRequested => _ar
+      ? 'تم إرسال طلب حذف الحساب للمراجعة'
+      : 'Account deletion request submitted for review';
+  static String get deleteAccountRequestFailed => _ar
+      ? 'تعذر إرسال طلب الحذف. حاول مرة أخرى.'
+      : 'Could not submit the deletion request. Try again.';
+  static String get deleteAccountPending =>
+      _ar ? 'طلبك قيد الانتظار' : 'Request pending';
+  static String get deleteAccountProcessing =>
+      _ar ? 'جارٍ معالجة طلبك' : 'Request processing';
+  static String get deleteAccountCompleted => _ar
+      ? 'اكتمل الطلب وتم تعطيل الحساب'
+      : 'Request completed and account access revoked';
+  static String get deleteAccountRejected => _ar
+      ? 'تم رفض الطلب. اضغط لإرسال طلب جديد.'
+      : 'Request rejected. Tap to submit a new request.';
+  static String get deleteAccountSubmitting =>
+      _ar ? 'جارٍ إرسال الطلب...' : 'Submitting request...';
   static String get deliveryMethod => _ar ? 'توصيل' : 'Delivery';
   static String get deliveryZone => _ar ? 'منطقة التوصيل' : 'Delivery Zone';
   static String get selectDeliveryZone =>
@@ -627,8 +752,8 @@ class S {
   static String get notEnoughPoints =>
       _ar ? 'لا توجد نقاط كافية بعد' : 'Not enough points yet';
   static String earnRate(String formatted, String currencyCode) => _ar
-      ? 'اكسب $formatted نقطة لكل 1 $currencyCode في كل طلب'
-      : 'Earn $formatted points per 1 $currencyCode on every order';
+      ? 'اكسب $formatted نقطة على كل $currencyCode في كل طلب'
+      : 'Earn $formatted points for each $currencyCode on every order';
   static String get earnRateUnavailable =>
       _ar ? 'معدل الكسب غير متوفر' : 'Earn rate unavailable';
 
@@ -877,6 +1002,25 @@ class S {
   // ---------- Profile ----------
   static String get yourProfile => _ar ? 'حسابك' : 'Your Profile';
   static String get help => _ar ? 'المساعدة' : 'Help';
+  static String get customerReviews =>
+      _ar ? 'تقييمات العملاء' : 'Customer reviews';
+  static String reviewsCount(int count) =>
+      _ar ? '$count تقييم' : (count == 1 ? '1 review' : '$count reviews');
+  static String averageOutOfFive(String average) =>
+      _ar ? '$average من 5' : '$average out of 5';
+  static String starRatingLabel(int stars) =>
+      _ar ? 'تقييم $stars من 5 نجوم' : '$stars out of 5 stars';
+  static String get noReviewsYet =>
+      _ar ? 'لا توجد تقييمات بعد' : 'No reviews yet';
+  static String get noReviewsHint => _ar
+      ? 'التقييمات المنشورة من العملاء ستظهر هنا.'
+      : 'Published customer reviews will appear here.';
+  static String get verifiedPurchase =>
+      _ar ? 'شراء موثّق' : 'Verified purchase';
+  static String get reviewsLoadFailed =>
+      _ar ? 'تعذر تحميل التقييمات.' : 'Could not load reviews.';
+  static String get anonymousReviewer => _ar ? 'عميل' : 'Customer';
+
   static String get privacyPolicy => _ar ? 'سياسة الخصوصية' : 'Privacy Policy';
   static String get defaultAddress => _ar ? 'افتراضي' : 'Default';
   static String get setDefaultAddress =>
@@ -1225,6 +1369,9 @@ class S {
   static String get authEmailInUse => _ar
       ? 'هذا الإيميل مسجل بالفعل، برجاء تسجيل الدخول أو استخدام إيميل آخر'
       : 'This email is already registered. Sign in or use another email.';
+  static String get authPhoneInUse => _ar
+      ? 'رقم الهاتف مرتبط بحساب. سجّل الدخول أو استخدم استعادة الحساب.'
+      : 'This phone is linked to an account. Sign in or recover your account.';
   static String get authWeakPassword => _ar
       ? 'كلمة المرور ضعيفة، برجاء استخدام كلمة مرور أطول وأكثر أمانًا'
       : 'Password is too weak. Please use a longer, stronger password.';
@@ -1423,6 +1570,12 @@ class S {
   static String get subscriptionPlans =>
       _ar ? 'باقات اشتراك القهوة' : 'Coffee subscription plans';
   static String get mySubscription => _ar ? 'اشتراكي' : 'My subscription';
+  static String get allMySubscriptionsIntro => _ar
+      ? 'كل اشتراكاتك في مكان واحد'
+      : 'All your subscriptions in one place';
+  static String get reservationCancellationWindowClosed => _ar
+      ? 'انتهت مهلة إلغاء الحجز، تواصل مع الفرع للمساعدة.'
+      : 'The cancellation window has closed. Contact the branch for help.';
   static String get myBundles => _ar ? 'باقاتي الشخصية' : 'My Bundles';
   static String get createYourFirstPersonalBundle =>
       _ar ? 'أنشئ أول باقة شخصية' : 'Create your first personal bundle';
@@ -1441,8 +1594,7 @@ class S {
   static String get addAtLeastOneBundleProduct => _ar
       ? 'أضف منتجًا واحدًا على الأقل للباقة.'
       : 'Add at least one product to the bundle.';
-  static String get addBundleItemsToCart =>
-      _ar ? 'أضف للسلة' : 'Add to cart';
+  static String get addBundleItemsToCart => _ar ? 'أضف للسلة' : 'Add to cart';
   static String get personalBundleProductsUnavailable => _ar
       ? 'بعض منتجات الباقة لم تعد متاحة في هذا الفرع.'
       : 'Some bundle products are no longer available at this branch.';
@@ -1454,7 +1606,7 @@ class S {
       : 'Added "$name" to your cart.';
   static String get myReservations => _ar ? 'حجوزاتي' : 'My Reservations';
   static String get productSubscriptions =>
-      _ar ? 'اشتراكات المنتجات' : 'Product Subscriptions';
+      _ar ? 'اشتراكات المنتجات' : 'Product subscriptions';
 
   // ---------- Customer bundles ----------
   static String get bundleName => _ar ? 'اسم الباقة' : 'Bundle name';
@@ -1520,8 +1672,33 @@ class S {
   // ---------- Product subscriptions ----------
   static String get newProductSubscription =>
       _ar ? 'اشتراك منتج جديد' : 'New product subscription';
+  static String get productSubscriptionsHint => _ar
+      ? 'رتّب طلبات منتجاتك المفضلة حسب جدول يناسبك.'
+      : 'Schedule your favorite products on a routine that works for you.';
+  static String get productSubscriptionSetupHint => _ar
+      ? 'اختر المنتجات والفرع وموعد أول طلب. ستراجع كل طلب وتؤكده بنفسك.'
+      : 'Choose products, a branch, and the first delivery date. You review and confirm every order.';
+  static String get chooseProductsHint =>
+      _ar ? 'اختر منتجًا واحدًا على الأقل' : 'Choose at least one product';
+  static String get searchProducts => _ar ? 'ابحث عن منتج' : 'Search products';
+  static String get productSubscriptionsDescription => _ar
+      ? 'طلبات متكررة بجدول من اختيارك، مع تأكيدك قبل كل طلب.'
+      : 'Recurring orders on your schedule, with your confirmation each time.';
+  static String get noProductSubscriptionsYet =>
+      _ar ? 'لا توجد اشتراكات بعد' : 'No subscriptions yet';
+  static String get couldNotLoadProductSubscriptions =>
+      _ar ? 'تعذر تحميل الاشتراكات' : 'Could not load subscriptions';
+  static String get couldNotCreateProductSubscription =>
+      _ar ? 'تعذر إنشاء الاشتراك' : 'Could not create subscription';
+  static String get selectProductsFirst => _ar
+      ? 'اختر المنتجات التي تريد تكرار طلبها'
+      : 'Choose products for your recurring order';
+  static String get selectBranchFirst =>
+      _ar ? 'اختر الفرع أولًا' : 'Choose a branch first';
   static String get subscriptionName =>
       _ar ? 'اسم الاشتراك' : 'Subscription name';
+  static String get subscriptionSetup =>
+      _ar ? 'تفاصيل الاشتراك' : 'Subscription details';
   static String get frequency => _ar ? 'التكرار' : 'Frequency';
   static String get repeatEvery => _ar ? 'التكرار كل' : 'Repeat every';
   static String repeatInterval(int count, String frequency) {
@@ -1581,21 +1758,12 @@ class S {
   static String get product => _ar ? 'المنتج' : 'Product';
   static String get createSubscription =>
       _ar ? 'إنشاء اشتراك' : 'Create subscription';
-  static String get couldNotLoadProductSubscriptions => _ar
-      ? 'تعذر تحميل اشتراكات المنتجات'
-      : 'Could not load product subscriptions';
-  static String get noProductSubscriptionsYet =>
-      _ar ? 'لا توجد اشتراكات منتجات' : 'No product subscriptions yet';
-  static String get productSubscriptionsHint =>
-      _ar ? 'اشترك في منتجاتك المفضلة' : 'Subscribe to your favorite products';
   static String get pause => _ar ? 'إيقاف' : 'Pause';
   static String get resume => _ar ? 'استئناف' : 'Resume';
   static String get paused => _ar ? 'متوقف' : 'Paused';
   static String get activeStatus => _ar ? 'نشط' : 'Active';
   static String get cancelledStatus => _ar ? 'ملغى' : 'Cancelled';
   static String get nextRun => _ar ? 'موعد الطلب القادم' : 'Next order date';
-  static String get couldNotCreateProductSubscription =>
-      _ar ? 'تعذر إنشاء الاشتراك' : 'Could not create subscription';
   static String get cancelSubscription =>
       _ar ? 'إلغاء الاشتراك؟' : 'Cancel subscription?';
 
@@ -1625,6 +1793,71 @@ class S {
   static String get checkPaymentStatus =>
       _ar ? 'التحقق من حالة الدفع' : 'Check payment status';
   static String get showQrCode => _ar ? 'عرض رمز QR' : 'Show QR code';
+  static String get mySubscriptionsIntro => _ar
+      ? 'اختر اشتراكًا لعرض رصيد المنتجات وسجل الاستخدام وإدارته.'
+      : 'Choose a subscription to view its product balance, usage, and options.';
+  static String previousSubscriptions(int count) =>
+      _ar ? 'الاشتراكات السابقة ($count)' : 'Previous subscriptions ($count)';
+  static String get pendingSubscriptionPayment =>
+      _ar ? 'اشتراك بانتظار الدفع' : 'Subscription awaiting payment';
+  static String remainingSubscriptionProducts(int available, int total) => _ar
+      ? 'المتبقي: $available من $total منتج'
+      : 'Remaining: $available of $total products';
+  static String get subscriptionRedeemInstructions => _ar
+      ? 'لاستلام منتج مشمول، اضغط «عرض رمز QR» واعرضه للكاشير قبل استلام طلبك. سيُخصم المنتج من رصيد هذا الاشتراك.'
+      : 'To redeem an included product, tap “Show QR code” and present it to the cashier before pickup. The product will be deducted from this subscription.';
+  static String get subscriptionPreorderTitle =>
+      _ar ? 'اطلب مسبقًا من اشتراكك' : 'Order ahead with your subscription';
+  static String get mySubscriptionsBack =>
+      _ar ? 'العودة إلى اشتراكاتي' : 'Back to my subscriptions';
+  static String get subscriptionPreorderIntro => _ar
+      ? 'اختر منتجات الباقة والفرع وموعد الاستلام. سيُحجز الرصيد عند تأكيد الطلب، ويُستهلك عند استلامه.'
+      : 'Choose included products, a branch, and a pickup time. Balance is reserved when you place the order and consumed when you collect it.';
+  static String get subscriptionPreorderBranch =>
+      _ar ? 'فرع الاستلام' : 'Pickup branch';
+  static String get subscriptionPreorderNoBranches => _ar
+      ? 'لا توجد فروع مؤهلة لهذا الاشتراك حاليًا.'
+      : 'No branches are currently eligible for this subscription.';
+  static String get subscriptionPreorderProducts =>
+      _ar ? 'منتجات الباقة' : 'Included products';
+  static String get subscriptionPreorderNoProducts => _ar
+      ? 'لا توجد منتجات مشمولة ومتاحة في هذا الفرع.'
+      : 'No included products are available at this branch.';
+  static String get subscriptionPreorderProductNeedsOptions => _ar
+      ? 'هذا المنتج يحتاج اختيارات إضافية؛ لا يمكن طلبه من الاشتراك حاليًا.'
+      : 'This product needs extra options and cannot be ordered from this subscription yet.';
+  static String subscriptionPreorderBalance(int available, int reserved) => _ar
+      ? 'المتاح $available كوب • المحجوز $reserved كوب'
+      : '$available cups available • $reserved reserved';
+  static String get subscriptionPreorderSelected =>
+      _ar ? 'الكمية المختارة' : 'Selected quantity';
+  static String get subscriptionPreorderAddOne =>
+      _ar ? 'زيادة الكمية' : 'Increase quantity';
+  static String get subscriptionPreorderRemoveOne =>
+      _ar ? 'تقليل الكمية' : 'Decrease quantity';
+  static String get subscriptionPreorderReview =>
+      _ar ? 'مراجعة الطلب' : 'Review order';
+  static String get subscriptionPreorderUsesBalance => _ar
+      ? 'الطلب مشمول في الاشتراك ولا يتطلب دفع ثمن المنتجات مرة أخرى.'
+      : 'Products are covered by your subscription; no second product payment is due.';
+  static String get subscriptionPreorderSubmit =>
+      _ar ? 'تأكيد الطلب المسبق' : 'Place preorder';
+  static String get subscriptionPreorderFailed => _ar
+      ? 'تعذر تأكيد الطلب. راجع الرصيد والموعد وحاول مرة أخرى.'
+      : 'Could not place the order. Check the balance and pickup time, then retry.';
+  static String get subscriptionPreorderSuccess =>
+      _ar ? 'تم تأكيد طلبك المسبق' : 'Your preorder is confirmed';
+  static String subscriptionPreorderNumber(String number) =>
+      _ar ? 'رقم الطلب: $number' : 'Order number: $number';
+  static String get subscriptionPreorderHistory =>
+      _ar ? 'طلبات الاشتراك المسبقة' : 'Subscription preorders';
+  static String get couldNotLoadSubscriptionPreorders => _ar
+      ? 'تعذر تحميل طلبات الاشتراك المسبقة'
+      : 'Could not load subscription preorders.';
+  static String get subscriptionPreorderReserved => _ar ? 'محجوز' : 'Reserved';
+  static String get subscriptionPreorderConsumed => _ar ? 'مستهلك' : 'Consumed';
+  static String get subscriptionPreorderReleased =>
+      _ar ? 'مُعاد للرصيد' : 'Released';
   static String get qrSingleUseHint => _ar
       ? 'رمز QR (صالح 5 دقائق، لمرة واحدة):'
       : 'QR code (valid 5 minutes, single use):';

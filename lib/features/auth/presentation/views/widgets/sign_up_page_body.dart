@@ -32,6 +32,7 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -39,6 +40,7 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -51,6 +53,7 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
+        phone: _phoneController.text.trim(),
       );
     }
   }
@@ -163,6 +166,15 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                       ),
                       CustomTextFormField(
                         showFocusTint: false,
+                        controller: _phoneController,
+                        hint: S.phoneHint,
+                        icon: AppIcons.smartphone,
+                        keyboardType: TextInputType.phone,
+                        textInputAction: TextInputAction.next,
+                        validator: AuthFormRules.phone,
+                      ),
+                      CustomTextFormField(
+                        showFocusTint: false,
                         controller: _passwordController,
                         hint: S.passwordHint,
                         icon: AppIcons.password,
@@ -202,10 +214,13 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                           actionText: S.signIn,
                           // Forwarded so switching screens does not lose the page
                           // the customer was asked to authenticate for.
-                          onTap: () => Navigator.of(context).pushReplacementNamed(
-                            AuthPage.routeName,
-                            arguments: ModalRoute.of(context)?.settings.arguments,
-                          ),
+                          onTap: () => Navigator.of(context)
+                              .pushReplacementNamed(
+                                AuthPage.routeName,
+                                arguments: ModalRoute.of(context)
+                                    ?.settings
+                                    .arguments,
+                              ),
                         ),
                       SizedBox(height: AuthSpacings.bottom),
                     ],

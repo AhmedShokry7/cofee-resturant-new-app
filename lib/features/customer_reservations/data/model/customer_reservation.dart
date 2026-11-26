@@ -20,6 +20,7 @@ class CustomerReservation {
     this.cancellationReason,
     this.reservationType = 'table',
     this.createdAt,
+    this.customerCanCancel = true,
   });
 
   final String id;
@@ -40,6 +41,7 @@ class CustomerReservation {
   final String? cancellationReason;
   final String reservationType;
   final DateTime? createdAt;
+  final bool customerCanCancel;
 
   factory CustomerReservation.fromJson(Map<String, dynamic> json) {
     return CustomerReservation(
@@ -67,6 +69,7 @@ class CustomerReservation {
       cancellationReason: Db.textOrNull(json['cancellation_reason']),
       reservationType: Db.text(json['reservation_type'], 'table'),
       createdAt: Db.asDateTimeOrNull(json['created_at']),
+      customerCanCancel: json['customer_can_cancel'] != false,
     );
   }
 }

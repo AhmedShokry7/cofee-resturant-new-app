@@ -36,7 +36,7 @@ class SupabaseProductRepository
       'description_en, base_price, compare_at_price, image_url, is_featured, '
       'discount_percentage, discount_starts_at, discount_ends_at, '
       'prep_minutes, calories, category_slug, category_name_ar, category_name_en, '
-      'related_product_ids';
+      'related_product_ids, allergens';
 
   static const _productImageColumns =
       'id, product_id, image_url, alt_ar, alt_en, is_primary, sort_order, fit, alignment';

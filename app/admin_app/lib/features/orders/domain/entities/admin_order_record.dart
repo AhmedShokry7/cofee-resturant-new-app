@@ -1,5 +1,6 @@
 import 'admin_order_item.dart';
 import 'admin_order_json.dart';
+import 'admin_subscription_preorder.dart';
 
 class AdminOrder {
   const AdminOrder({
@@ -26,6 +27,8 @@ class AdminOrder {
     required this.taxTotal,
     required this.grandTotal,
     this.placedAt,
+    this.scheduledPickupAt,
+    this.subscriptionPreorder,
     this.items = const <AdminOrderItem>[],
   });
 
@@ -38,6 +41,8 @@ class AdminOrder {
   final String fulfillmentType, status, paymentStatus;
   final double subtotal, discountTotal, deliveryFee, taxTotal, grandTotal;
   final DateTime? placedAt;
+  final DateTime? scheduledPickupAt;
+  final AdminSubscriptionPreorder? subscriptionPreorder;
   final List<AdminOrderItem> items;
 
   factory AdminOrder.fromJson(Map<String, dynamic> json) =>

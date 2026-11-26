@@ -72,6 +72,8 @@ class _CheckoutPageBodyState extends State<CheckoutPageBody> {
           alignment: AlignmentDirectional.centerStart,
           child: BranchSelector(),
         ),
+        const SizedBox(height: AppSpacing.md),
+        const _PickupSchedulePicker(),
         SizedBox(height: AppSpacing.lg),
         const Divider(),
         SizedBox(height: AppSpacing.lg),
@@ -216,6 +218,59 @@ class _AppliedCouponRow extends StatelessWidget {
       ),
     );
   }
+}
+
+class _PickupSchedulePicker extends StatefulWidget {
+  const _PickupSchedulePicker();
+  @override
+  State<_PickupSchedulePicker> createState() => _PickupSchedulePickerState();
+}
+
+class _PickupSchedulePickerState extends State<_PickupSchedulePicker> {
+  DateTime day = DateUtils.dateOnly(DateTime.now());
+  bool showSlots = false;
+  @override
+  Widget build(BuildContext context) => BlocBuilder<CheckoutCubit, CheckoutState>(
+    builder: (context, state) {
+      if (state.fulfillment != FulfillmentType.pickup) return const SizedBox.shrink();
+      final cubit = context.read<CheckoutCubit>();
+      return Card(child: Padding(padding: EdgeInsets.all(AppSpacing.md), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(S.pickupMethod, style: AppFonts.semiBold16(context)),
+        Wrap(spacing: AppSpacing.sm, children: [
+          ChoiceChip(label: Text(S.pickupImmediate), selected: !showSlots, onSelected: (_) { setState(() => showSlots = false); cubit.setScheduledPickup(null); }),
+          ChoiceChip(label: Text(S.pickupSchedule), selected: showSlots, onSelected: (_) async {
+            setState(() => showSlots = true);
+            cubit.enablePickupScheduling();
+            await cubit.loadPickupDays();
+            if (!context.mounted) return;
+            if (cubit.state.pickupAvailableDays.isNotEmpty) {
+              setState(() => day = cubit.state.pickupAvailableDays.first);
+            }
+          }),
+        ]),
+        if (showSlots) ...[
+          if (state.pickupDaysLoading) const LinearProgressIndicator()
+          else if (state.pickupAvailableDays.isEmpty) Text(S.pickupNoDays)
+          else Wrap(spacing: AppSpacing.xs, children: [
+            for (final availableDay in state.pickupAvailableDays)
+              ChoiceChip(
+                label: Text(MaterialLocalizations.of(context).formatShortDate(availableDay)),
+                selected: DateUtils.isSameDay(day, availableDay),
+                onSelected: (_) async {
+                  setState(() => day = availableDay);
+                  await cubit.loadPickupSlots(availableDay);
+                },
+              ),
+          ]),
+          if (state.pickupSlotsLoading) const LinearProgressIndicator()
+          else if (state.pickupSlots.isEmpty && state.pickupAvailableDays.isNotEmpty) Text(S.pickupNoSlots)
+          else Wrap(spacing: AppSpacing.xs, children: [for (final slot in state.pickupSlots) ChoiceChip(label: Text(TimeOfDay.fromDateTime(slot).format(context)), selected: state.scheduledPickup?.isAtSameMomentAs(slot) ?? false, onSelected: (_) => cubit.setScheduledPickup(slot))]),
+          if (state.pickupAvailableDays.isNotEmpty && state.pickupSlots.isEmpty)
+            TextButton(onPressed: () => cubit.loadPickupSlots(day), child: Text(S.retry)),
+        ],
+      ])));
+    },
+  );
 }
 
 class _OrderSummary extends StatelessWidget {

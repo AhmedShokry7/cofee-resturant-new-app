@@ -6,6 +6,7 @@ class SubscriptionState {
     this.loading = false,
     this.isMutating = false,
     this.plans = const [],
+    this.subscriptions = const [],
     this.subscription,
     this.loadError,
     this.actionError,
@@ -28,6 +29,7 @@ class SubscriptionState {
   final bool isMutating;
 
   final List<SubscriptionPlan> plans;
+  final List<CustomerSubscription> subscriptions;
   final CustomerSubscription? subscription;
 
   /// The subscription page could not be read. The whole screen belongs to this
@@ -65,6 +67,7 @@ class SubscriptionState {
     bool? loading,
     bool? isMutating,
     List<SubscriptionPlan>? plans,
+    List<CustomerSubscription>? subscriptions,
     CustomerSubscription? subscription,
     bool clearSubscription = false,
     String? loadError,
@@ -76,6 +79,7 @@ class SubscriptionState {
     String? qrError,
     bool clearQrError = false,
     List<SubscriptionUsage>? usage,
+    bool clearUsage = false,
     String? usageError,
     bool clearUsageError = false,
     List<SubscriptionPlanProduct>? planProducts,
@@ -86,6 +90,7 @@ class SubscriptionState {
       loading: loading ?? this.loading,
       isMutating: isMutating ?? this.isMutating,
       plans: plans ?? this.plans,
+      subscriptions: subscriptions ?? this.subscriptions,
       subscription: clearSubscription
           ? null
           : (subscription ?? this.subscription),
@@ -93,7 +98,7 @@ class SubscriptionState {
       actionError: clearActionError ? null : (actionError ?? this.actionError),
       qrToken: clearQr ? null : (qrToken ?? this.qrToken),
       qrError: clearQrError ? null : (qrError ?? this.qrError),
-      usage: usage ?? this.usage,
+      usage: clearUsage ? null : (usage ?? this.usage),
       usageError: clearUsageError ? null : (usageError ?? this.usageError),
       planProducts: planProducts ?? this.planProducts,
       planProductsError: clearPlanProductsError

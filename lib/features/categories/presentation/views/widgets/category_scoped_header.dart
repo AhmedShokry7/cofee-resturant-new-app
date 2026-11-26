@@ -1,11 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 
-import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
-import 'package:new_coffee/shared/utils/direction_aware_icons.dart';
-import 'package:new_coffee/shared/widgets/app_icon.dart';
+import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 /// The line a page wears when it answers for one category only.
 ///
@@ -38,25 +35,7 @@ class CategoryScopedHeader extends StatelessWidget {
           children: [
             Align(
               alignment: AlignmentDirectional.centerStart,
-              child: Semantics(
-                button: true,
-                label: S.back,
-                child: Material(
-                  color: AppColor.transparent,
-                  borderRadius: BorderRadius.circular(AppRadius.r8),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(AppRadius.r8),
-                    onTap: onBack,
-                    child: SizedBox(
-                      width: AppDimensions.tapTargetMin,
-                      height: AppDimensions.tapTargetMin,
-                      child: Center(
-                        child: AppIcon(DirectionAwareIcons.back(context)),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+              child: AppBackButton(onPressed: onBack),
             ),
             Padding(
               // Keep the title truly centered while leaving room for the back

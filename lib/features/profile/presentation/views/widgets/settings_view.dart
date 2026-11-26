@@ -23,12 +23,12 @@ import 'package:new_coffee/features/profile/presentation/views/widgets/logout_bo
 import 'package:new_coffee/features/profile/presentation/views/widgets/profile_menu_tile.dart';
 import 'package:new_coffee/features/profile/presentation/views/widgets/settings_header.dart';
 import 'package:new_coffee/features/profile/presentation/views/widgets/settings_language_dialog.dart';
+import 'package:new_coffee/features/profile/data/repositories/account_deletion_repository.dart';
 import 'package:new_coffee/shared/utils/optional_provider.dart';
-import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plans_page.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/my_subscriptions_page.dart';
 import 'package:new_coffee/features/customer_bundles/presentation/views/my_bundles_page.dart';
 import 'package:new_coffee/features/customer_reservations/presentation/views/my_reservations_page.dart';
-import 'package:new_coffee/features/product_subscriptions/presentation/views/my_product_subscriptions_page.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 /// What the Settings tab is made of: the customer's photo and name, the
@@ -132,9 +132,7 @@ class _SettingsEntries extends StatelessWidget {
         ProfileMenuTile(
           icon: AppIcons.calendar,
           label: S.mySubscription,
-          onTap: () =>
-              Navigator.of(context)
-                  .pushNamed(SubscriptionDetailsPage.routeName),
+          onTap: () => Navigator.of(context).pushNamed(MySubscriptionsPage.routeName),
         ),
         ProfileMenuTile(
           icon: AppIcons.coupon,
@@ -150,13 +148,6 @@ class _SettingsEntries extends StatelessWidget {
           icon: AppIcons.package,
           label: S.myBundles,
           onTap: () => Navigator.of(context).pushNamed(MyBundlesPage.routeName),
-        ),
-        ProfileMenuTile(
-          icon: AppIcons.repeat,
-          label: S.productSubscriptions,
-          onTap: () =>
-              Navigator.of(context)
-                  .pushNamed(MyProductSubscriptionsPage.routeName),
         ),
         ProfileMenuTile(
           icon: AppIcons.calendar,
@@ -208,6 +199,7 @@ class _SettingsEntries extends StatelessWidget {
             onTap: () =>
                 Navigator.of(context).pushNamed(AssistantMemoryPage.routeName),
           ),
+        if (signedIn) const _AccountDeletionTile(),
         ProfileMenuTile(
           icon: AppIcons.logout,
           label: S.logOut,
@@ -218,6 +210,83 @@ class _SettingsEntries extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AccountDeletionTile extends StatefulWidget {
+  const _AccountDeletionTile();
+
+  @override
+  State<_AccountDeletionTile> createState() => _AccountDeletionTileState();
+}
+
+class _AccountDeletionTileState extends State<_AccountDeletionTile> {
+  final _repository = const AccountDeletionRepository();
+  Map<String, dynamic>? _request;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final request = await _repository.currentRequest();
+      if (mounted) setState(() => _request = request);
+    } catch (_) {
+      // The request action still reports its own error; a status read failure
+      // must not hide the rest of the settings screen.
+    }
+  }
+
+  Future<void> _requestDeletion() async {
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(S.deleteAccountTitle),
+        content: Text(S.deleteAccountConfirmation),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(S.cancel)),
+          TextButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(S.deleteAccountTitle)),
+        ],
+      ),
+    );
+    if (accepted != true || !mounted || _loading) return;
+    setState(() => _loading = true);
+    try {
+      await _repository.requestDeletion();
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.deleteAccountRequested)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.deleteAccountRequestFailed)));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final status = _request?['status']?.toString();
+    final subtitle = switch (status) {
+      'pending' => S.deleteAccountPending,
+      'processing' => S.deleteAccountProcessing,
+      'completed' => S.deleteAccountCompleted,
+      'rejected' => S.deleteAccountRejected,
+      _ => null,
+    };
+    return ProfileMenuTile(
+      icon: AppIcons.delete,
+      label: S.deleteAccountTitle,
+      subtitle: _loading ? S.deleteAccountSubmitting : subtitle,
+      opensPage: false,
+      onTap: status == 'pending' || status == 'processing' || status == 'completed'
+          ? () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(subtitle ?? S.deleteAccountPending)))
+          : _requestDeletion,
     );
   }
 }

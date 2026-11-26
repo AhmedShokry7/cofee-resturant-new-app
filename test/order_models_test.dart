@@ -88,6 +88,30 @@ void main() {
     expect(line.status, OrderStatus.cancelled);
   });
 
+  test('order history retains pickup appointment and selected option ids', () {
+    final line = OrderItemModel.fromDatabase(
+      order: {
+        'id': 'order-pickup',
+        'order_number': '1010',
+        'status': 'confirmed',
+        'fulfillment_type': 'pickup',
+        'scheduled_pickup_at': '2026-11-27T10:30:00Z',
+      },
+      item: {
+        'id': 'line-pickup',
+        'product_id': 'product-1',
+        'product_name_en': 'Latte',
+        'unit_price': 12,
+        'quantity': 1,
+        'line_total': 12,
+      },
+      optionValueIds: const ['size-large-id'],
+    );
+
+    expect(line.scheduledPickupAt?.toUtc(), DateTime.utc(2026, 11, 27, 10, 30));
+    expect(line.optionValueIds, ['size-large-id']);
+  });
+
   test('tracking follows server history instead of fixed steps', () {
     AppLocale.instance.debugSet(AppLanguage.english);
     final steps = OrderTrackingSteps.forOrder(

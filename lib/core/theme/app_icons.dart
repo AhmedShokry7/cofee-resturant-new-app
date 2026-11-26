@@ -17,6 +17,9 @@ abstract final class AppIcons {
   static const home = HugeIcons.strokeRoundedHome01;
   static const back = HugeIcons.strokeRoundedArrowLeft01;
   static const forward = HugeIcons.strokeRoundedArrowRight01;
+  // Line-style arrows for the app bar back button.
+  static const backLine = HugeIcons.strokeRoundedArrowLeft02;
+  static const forwardLine = HugeIcons.strokeRoundedArrowRight02;
   static const arrowUp = HugeIcons.strokeRoundedArrowUp01;
   static const arrowDown = HugeIcons.strokeRoundedArrowDown01;
   static const menu = HugeIcons.strokeRoundedMenu01;

@@ -13,6 +13,7 @@ class CustomerSubscription {
     this.endsAt,
     this.cupsEntitled = 0,
     this.cupsUsed = 0,
+    this.cupsReserved = 0,
     this.cupsCarriedOver = 0,
     this.bonusBalance = 0,
     this.bonusExpiresAt,
@@ -29,6 +30,7 @@ class CustomerSubscription {
   final DateTime? endsAt;
   final int cupsEntitled;
   final int cupsUsed;
+  final int cupsReserved;
   final int cupsCarriedOver;
   final double bonusBalance;
   final DateTime? bonusExpiresAt;
@@ -40,6 +42,7 @@ class CustomerSubscription {
     DateTime? endsAt,
     int? cupsEntitled,
     int? cupsUsed,
+    int? cupsReserved,
     int? cupsCarriedOver,
     double? bonusBalance,
     DateTime? bonusExpiresAt,
@@ -55,6 +58,7 @@ class CustomerSubscription {
       endsAt: endsAt ?? this.endsAt,
       cupsEntitled: cupsEntitled ?? this.cupsEntitled,
       cupsUsed: cupsUsed ?? this.cupsUsed,
+      cupsReserved: cupsReserved ?? this.cupsReserved,
       cupsCarriedOver: cupsCarriedOver ?? this.cupsCarriedOver,
       bonusBalance: bonusBalance ?? this.bonusBalance,
       bonusExpiresAt: bonusExpiresAt ?? this.bonusExpiresAt,
@@ -69,7 +73,7 @@ class CustomerSubscription {
   /// granted, and a negative "available cups" on the screen is not something the
   /// customer can act on — the pass simply has nothing left.
   int get availableCups {
-    final left = cupsEntitled + cupsCarriedOver - cupsUsed;
+    final left = cupsEntitled + cupsCarriedOver - cupsUsed - cupsReserved;
     return left < 0 ? 0 : left;
   }
 
@@ -110,6 +114,7 @@ class CustomerSubscription {
       endsAt: parse('ends_at'),
       cupsEntitled: Db.asInt(map['cups_entitled']),
       cupsUsed: Db.asInt(map['cups_used']),
+      cupsReserved: Db.asInt(map['cups_reserved']),
       cupsCarriedOver: Db.asInt(map['cups_carried_over']),
       bonusBalance: Db.asDouble(map['bonus_balance']),
       bonusExpiresAt: parse('bonus_expires_at'),

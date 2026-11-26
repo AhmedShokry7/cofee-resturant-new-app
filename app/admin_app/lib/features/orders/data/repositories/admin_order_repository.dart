@@ -19,10 +19,18 @@ class AdminOrderRepository implements OrderRepository {
       await _supabase.rpc('admin_orders'),
       client: _supabase,
     );
+    final scheduleResponse = await _supabase.rpc('admin_order_pickup_schedules');
+    final schedules = scheduleResponse is Map
+        ? Map<String, dynamic>.from(scheduleResponse)
+        : const <String, dynamic>{};
     if (response is List) {
       return response
           .whereType<Map>()
-          .map((row) => AdminOrder.fromJson(Map<String, dynamic>.from(row)))
+          .map((row) {
+            final data = Map<String, dynamic>.from(row);
+            data['scheduled_pickup_at'] = schedules[data['id']?.toString()];
+            return AdminOrder.fromJson(data);
+          })
           .toList(growable: false);
     }
     return const <AdminOrder>[];

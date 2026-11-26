@@ -127,8 +127,9 @@ class OrderCard extends StatelessWidget {
         .toList(growable: false);
     final List<ProductModel> products;
     final Set<String> branchUnavailable;
+    final Map<String, List<OptionGroup>> optionGroups;
+    final productRepository = context.read<ProductRepository>();
     try {
-      final productRepository = context.read<ProductRepository>();
       products = await getProductsByIds(
         productRepository,
         validLines.map((line) => line.product.id).toList(growable: false),
@@ -145,6 +146,9 @@ class OrderCard extends StatelessWidget {
                   branchId: cart.branchId!,
                 )
           : const <String>{};
+      optionGroups = await productRepository.getOptionsByProduct(
+        validLines.map((line) => line.product.id).toSet().toList(growable: false),
+      );
     } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context)
@@ -153,12 +157,41 @@ class OrderCard extends StatelessWidget {
     }
     if (!context.mounted) return;
     final byId = {for (final product in products) product.id: product};
-    final available = [
-      for (final line in validLines)
-        if (byId.containsKey(line.product.id) &&
-            !branchUnavailable.contains(line.product.id))
-          (line, byId[line.product.id]!),
-    ];
+    final List<(OrderItemModel, ProductModel, List<String>, double)> available = [];
+    final invalidOptions = <OrderItemModel>[];
+    for (final line in validLines) {
+      final product = byId[line.product.id];
+      if (product == null || branchUnavailable.contains(line.product.id)) continue;
+      final groups = optionGroups[line.product.id] ?? const <OptionGroup>[];
+      final saved = line.optionValueIds.toSet();
+      final validIds = <String>[];
+      var invalidRequiredGroup = false;
+      for (final group in groups) {
+        final groupIds = group.values.map((value) => value.id).toSet();
+        final selected = saved.where(groupIds.contains).toList(growable: false);
+        validIds.addAll(selected);
+        if (group.isRequired && selected.length < group.minSelect) {
+          invalidRequiredGroup = true;
+        }
+        if (group.isSingleSelect && selected.length > 1) {
+          invalidRequiredGroup = true;
+        }
+      }
+      if (invalidRequiredGroup) {
+        invalidOptions.add(line);
+        continue;
+      }
+      final resolved = await productRepository.resolvePrice(
+        product.id,
+        branchId: cart.branchId,
+        optionValueIds: validIds,
+      ).catchError((_) => null);
+      if (resolved == null || !resolved.isAvailable) {
+        invalidOptions.add(line);
+        continue;
+      }
+      available.add((line, product, validIds, resolved.unitPrice));
+    }
     final unavailable = validLines
         .where(
           (line) =>
@@ -169,6 +202,7 @@ class OrderCard extends StatelessWidget {
     final hasOldNotes = available.any(
       (entry) => entry.$1.note.trim().isNotEmpty,
     );
+    if (!context.mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -185,6 +219,10 @@ class OrderCard extends StatelessWidget {
                 SizedBox(height: AppSpacing.sm),
                 Text(S.reorderOptionsNote),
               ],
+              if (invalidOptions.isNotEmpty) ...[
+                SizedBox(height: AppSpacing.sm),
+                Text(S.reorderOptionsUnavailable),
+              ],
               SizedBox(height: AppSpacing.sm),
               Flexible(
                 child: ListView(
@@ -195,7 +233,7 @@ class OrderCard extends StatelessWidget {
                         contentPadding: EdgeInsets.zero,
                         title: Text(entry.$2.name),
                         subtitle: Text(S.quantityLabel(entry.$1.quantity)),
-                        trailing: Text(Formatters.price(entry.$2.price)),
+                      trailing: Text(Formatters.price(entry.$4)),
                       ),
                     for (final line in unavailable)
                       ListTile(
@@ -229,12 +267,13 @@ class OrderCard extends StatelessWidget {
         entry.$2,
         quantity: entry.$1.quantity,
         note: entry.$1.note,
-        unitPrice: entry.$2.price,
+        optionValueIds: entry.$3,
+        unitPrice: entry.$4,
       );
     }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(S.reorderAdded(available.length, unavailable.length)),
+        content: Text(S.reorderAdded(available.length, unavailable.length + invalidOptions.length)),
       ),
     );
   }

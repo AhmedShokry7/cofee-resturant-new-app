@@ -61,6 +61,66 @@ class PhoneAuthCubit extends Cubit<PhoneAuthState> {
     }
   }
 
+  Future<void> sendChangeCode({required String phone}) async {
+    if (state is PhoneAuthLoading) return;
+    emit(const PhoneAuthLoading());
+    try {
+      final repository = _repository as PhoneIdentityRepository?;
+      if (repository == null) {
+        throw const AuthException('phone linking unavailable');
+      }
+      await repository.sendPhoneChangeCode(phone: phone);
+      if (!isClosed) emit(const PhoneAuthCodeSent());
+    } on AuthException catch (error) {
+      if (!isClosed) emit(PhoneAuthFailure(AuthCubit.reasonFor(error.message)));
+    } catch (_) {
+      if (!isClosed) emit(const PhoneAuthFailure(AppCopy.authUnexpected));
+    }
+  }
+
+  Future<void> resendChangeCode({required String phone}) async {
+    if (state is PhoneAuthLoading) return;
+    emit(const PhoneAuthLoading());
+    try {
+      final repository = _repository as PhoneIdentityRepository?;
+      if (repository == null) {
+        throw const AuthException('phone linking unavailable');
+      }
+      await repository.resendPhoneChangeCode(phone: phone);
+      if (!isClosed) emit(const PhoneAuthCodeSent());
+    } on AuthException catch (error) {
+      if (!isClosed) emit(PhoneAuthFailure(AuthCubit.reasonFor(error.message)));
+    } catch (_) {
+      if (!isClosed) emit(const PhoneAuthFailure(AppCopy.authUnexpected));
+    }
+  }
+
+  Future<void> verifyChangeCode({
+    required String phone,
+    required String code,
+  }) async {
+    if (state is PhoneAuthLoading) return;
+    emit(const PhoneAuthLoading());
+    try {
+      final repository = _repository as PhoneIdentityRepository?;
+      if (repository == null) {
+        throw const AuthException('phone linking unavailable');
+      }
+      final user = await repository.verifyPhoneChangeCode(
+        phone: phone,
+        code: code,
+      );
+      if (!user.phoneVerified) {
+        throw const AuthException('phone verification failed');
+      }
+      if (!isClosed) emit(PhoneAuthSuccess(user));
+    } on AuthException catch (error) {
+      if (!isClosed) emit(PhoneAuthFailure(AuthCubit.reasonFor(error.message)));
+    } catch (_) {
+      if (!isClosed) emit(const PhoneAuthFailure(AppCopy.authUnexpected));
+    }
+  }
+
   void reset() {
     if (isClosed) return;
     emit(const PhoneAuthInitial());

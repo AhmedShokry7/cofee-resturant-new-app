@@ -212,7 +212,7 @@ class _PersonalBundleCard extends StatelessWidget {
       (sum, item) => sum + products[item.productId]!.price * item.quantity,
     );
     return SizedBox(
-      width: AppSizes.px224,
+      width: AppSizes.px200,
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -251,7 +251,7 @@ class _PersonalBundleCard extends StatelessWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: AppSpacing.md),
                 BundleProductImageStrip(
                   items: bundle.items,
                   imageSize: 52,
@@ -266,12 +266,19 @@ class _PersonalBundleCard extends StatelessWidget {
                 Row(
                   children: [
                     if (availableItems.length == bundle.items.length)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text('${S.currentEstimate}: '),
-                          PriceLabel(amount: total),
-                        ],
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                '${S.currentEstimate}: ',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            PriceLabel(amount: total),
+                          ],
+                        ),
                       )
                     else
                       Expanded(
@@ -283,7 +290,7 @@ class _PersonalBundleCard extends StatelessWidget {
                       ),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: AppSpacing.md),
                 SizedBox(
                   width: double.infinity,
                   child: AnimatedAddToCartButton(

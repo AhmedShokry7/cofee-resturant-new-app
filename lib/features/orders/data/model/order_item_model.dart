@@ -25,6 +25,7 @@ class OrderItemModel {
     this.placedAt,
     this.createdAt,
     this.fulfillmentType = '',
+    this.scheduledPickupAt,
     this.databaseStatus = '',
     this.deliveryFee = 0,
     this.deliveryZoneNameAr,
@@ -40,6 +41,7 @@ class OrderItemModel {
     this.lineProductDiscountTotal,
     this.taxTotal,
     this.grandTotal,
+    this.optionValueIds = const [],
   });
 
   final String id;
@@ -63,6 +65,7 @@ class OrderItemModel {
 
   /// Pickup or delivery, frozen from the order header.
   final String fulfillmentType;
+  final DateTime? scheduledPickupAt;
 
   /// Raw database status (`preparing`, `ready`, ...). The public [status] is
   /// only the customer-facing bucket.
@@ -96,6 +99,7 @@ class OrderItemModel {
 
   final double? taxTotal;
   final double? grandTotal;
+  final List<String> optionValueIds;
 
   /// Zone name frozen into the order's delivery snapshot at placement, so the
   /// invoice keeps showing the zone the customer chose even if it is later
@@ -152,6 +156,7 @@ class OrderItemModel {
   factory OrderItemModel.fromDatabase({
     required Map<String, dynamic> order,
     required Map<String, dynamic> item,
+    List<String> optionValueIds = const [],
   }) {
     final orderMap = Db.asMap(order);
     final itemMap = Db.asMap(item);
@@ -191,8 +196,12 @@ class OrderItemModel {
       orderNumber: Db.text(orderMap['order_number']),
       unitPrice: unitPrice,
       lineTotal: lineTotal,
+      optionValueIds: optionValueIds,
       note: Db.text(itemMap['note']),
       fulfillmentType: Db.text(orderMap['fulfillment_type']),
+      scheduledPickupAt: DateTime.tryParse(
+        Db.textOrNull(orderMap['scheduled_pickup_at']) ?? '',
+      )?.toLocal(),
       databaseStatus: Db.text(orderMap['status']),
       deliveryFee: Db.asDouble(orderMap['delivery_fee']),
       deliveryZoneNameAr: Db.textOrNull(snapshot['zone_name_ar']),

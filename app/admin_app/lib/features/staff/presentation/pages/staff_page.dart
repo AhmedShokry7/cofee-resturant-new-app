@@ -16,6 +16,7 @@ import 'package:admin_app/features/staff/presentation/widgets/staff_page_body.da
 import 'package:admin_app/features/hr/presentation/strings/hr_employee_strings.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_employee_file_dialog.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
+import 'package:admin_app/features/staff/presentation/widgets/account_deletion_requests_dialog.dart';
 
 class StaffPage extends StatefulWidget {
   const StaffPage({
@@ -112,6 +113,9 @@ class _StaffPageState extends State<StaffPage> {
         .showSnackBar(SnackBar(content: Text(S.staffInvitationCancelledDone)));
   }
 
+  Future<void> _showAccountDeletionRequests() =>
+      showAccountDeletionRequestsDialog(context);
+
   Future<void> _openEmployeeFile(
     BuildContext context,
     AdminStaffMember member,
@@ -193,6 +197,7 @@ class _StaffPageState extends State<StaffPage> {
             onEmployeeFile: (member) => _openEmployeeFile(context, member),
             onInvite: _invite,
             onShowInvitations: _showInvitations,
+            onAccountDeletionRequests: widget.canManagePermissions ? _showAccountDeletionRequests : null,
             errorMessage: state.status == AdminStaffStatus.failure
                 ? state.errorMessage
                 : null,

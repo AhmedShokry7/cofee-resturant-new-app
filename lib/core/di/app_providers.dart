@@ -29,7 +29,9 @@ import 'package:new_coffee/features/coupon/data/repositories/coupon_repository.d
 import 'package:new_coffee/features/design/data/repositories/design_repository.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
+import 'package:new_coffee/features/menu/data/repositories/product_reviews_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/supabase_product_repository.dart';
+import 'package:new_coffee/features/menu/data/repositories/supabase_product_reviews_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/unavailable_catalog_repository.dart';
 import 'package:new_coffee/features/notifications/data/repositories/notification_repository.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
@@ -85,6 +87,11 @@ class AppProviders extends StatelessWidget {
     return const UnavailableCatalogRepository();
   }
 
+  ProductReviewsRepository _buildProductReviewsRepository() {
+    if (SupabaseService.isReady) return SupabaseProductReviewsRepository();
+    return const UnavailableProductReviewsRepository();
+  }
+
   /// The server cart is authoritative. There is no local-only fallback: an
   /// order must always price and validate against the database.
   CartRepository _buildCartRepository() {
@@ -118,6 +125,7 @@ class AppProviders extends StatelessWidget {
     // One instance, exposed under both interfaces, so a category listing and a
     // product query can never come from two different snapshots.
     final catalog = _buildCatalogRepository();
+    final reviews = _buildProductReviewsRepository();
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<AuthRepository>(
@@ -129,6 +137,7 @@ class AppProviders extends StatelessWidget {
         RepositoryProvider<CatalogRepository>.value(value: catalog),
         RepositoryProvider<ProductRepository>.value(value: catalog),
         RepositoryProvider<CategoryRepository>.value(value: catalog),
+        RepositoryProvider<ProductReviewsRepository>.value(value: reviews),
         RepositoryProvider<OrdersRepository>(
           create: (_) => _buildOrdersRepository(),
         ),

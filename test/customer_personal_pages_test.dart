@@ -11,8 +11,6 @@ import 'package:new_coffee/features/customer_reservations/data/model/customer_re
 import 'package:new_coffee/features/customer_reservations/data/model/customer_event_request.dart';
 import 'package:new_coffee/features/customer_reservations/presentation/views/reservation_form_page.dart';
 import 'package:new_coffee/features/customer_reservations/presentation/views/event_request_form_page.dart';
-import 'package:new_coffee/features/product_subscriptions/data/model/product_subscription.dart';
-import 'package:new_coffee/features/product_subscriptions/presentation/views/product_subscription_form_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 http.Response _json(Object body, http.Request request) => http.Response(
@@ -41,32 +39,6 @@ void main() {
 
     expect(bundle.lastUsedAt, DateTime.utc(2026, 11, 24, 10));
     expect(bundle.items.single.productId, 'coffee-1');
-  });
-
-  test('product subscription model reads recurrence and multiple items', () {
-    final subscription = ProductSubscription.fromJson({
-      'id': 'subscription-1',
-      'status': 'active',
-      'recurrence_type': 'daily',
-      'interval_value': 2,
-      'branch_id': 'branch-1',
-      'pending_runs': [
-        {
-          'id': 'run-1',
-          'scheduled_for': '2026-11-25T09:00:00Z',
-          'status': 'pending',
-        },
-      ],
-      'items': [
-        {'product_id': 'coffee-1', 'quantity': 2},
-        {'product_id': 'tea-1', 'quantity': 3},
-      ],
-    });
-
-    expect(subscription.frequency, 'daily');
-    expect(subscription.intervalValue, 2);
-    expect(subscription.pendingRuns.single.id, 'run-1');
-    expect(subscription.items.map((item) => item.quantity), [2, 3]);
   });
 
   test('reservation model falls back to the stored reserved-until value', () {
@@ -159,80 +131,6 @@ void main() {
     },
   );
 
-  testWidgets(
-    'product subscription form submits more than one selected product',
-    (tester) async {
-      final bodies = <Map<String, dynamic>>[];
-      final client = SupabaseClient(
-        'https://customer-flow.test',
-        'publishable-test-key',
-        authOptions: const FlutterAuthClientOptions(
-          autoRefreshToken: false,
-          persistSession: false,
-        ),
-        httpClient: MockClient((request) async {
-          if (request.url.path.endsWith('/rest/v1/branches')) {
-            return _json([
-              {'id': 'branch-1', 'name_ar': 'Branch', 'name_en': 'Branch'},
-            ], request);
-          }
-          if (request.url.path.endsWith('/rest/v1/products')) {
-            return _json([
-              {'id': 'coffee-1', 'name_ar': 'Coffee A', 'name_en': 'Coffee A'},
-              {'id': 'tea-1', 'name_ar': 'Tea B', 'name_en': 'Tea B'},
-            ], request);
-          }
-          if (request.url.path.endsWith(
-            '/rest/v1/rpc/create_customer_product_subscription',
-          )) {
-            bodies.add(jsonDecode(request.body) as Map<String, dynamic>);
-            return _json('subscription-1', request);
-          }
-          return _json({'message': 'Unexpected test request'}, request);
-        }),
-      );
-      SupabaseService.debugSetClient(client);
-      SupabaseService.debugSetSignedIn(true);
-
-      await tester.pumpWidget(
-        const MaterialApp(home: ProductSubscriptionFormPage()),
-      );
-      await tester.pumpAndSettle();
-      for (final product in ['Coffee A', 'Tea B']) {
-        await tester.drag(find.byType(ListView), const Offset(0, -550));
-        await tester.pumpAndSettle();
-        final tile = find.widgetWithText(CheckboxListTile, product);
-        await tester.ensureVisible(tile);
-        await tester.tap(tile);
-        await tester.pumpAndSettle();
-      }
-
-      await tester.drag(find.byType(ListView), const Offset(0, -1000));
-      await tester.pumpAndSettle();
-      final createButton = find.byType(FilledButton).last;
-      await tester.ensureVisible(createButton);
-      await tester.tap(createButton);
-      await tester.pumpAndSettle();
-
-      expect(bodies, hasLength(1));
-      final payload = bodies.single['p_payload'] as Map<String, dynamic>;
-      expect(payload['recurrence_type'], 'weekly');
-      expect(payload['interval_value'], 1);
-      expect(
-        DateTime.parse(payload['first_run_at'] as String)
-            .isAfter(DateTime.now().toUtc()),
-        isTrue,
-      );
-      expect(payload['items'], hasLength(2));
-      expect(
-        (payload['items'] as List)
-            .map((item) => (item as Map<String, dynamic>)['product_id'])
-            .toSet(),
-        {'coffee-1', 'tea-1'},
-      );
-    },
-  );
-
   testWidgets('reservation form loads and submits the selected room type', (
     tester,
   ) async {
@@ -289,19 +187,17 @@ void main() {
     await tester.tap(find.text(S.roomReservation).last);
     await tester.pumpAndSettle();
 
-    final spaceDropdowns = tester
-        .widgetList<DropdownButtonFormField<String?>>(
-          find.byType(DropdownButtonFormField<String?>),
-        )
-        .toList();
-    await tester.tap(find.byWidget(spaceDropdowns.single));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Room 1 · 4').last);
+    final roomCard = find.text('Room 1');
+    await tester.ensureVisible(roomCard);
+    await tester.tap(roomCard);
     await tester.pumpAndSettle();
 
-    await tester.drag(find.byType(ListView), const Offset(0, -1000));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byType(FilledButton).last);
+    await tester.scrollUntilVisible(
+      find.text(S.submitReservation),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text(S.submitReservation));
     await tester.pumpAndSettle();
 
     expect(bodies, hasLength(1));

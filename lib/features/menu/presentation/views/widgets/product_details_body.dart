@@ -12,6 +12,7 @@ import 'package:new_coffee/features/menu/presentation/manager/product_details/pr
 import 'package:new_coffee/features/menu/presentation/views/widgets/cup_icon.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_description.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
+import 'package:new_coffee/features/menu/presentation/views/widgets/product_reviews_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_products_carousel.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/quantity_stepper.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
@@ -186,6 +187,12 @@ class _DetailsSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (product.allergens.isNotEmpty) ...[
+            Text(S.productAllergens, style: AppFonts.semiBold14(context)),
+            SizedBox(height: AppSpacing.xs),
+            Text(product.allergens.join('، ')),
+            SizedBox(height: AppSpacing.sm),
+          ],
           Text(
             product.category,
             style: AppFonts.regular14(context)
@@ -290,6 +297,9 @@ class _DetailsSheet extends StatelessWidget {
               cupSize: cupSizeFor(groups, state.selection),
             ),
           ],
+
+          SizedBox(height: AppSpacing.xl),
+          ProductReviewsSection(productId: product.id),
 
           if (state.pairs.isNotEmpty) ...[
             SizedBox(height: AppSpacing.xl),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:material_ui/material_ui.dart';
@@ -7,14 +9,59 @@ import 'package:new_coffee/features/customer_reservations/data/model/customer_ev
 import 'package:new_coffee/features/customer_reservations/presentation/views/my_reservations_page.dart';
 import 'package:new_coffee/shared/widgets/db_image.dart';
 
-class EventReminderHomeSection extends StatelessWidget {
+class EventReminderHomeSection extends StatefulWidget {
   const EventReminderHomeSection({super.key, required this.reminders});
 
   final List<CustomerEventRequest> reminders;
 
   @override
+  State<EventReminderHomeSection> createState() => _ReminderState();
+}
+
+class _ReminderState extends State<EventReminderHomeSection> {
+  Timer? timer;
+
+  void schedule() {
+    timer?.cancel();
+    final now = DateTime.now();
+    final dates =
+        widget.reminders
+            .map((e) => e.quotedStartAt ?? e.preferredStartAt)
+            .where((d) => d.isAfter(now))
+            .toList()
+          ..sort();
+    if (dates.isNotEmpty) {
+      timer = Timer(dates.first.difference(now), () {
+        if (mounted) setState(schedule);
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    schedule();
+  }
+
+  @override
+  void didUpdateWidget(covariant EventReminderHomeSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    schedule();
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final event = reminders.first;
+    final now = DateTime.now();
+    final event = widget.reminders
+        .where((e) => (e.quotedStartAt ?? e.preferredStartAt).isAfter(now))
+        .firstOrNull;
+    if (event == null) return const SizedBox.shrink();
     final start = (event.quotedStartAt ?? event.preferredStartAt).toLocal();
     final date =
         '${start.year}/${start.month.toString().padLeft(2, '0')}/${start.day.toString().padLeft(2, '0')} · ${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}';

@@ -30,6 +30,7 @@ class StaffPageBody extends StatelessWidget {
     required this.onShowInvitations,
     this.errorMessage,
     this.onRefresh,
+    this.onAccountDeletionRequests,
   });
 
   final List<AdminStaffMember> staff;
@@ -45,6 +46,7 @@ class StaffPageBody extends StatelessWidget {
   final VoidCallback onShowInvitations;
   final String? errorMessage;
   final VoidCallback? onRefresh;
+  final VoidCallback? onAccountDeletionRequests;
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +67,16 @@ class StaffPageBody extends StatelessWidget {
                 backgroundColor: AppColor.primaryColor,
                 textColor: AppColor.whiteColor,
               ),
+              if (canManagePermissions)
+                CustomBtn(
+                  text: S.accountDeletionRequests,
+                  onPressed: onAccountDeletionRequests,
+                  leadingIcon: const Icon(AppIcons.delete02, size: 18),
+                  height: 42,
+                  borderRadius: AppRadius.pill,
+                  backgroundColor: AppColor.adminAccentSurface,
+                  textColor: AppColor.adminHeading,
+                ),
               if (canManagePermissions)
                 AdminCreateButton(
                   label: S.inviteStaff,

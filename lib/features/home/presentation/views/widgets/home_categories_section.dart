@@ -3,12 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/features/categories/presentation/views/categories_page.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
-import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/category_marquee.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_section_link.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_section_title.dart';
-import 'package:new_coffee/features/main/presentation/manager/main/main_cubit.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 /// The category row of the home page: one line of circles that keeps walking.
@@ -24,14 +23,29 @@ class HomeCategoriesSection extends StatelessWidget {
   final bool showTitle;
   final TextStyle? titleStyle;
 
-  /// Opens the catalogue tab on the chip the customer was looking at.
+  /// Opens the products of one category, not the catalogue tab.
   ///
-  /// Matched by stable id, not by position: the home row and the categories tab
-  /// load independently, so equal indices do not guarantee equal categories.
+  /// The id travels on the page and is resolved by the cubit, never written to
+  /// the shared tab index: a category tapped here used to move the tab the
+  /// customer had left open, and going back from the products was impossible
+  /// because the page was the tab. Pushing gives the arrow a page to return to.
   void _openCategory(BuildContext context, String? categoryId) {
-    if (categoryId == null) return;
-    context.read<CategoriesCubit>().selectCategoryById(categoryId);
-    context.read<MainCubit>().changeTab(MainTab.categories.index);
+    if (categoryId == null || categoryId.isEmpty) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CategoriesPage(initialCategoryId: categoryId),
+      ),
+    );
+  }
+
+  /// Opens the root of the category tree: every main category, no products.
+  ///
+  /// Nothing is selected here on purpose. The page carries no category id, so
+  /// a tab selected on a previous visit has no way of turning this into a
+  /// product page.
+  void _openAllCategories(BuildContext context) {
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const CategoriesPage.all()));
   }
 
   @override
@@ -49,8 +63,7 @@ class HomeCategoriesSection extends StatelessWidget {
             titleStyle: titleStyle ?? AppFonts.semiBold18(context),
             trailing: HomeSectionLink(
               label: S.seeAll,
-              onTap: () =>
-                  context.read<MainCubit>().changeTab(MainTab.categories.index),
+              onTap: () => _openAllCategories(context),
             ),
           ),
         SizedBox(height: AppSpacing.md),

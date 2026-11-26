@@ -3,11 +3,8 @@ import 'package:new_coffee/shared/widgets/design_text.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'dart:async';
-
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_icons.dart';
-import 'package:new_coffee/features/notifications/data/model/notification_model.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/notifications/presentation/views/widgets/notifications_page_body.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
@@ -28,24 +25,8 @@ class NotificationsPage extends StatefulWidget {
 }
 
 class _NotificationsPageState extends State<NotificationsPage> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(context.read<NotificationsCubit>().markAllRead());
-    });
-  }
-
   void _toggleSelection(String id) {
     context.read<NotificationsCubit>().toggleSelection(id);
-  }
-
-  Future<void> _selectAll(List<NotificationModel> notifications) async {
-    final cubit = context.read<NotificationsCubit>();
-    if (cubit.state.hasMore) await cubit.loadAll();
-    if (!mounted) return;
-    notifications = cubit.state.notifications;
-    cubit.selectNotifications(notifications.map((item) => item.id));
   }
 
   Future<void> _deleteSelected() async {
@@ -112,16 +93,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
   }
 
-  /// Reads the switches of the customer when the screen opens.
-  ///
-  /// They belong to the account, not to this phone, so the bell and the banner
-  /// are drawn from the server row rather than from anything stored locally.
-  ///
-  /// This runs from [State.initState], a lifecycle callback: an earlier version
-  /// ran it from a post-frame callback registered inside a `builder`, which
-  /// meant every emission scheduled another one.
-  ///
-  /// Opening the page marks all notifications as read through the cubit.
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<NotificationsCubit, NotificationsState>(
@@ -160,12 +131,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     icon: const Icon(AppIcons.checkmark),
                     onPressed: () =>
                         context.read<NotificationsCubit>().markAllRead(),
-                  ),
-                if (state.notifications.isNotEmpty)
-                  CustomIconButton(
-                    tooltip: S.notificationSelectAll,
-                    icon: const Icon(AppIcons.checkmarkCircle),
-                    onPressed: () => _selectAll(state.notifications),
                   ),
                 if (state.notifications.isNotEmpty || state.hasMore)
                   PopupMenuButton<String>(

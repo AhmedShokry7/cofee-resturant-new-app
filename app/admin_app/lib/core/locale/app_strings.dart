@@ -6,6 +6,99 @@ import 'package:admin_app/core/locale/app_locale.dart';
 /// language rebuilds the whole tree and every label flips together.
 class S {
   S._();
+  static String get pickupScheduleTitle =>
+      _ar ? 'جدولة الاستلام' : 'Pickup schedule';
+  static String get reservationCancellationPolicy =>
+      _ar ? 'مهلة إلغاء الحجوزات' : 'Reservation cancellation cutoff';
+  static String get tableCancellationCutoffHours =>
+      _ar ? 'مهلة إلغاء الطاولة (بالساعات)' : 'Table cancellation cutoff (hours)';
+  static String get eventCancellationCutoffHours =>
+      _ar ? 'مهلة إلغاء المناسبة (بالساعات)' : 'Event cancellation cutoff (hours)';
+  static String get reservationPolicyHoursHint =>
+      _ar ? 'من 0 إلى 168 ساعة. صفر يسمح بالإلغاء حتى بداية الموعد.' : 'Enter 0–168. Zero allows cancellation until the reservation starts.';
+  static String get reservationPolicyLoadFailed =>
+      _ar ? 'تعذر تحميل إعدادات مهلة الإلغاء' : 'Could not load cancellation settings';
+  static String get reservationPolicySaveFailed =>
+      _ar ? 'تعذر حفظ مهلة الإلغاء' : 'Could not save cancellation settings';
+  static String get reservationPolicyInvalid =>
+      _ar ? 'أدخل عدد ساعات صحيحًا بين 0 و168' : 'Enter a valid number from 0 to 168 hours';
+  static String get reservationPolicyPermissionDenied =>
+      _ar ? 'ليس لديك صلاحية لتعديل هذا الإعداد' : 'You cannot change this setting';
+  static String get pickupAddWindow => _ar ? 'إضافة فترة' : 'Add window';
+  static String get pickupWindows => _ar ? 'فترات العمل' : 'Working windows';
+  static String get pickupExceptions =>
+      _ar ? 'الإجازات والاستثناءات' : 'Closures and exceptions';
+  static String get pickupNoSchedule =>
+      _ar ? 'لا توجد فترات معرفة' : 'No windows configured';
+  static String get pickupSave => _ar ? 'حفظ' : 'Save';
+  static String get pickupSaveFailed =>
+      _ar ? 'تعذر حفظ إعدادات الاستلام' : 'Could not save pickup settings';
+  static String get pickupTimeZone => _ar
+      ? 'المنطقة الزمنية (مثال: Asia/Riyadh)'
+      : 'Time zone (for example: Asia/Riyadh)';
+  static String get scheduledPickup =>
+      _ar ? 'موعد الاستلام' : 'Scheduled pickup';
+  static String get pickupDelete => _ar ? 'حذف' : 'Delete';
+  static String get pickupClosed => _ar ? 'مغلق' : 'Closed';
+  static String get pickupOpenOverride =>
+      _ar ? 'ساعات استثنائية' : 'Special hours';
+  static String get pickupAddException =>
+      _ar ? 'إضافة إجازة أو استثناء' : 'Add closure or exception';
+  static String pickupWeekday(int day) => _ar
+      ? [
+          'الأحد',
+          'الاثنين',
+          'الثلاثاء',
+          'الأربعاء',
+          'الخميس',
+          'الجمعة',
+          'السبت',
+        ][day]
+      : [
+          'Sunday',
+          'Monday',
+          'Tuesday',
+          'Wednesday',
+          'Thursday',
+          'Friday',
+          'Saturday',
+        ][day];
+  static String get accountDeletionRequests =>
+      _ar ? 'طلبات حذف الحسابات' : 'Account deletion requests';
+  static String get noAccountDeletionRequests =>
+      _ar ? 'لا توجد طلبات معلقة' : 'No pending requests';
+  static String get processDeletion =>
+      _ar ? 'معالجة الحذف' : 'Process deletion';
+  static String get rejectDeletion => _ar ? 'رفض الطلب' : 'Reject request';
+  static String get deletionProcessing => _ar
+      ? 'جارٍ تعطيل الحساب وإخفاء بياناته الشخصية'
+      : 'Revoking account access and anonymizing profile';
+  static String get deletionCompleted => _ar
+      ? 'اكتملت المعالجة مع الاحتفاظ بسجل الطلبات'
+      : 'Completed; order records retained';
+  static String get deletionFailed => _ar
+      ? 'فشلت المعالجة؛ الطلب سيظل متاحًا لإعادة المحاولة'
+      : 'Processing failed; request remains retryable';
+  static String get issueTitle => _ar ? 'مشكلة في الطلب' : 'Order issue';
+  static String get issueNew => _ar ? 'عندي مشكلة في الطلب' : 'Report an issue';
+  static String get issueMissing => _ar ? 'صنف ناقص' : 'Missing item';
+  static String get issueIncorrect => _ar ? 'صنف غير صحيح' : 'Incorrect item';
+  static String get issueDelay => _ar ? 'الطلب متأخر' : 'Delayed order';
+  static String get issueOther => _ar ? 'مشكلة أخرى' : 'Other issue';
+  static String get issueNotes => _ar ? 'تفاصيل المشكلة' : 'Issue details';
+  static String get issueEntire => _ar ? 'الطلب بالكامل' : 'Entire order';
+  static String get issuePhoto => _ar ? 'إرفاق صورة' : 'Attach photo';
+  static String get issuePhotoReady =>
+      _ar ? 'تم إرفاق الصورة' : 'Photo attached';
+  static String get issuePhotoLarge =>
+      _ar ? 'اختر صورة أصغر' : 'Choose a smaller photo';
+  static String get issuePending =>
+      _ar ? 'بانتظار رد الفرع' : 'Awaiting branch reply';
+  static String get issueReply => _ar ? 'رد الفرع' : 'Branch reply';
+  static String get issueRetry => _ar
+      ? 'تعذر تنفيذ العملية. حاول مرة أخرى.'
+      : 'Could not complete this action. Try again.';
+  static String get issueSend => _ar ? 'إرسال' : 'Send';
 
   static String get studioTitle =>
       _ar ? 'استوديو تطبيق العميل' : 'Customer App Studio';
@@ -724,6 +817,21 @@ class S {
   static String get customer => _ar ? 'العميل' : 'Customer';
   static String get total => _ar ? 'الإجمالي' : 'Total';
   static String get fulfillmentType => _ar ? 'نوع الطلب' : 'Order type';
+  static String get orderSubscriptionPreorder =>
+      _ar ? 'طلب مسبق من الاشتراك' : 'Subscription pre-order';
+  static String get subscriptionPlanLabel => _ar ? 'الباقة' : 'Plan';
+  static String get subscriptionIdLabel =>
+      _ar ? 'رقم الاشتراك' : 'Subscription ID';
+  static String get subscriptionPreorderQuantity =>
+      _ar ? 'كمية منتجات الاشتراك' : 'Subscription products';
+  static String get subscriptionConsumptionStatus =>
+      _ar ? 'حالة رصيد الاشتراك' : 'Subscription balance status';
+  static String get subscriptionConsumptionReserved =>
+      _ar ? 'محجوز' : 'Reserved';
+  static String get subscriptionConsumptionFinalized =>
+      _ar ? 'مستهلك' : 'Consumed';
+  static String get subscriptionConsumptionReleased =>
+      _ar ? 'محرر' : 'Released';
   static String get date => _ar ? 'التاريخ' : 'Date';
   static String get statusPending => _ar ? 'قيد الانتظار' : 'Pending';
   static String get statusConfirmed => _ar ? 'مؤكد' : 'Confirmed';

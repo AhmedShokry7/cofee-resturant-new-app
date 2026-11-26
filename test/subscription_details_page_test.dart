@@ -30,6 +30,7 @@ class _FakeRepository implements SubscriptionRepository {
 
   List<SubscriptionPlan> plansToReturn;
   CustomerSubscription? subscriptionToReturn;
+  List<CustomerSubscription>? subscriptionsToReturn;
 
   Object? plansError;
   Object? renewError;
@@ -67,6 +68,11 @@ class _FakeRepository implements SubscriptionRepository {
 
   @override
   Future<CustomerSubscription?> mySubscription() async => subscriptionToReturn;
+
+  @override
+  Future<List<CustomerSubscription>> mySubscriptions() async =>
+      subscriptionsToReturn ??
+      (subscriptionToReturn == null ? const [] : [subscriptionToReturn!]);
 
   @override
   Future<List<SubscriptionUsage>> usageHistory({String? subscriptionId}) async {
@@ -200,7 +206,11 @@ void _setSurface(WidgetTester tester) {
   addTearDown(tester.view.resetDevicePixelRatio);
 }
 
-Future<void> _pumpPage(WidgetTester tester, _FakeRepository repo) async {
+Future<void> _pumpPage(
+  WidgetTester tester,
+  _FakeRepository repo, {
+  bool openSubscription = true,
+}) async {
   final branch = BranchCubit(repository: _FakeBranchRepository());
   addTearDown(branch.close);
   await tester.pumpWidget(
@@ -221,6 +231,11 @@ Future<void> _pumpPage(WidgetTester tester, _FakeRepository repo) async {
       ),
     ),
   );
+  await tester.pumpAndSettle();
+  if (openSubscription && repo.subscriptionToReturn != null) {
+    await tester.tap(find.text(repo.subscriptionToReturn!.planName));
+    await tester.pumpAndSettle();
+  }
 }
 
 void main() {
@@ -545,22 +560,70 @@ void main() {
     expect(repository.renewCalls, 1);
   });
 
-  testWidgets('a cancelled subscription is gone from the page', (tester) async {
+  testWidgets(
+    'a cancelled subscription remains visible without an active pass',
+    (tester) async {
+      _setSurface(tester);
+      SupabaseService.debugSetSignedIn(true);
+      final repository = _FakeRepository(
+        plansToReturn: const [_plan],
+        subscriptionToReturn: _subscription(),
+      );
+
+      await _pumpPage(tester, repository);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(OutlinedButton, S.cancel));
+      await tester.pumpAndSettle();
+
+      expect(repository.cancelCalls, 1);
+      expect(find.text('Monthly plan'), findsOneWidget);
+      expect(
+        find.text('${S.subscriptionStatus}: ${S.subscriptionCancelled}'),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(OutlinedButton, S.cancel), findsOneWidget);
+      expect(
+        tester
+            .widget<OutlinedButton>(
+              find.widgetWithText(OutlinedButton, S.cancel),
+            )
+            .onPressed,
+        isNull,
+      );
+    },
+  );
+
+  testWidgets('cancelled subscriptions are grouped under previous history', (
+    tester,
+  ) async {
     _setSurface(tester);
     SupabaseService.debugSetSignedIn(true);
+    final first = _subscription(status: 'cancelled');
+    final second = CustomerSubscription(
+      id: 'sub-old-2',
+      planId: first.planId,
+      planNameAr: first.planNameAr,
+      planNameEn: first.planNameEn,
+      status: 'cancelled',
+      startsAt: first.startsAt,
+      endsAt: first.endsAt,
+      cupsEntitled: first.cupsEntitled,
+      cupsUsed: first.cupsUsed,
+    );
     final repository = _FakeRepository(
       plansToReturn: const [_plan],
-      subscriptionToReturn: _subscription(),
-    );
+      subscriptionToReturn: first,
+    )..subscriptionsToReturn = [first, second];
 
-    await _pumpPage(tester, repository);
-    await tester.pumpAndSettle();
+    await _pumpPage(tester, repository, openSubscription: false);
 
-    await tester.tap(find.widgetWithText(OutlinedButton, S.cancel));
-    await tester.pumpAndSettle();
-
-    expect(repository.cancelCalls, 1);
     expect(find.text(S.noSubscriptionYet), findsOneWidget);
+    expect(find.text(S.previousSubscriptions(2)), findsOneWidget);
     expect(find.text('Monthly plan'), findsNothing);
+
+    await tester.tap(find.text(S.previousSubscriptions(2)));
+    await tester.pumpAndSettle();
+    expect(find.text('Monthly plan'), findsNWidgets(2));
   });
 }

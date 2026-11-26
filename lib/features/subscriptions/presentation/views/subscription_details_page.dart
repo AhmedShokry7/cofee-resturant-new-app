@@ -13,6 +13,8 @@ import 'package:new_coffee/features/subscriptions/data/model/subscription_usage.
 import 'package:new_coffee/features/subscriptions/data/repositories/subscription_repository.dart';
 import 'package:new_coffee/features/subscriptions/presentation/manager/subscription/subscription_cubit.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plans_page.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/subscription_preorder_page.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/widgets/subscription_preorder_history_section.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/widgets/subscription_detail_row.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
@@ -21,7 +23,9 @@ import 'package:qr/qr.dart';
 import 'package:new_coffee/shared/widgets/app_back_button.dart';
 
 class SubscriptionDetailsPage extends StatelessWidget {
-  const SubscriptionDetailsPage({super.key});
+  const SubscriptionDetailsPage({super.key, this.initialSubscriptionId});
+
+  final String? initialSubscriptionId;
 
   static const routeName = '/subscription-details';
 
@@ -32,10 +36,17 @@ class SubscriptionDetailsPage extends StatelessWidget {
     // request.
     return AuthGuard(
       child: BlocProvider(
-        create: (context) => SubscriptionCubit(
-          repository: context.read<SubscriptionRepository>(),
-          branchId: context.read<BranchCubit>().state.selected?.id,
-        )..load(),
+        create: (context) {
+          final cubit = SubscriptionCubit(
+            repository: context.read<SubscriptionRepository>(),
+            branchId: context.read<BranchCubit>().state.selected?.id,
+          );
+          cubit.load().then((_) {
+            final id = initialSubscriptionId;
+            if (id != null) cubit.selectSubscription(id);
+          });
+          return cubit;
+        },
         // A renewal is priced by the plan the selected branch sells (083
         // filters on `p_branch_id`), so moving to another branch while this
         // page is open has to re-read it.
@@ -44,21 +55,40 @@ class SubscriptionDetailsPage extends StatelessWidget {
               previous.selected?.id != current.selected?.id,
           listener: (context, state) =>
               context.read<SubscriptionCubit>().setBranch(state.selected?.id),
-          child: const _SubscriptionDetailsView(),
+          child: _SubscriptionDetailsView(
+            initiallyShowingDetails: initialSubscriptionId != null,
+          ),
         ),
       ),
     );
   }
 }
 
-class _SubscriptionDetailsView extends StatelessWidget {
-  const _SubscriptionDetailsView();
+class _SubscriptionDetailsView extends StatefulWidget {
+  const _SubscriptionDetailsView({required this.initiallyShowingDetails});
+
+  final bool initiallyShowingDetails;
+
+  @override
+  State<_SubscriptionDetailsView> createState() =>
+      _SubscriptionDetailsViewState();
+}
+
+class _SubscriptionDetailsViewState extends State<_SubscriptionDetailsView> {
+  late bool _showDetails = widget.initiallyShowingDetails;
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<SubscriptionCubit>();
     return Scaffold(
       appBar: AppBar(
-        leading: const AppBackButton(),
+        leading: _showDetails
+            ? IconButton(
+                tooltip: S.mySubscriptionsBack,
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => setState(() => _showDetails = false),
+              )
+            : const AppBackButton(),
         title: DesignText(
           S.mySubscription,
           page: 'subscription_details',
@@ -117,6 +147,15 @@ class _SubscriptionDetailsView extends StatelessWidget {
               ),
             );
           }
+          if (!_showDetails) {
+            return _MySubscriptionsOverview(
+              subscriptions: state.subscriptions,
+              onOpen: (item) {
+                cubit.selectSubscription(item.id);
+                setState(() => _showDetails = true);
+              },
+            );
+          }
           return _SubscriptionBody(
             subscription: subscription,
             state: state,
@@ -126,6 +165,103 @@ class _SubscriptionDetailsView extends StatelessWidget {
       ),
     );
   }
+}
+
+class _MySubscriptionsOverview extends StatelessWidget {
+  const _MySubscriptionsOverview({
+    required this.subscriptions,
+    required this.onOpen,
+  });
+
+  final List<CustomerSubscription> subscriptions;
+  final ValueChanged<CustomerSubscription> onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final current = subscriptions.where((item) => item.isActive).toList();
+    final pending = subscriptions
+        .where((item) => item.isPendingPayment)
+        .toList();
+    final previous = subscriptions
+        .where((item) => !item.isActive && !item.isPendingPayment)
+        .toList();
+    return ListView(
+      padding: EdgeInsets.all(AppSpacing.lg),
+      children: [
+        Text(S.mySubscription, style: AppFonts.semiBold20(context)),
+        SizedBox(height: AppSpacing.xs),
+        Text(S.mySubscriptionsIntro),
+        SizedBox(height: AppSpacing.md),
+        if (current.isEmpty && pending.isEmpty) ...[
+          Card(
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                children: [
+                  Text(S.noSubscriptionYet),
+                  SizedBox(height: AppSpacing.sm),
+                  CustomFilledButton(
+                    onPressed: () =>
+                        Navigator.of(context)
+                            .pushNamed(SubscriptionPlansPage.routeName),
+                    child: Text(S.browsePlans),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: AppSpacing.sm),
+        ],
+        for (final item in current) _subscriptionCard(item, context),
+        if (pending.isNotEmpty) ...[
+          Text(S.pendingSubscriptionPayment),
+          for (final item in pending) _subscriptionCard(item, context),
+        ],
+        if (previous.isNotEmpty)
+          Card(
+            margin: EdgeInsets.zero,
+            child: ExpansionTile(
+              title: Text(S.previousSubscriptions(previous.length)),
+              children: [
+                for (final item in previous) _subscriptionCard(item, context),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _subscriptionCard(CustomerSubscription item, BuildContext context) =>
+      ListTile(
+        contentPadding: EdgeInsets.all(AppSpacing.md),
+        title: Text(item.planName, style: AppFonts.semiBold16(context)),
+        subtitle: Padding(
+          padding: EdgeInsets.only(top: AppSpacing.xs),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${S.subscriptionStatus}: ${item.statusLabel}'),
+              SizedBox(height: AppSpacing.xs),
+              Text(
+                S.remainingSubscriptionProducts(
+                  item.availableCups,
+                  item.cupsEntitled + item.cupsCarriedOver,
+                ),
+              ),
+              SizedBox(height: AppSpacing.xs),
+              Text('${S.cupsUsed}: ${item.cupsUsed}'),
+              Text('${S.subscriptionPreorderReserved}: ${item.cupsReserved}'),
+              if (item.endsAt != null) ...[
+                SizedBox(height: AppSpacing.xs),
+                Text('${S.subscriptionEnd}: ${Formatters.date(item.endsAt!)}'),
+              ],
+            ],
+          ),
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => onOpen(item),
+      );
 }
 
 class _SubscriptionBody extends StatelessWidget {
@@ -154,6 +290,30 @@ class _SubscriptionBody extends StatelessWidget {
         SizedBox(height: AppSpacing.md),
         _SubscriptionFacts(subscription: subscription),
         SizedBox(height: AppSpacing.sm),
+        if (subscription.isActive) ...[
+          CustomFilledButton(
+            onPressed: busy
+                ? null
+                : () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          SubscriptionPreorderPage(subscription: subscription),
+                    ),
+                  ),
+            child: Text(S.subscriptionPreorderTitle),
+          ),
+          SizedBox(height: AppSpacing.sm),
+          Card(
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: EdgeInsets.all(AppSpacing.md),
+              child: Text(S.subscriptionRedeemInstructions),
+            ),
+          ),
+          SizedBox(height: AppSpacing.md),
+        ],
+        SubscriptionPreorderHistorySection(subscriptionId: subscription.id),
+        SizedBox(height: AppSpacing.md),
         Card(
           margin: EdgeInsets.zero,
           child: SwitchListTile(
@@ -408,6 +568,11 @@ class _SubscriptionSummary extends StatelessWidget {
             SubscriptionDetailRow(
               label: S.cupsUsed,
               value: '${subscription.cupsUsed}',
+            ),
+            SizedBox(height: AppSpacing.xs),
+            SubscriptionDetailRow(
+              label: S.subscriptionPreorderReserved,
+              value: '${subscription.cupsReserved}',
             ),
           ],
         ),

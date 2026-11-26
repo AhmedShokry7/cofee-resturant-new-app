@@ -13,10 +13,12 @@ import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.da
 import 'package:new_coffee/features/auth/presentation/manager/phone_auth/phone_auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/manager/phone_auth/phone_auth_state.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/login_page_body.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 import 'package:new_coffee/shared/widgets/skip_btn.dart';
 
 import 'support/pump_harness.dart';
+import 'support/fake_design_repository.dart';
 
 const _user = AuthUser(id: 'u-1', name: 'Ahmed', email: 'a@b.com');
 
@@ -263,14 +265,17 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        BlocProvider<AuthCubit>.value(
-          value: cubit,
-          child: MaterialApp(
-            routes: {
-              MainPage.routeName: (context) =>
-                  const Scaffold(body: Text('home-stub')),
-            },
-            home: const Scaffold(body: LoginPageBody()),
+        BlocProvider<DesignCubit>(
+          create: (_) => DesignCubit(repository: FakeDesignRepository()),
+          child: BlocProvider<AuthCubit>.value(
+            value: cubit,
+            child: MaterialApp(
+              routes: {
+                MainPage.routeName: (context) =>
+                    const Scaffold(body: Text('home-stub')),
+              },
+              home: const Scaffold(body: LoginPageBody()),
+            ),
           ),
         ),
       );

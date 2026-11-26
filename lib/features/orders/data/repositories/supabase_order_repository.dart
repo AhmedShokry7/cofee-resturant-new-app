@@ -86,6 +86,21 @@ class SupabaseOrdersRepository
     );
 
     final ordersById = {for (final row in orderRows) row['id'].toString(): row};
+    final itemIds = itemRows.map((row) => row['id'].toString()).toList();
+    final optionsByItem = <String, List<String>>{};
+    if (itemIds.isNotEmpty) {
+      final options = await _readClient
+          .from('order_item_options')
+          .select('order_item_id,option_value_id')
+          .inFilter('order_item_id', itemIds);
+      for (final option in options as List) {
+        final row = Map<String, dynamic>.from(option as Map);
+        final id = row['option_value_id']?.toString();
+        if (id != null && id.isNotEmpty) {
+          (optionsByItem[row['order_item_id'].toString()] ??= []).add(id);
+        }
+      }
+    }
     final orderPosition = {
       for (var i = 0; i < orderRows.length; i++)
         orderRows[i]['id'].toString(): i,
@@ -96,6 +111,7 @@ class SupabaseOrdersRepository
           OrderItemModel.fromDatabase(
             order: ordersById[item['order_id'].toString()]!,
             item: item,
+            optionValueIds: optionsByItem[item['id'].toString()] ?? const [],
           ),
     ];
 
@@ -253,6 +269,7 @@ class SupabaseOrdersRepository
     String? couponCode,
     String? note,
     String? subscriptionRunId,
+    DateTime? scheduledPickupAt,
   }) => _submitOrder(
     branchId: branchId,
     lines: lines,
@@ -264,6 +281,7 @@ class SupabaseOrdersRepository
     note: note,
     expectedTotal: expectedTotal,
     subscriptionRunId: subscriptionRunId,
+    scheduledPickupAt: scheduledPickupAt,
   );
 
   Future<PlacedOrder> _submitOrder({
@@ -277,6 +295,7 @@ class SupabaseOrdersRepository
     String? note,
     double? expectedTotal,
     String? subscriptionRunId,
+    DateTime? scheduledPickupAt,
   }) async {
     _requireUserId();
     final branch = branchId.trim();
@@ -302,16 +321,23 @@ class SupabaseOrdersRepository
     if (!allowed) {
       throw StateError('place_order rate limit exceeded. Try again later.');
     }
+    if (scheduledPickupAt != null && expectedTotal == null) {
+      throw StateError('Scheduled pickup requires a server checkout quote.');
+    }
     final response = await _rpc(
-      expectedTotal == null
-          ? 'place_order_with_lines'
-          : 'place_order_with_quote',
+      scheduledPickupAt != null
+          ? 'place_order_with_pickup_schedule'
+          : expectedTotal == null
+              ? 'place_order_with_lines'
+              : 'place_order_with_quote',
       <String, dynamic>{
         'p_branch_id': branch,
         'p_lines': _cartLinePayload(lines),
         'p_idempotency_key': idempotencyKey,
-        'p_fulfillment_type': fulfillmentType,
+        if (scheduledPickupAt == null) 'p_fulfillment_type': fulfillmentType,
         'p_expected_total': ?expectedTotal,
+        if (scheduledPickupAt != null)
+          'p_scheduled_pickup_at': scheduledPickupAt.toUtc().toIso8601String(),
         if (zoneId.isNotEmpty) 'p_delivery_zone_id': zoneId,
         if (addressIdValue.isNotEmpty) 'p_address_id': addressIdValue,
         if (coupon.isNotEmpty) 'p_coupon_code': coupon,

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/models/admin_branch.dart';
+import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/features/branches/domain/entities/branch_mutation_outcome.dart';
 import 'package:admin_app/features/branches/presentation/manager/admin_branch_cubit.dart';
 import 'package:admin_app/features/branches/presentation/manager/admin_branch_state.dart';
@@ -16,6 +17,8 @@ import 'package:admin_app/features/branches/presentation/widgets/branch_page_bod
 import 'package:admin_app/features/branches/presentation/widgets/branch_product_pricing_dialog.dart';
 import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
+import 'package:admin_app/features/branches/presentation/widgets/pickup_schedule_dialog.dart';
+import 'package:admin_app/features/branches/presentation/widgets/reservation_cancellation_policy_dialog.dart';
 
 class BranchPage extends StatefulWidget {
   const BranchPage({
@@ -149,6 +152,44 @@ class _BranchPageState extends State<BranchPage> {
     showBranchProductPricingDialog(context: context, branch: branch);
   }
 
+  Future<void> _managePickupSchedules(List<AdminBranch> branches) async {
+    if (!widget.canManage || branches.isEmpty) return;
+    final branch = await showDialog<AdminBranch>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text(S.pickupScheduleTitle),
+        children: [
+          for (final item in branches)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, item),
+              child: Text(item.nameFor(AppLocale.instance.language)),
+            ),
+        ],
+      ),
+    );
+    if (branch == null || !mounted) return;
+    await showPickupScheduleDialog(context: context, branch: branch);
+  }
+
+  Future<void> _manageCancellationPolicy(List<AdminBranch> branches) async {
+    if (!widget.canManage || branches.isEmpty) return;
+    final branch = await showDialog<AdminBranch>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text(S.reservationCancellationPolicy),
+        children: [
+          for (final item in branches)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, item),
+              child: Text(item.nameFor(AppLocale.instance.language)),
+            ),
+        ],
+      ),
+    );
+    if (branch == null || !mounted) return;
+    await showReservationCancellationPolicyDialog(context: context, branch: branch);
+  }
+
   void _showMessage(String message, {bool error = false}) {
     final messenger = ScaffoldMessenger.of(context);
     messenger
@@ -188,6 +229,8 @@ class _BranchPageState extends State<BranchPage> {
             onChangeImage: _changeImage,
             onManageDelivery: _manageDelivery,
             onManagePricing: widget.canManagePricing ? _managePricing : null,
+            onManagePickupSchedules: () => _managePickupSchedules(state.branches),
+            onManageCancellationPolicy: () => _manageCancellationPolicy(state.branches),
             onToggleActive: _toggleActive,
             onDelete: _delete,
             errorMessage: state.errorMessage,

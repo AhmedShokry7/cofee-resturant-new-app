@@ -11,6 +11,22 @@ void main() {
   });
 
   group('DesignDocumentCodec — مفاتيح العقد', () {
+    test('all editor pages fit in one publishable document and retain event labels', () {
+      final pages = {
+        for (final page in EditorPages.pages)
+          page.pageId: DesignDocumentCodec.withNativeLabels(
+            page.pageId,
+            DesignDocumentCodec.defaultComponentsFor(page.pageId),
+          ),
+      };
+      final document = DesignDocumentCodec.document(pages);
+      expect(DesignDocumentCodec.validate(document), isNull);
+      final restored = DesignDocumentCodec.parseDocument(document);
+      final submit = restored['event_request_form']!.singleWhere(
+        (node) => node.componentId == 'event_request_form_label_sendRequest',
+      );
+      expect(submit.properties['text_en'], 'Send event request');
+    });
     test('تظهر نصوص الصفحات المدمجة بالعربية والإنجليزية في حقول التحرير', () {
       final home = DesignDocumentCodec.defaultComponentsFor('home');
       final header = home.firstWhere(

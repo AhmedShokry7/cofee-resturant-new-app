@@ -67,6 +67,12 @@ class CheckoutState {
     this.checkoutQuote,
     this.quoteLoading = false,
     this.quoteError,
+    this.pickupSlots = const [],
+    this.pickupAvailableDays = const [],
+    this.pickupDaysLoading = false,
+    this.scheduledPickup,
+    this.pickupScheduleSelected = false,
+    this.pickupSlotsLoading = false,
   });
 
   final List<AddressModel> addresses;
@@ -153,6 +159,12 @@ class CheckoutState {
   final CheckoutQuote? checkoutQuote;
   final bool quoteLoading;
   final String? quoteError;
+  final List<DateTime> pickupSlots;
+  final List<DateTime> pickupAvailableDays;
+  final bool pickupDaysLoading;
+  final DateTime? scheduledPickup;
+  final bool pickupScheduleSelected;
+  final bool pickupSlotsLoading;
 
   /// True when the selected address has coordinates and none of the branch's
   /// zones covers it.
@@ -217,6 +229,13 @@ class CheckoutState {
     bool? quoteLoading,
     String? quoteError,
     bool clearQuoteError = false,
+    List<DateTime>? pickupSlots,
+    List<DateTime>? pickupAvailableDays,
+    bool? pickupDaysLoading,
+    DateTime? scheduledPickup,
+    bool clearScheduledPickup = false,
+    bool? pickupScheduleSelected,
+    bool? pickupSlotsLoading,
   }) {
     return CheckoutState(
       addresses: addresses ?? this.addresses,
@@ -258,6 +277,12 @@ class CheckoutState {
           : checkoutQuote ?? this.checkoutQuote,
       quoteLoading: quoteLoading ?? this.quoteLoading,
       quoteError: clearQuoteError ? null : quoteError ?? this.quoteError,
+      pickupSlots: pickupSlots ?? this.pickupSlots,
+      pickupAvailableDays: pickupAvailableDays ?? this.pickupAvailableDays,
+      pickupDaysLoading: pickupDaysLoading ?? this.pickupDaysLoading,
+      scheduledPickup: clearScheduledPickup ? null : scheduledPickup ?? this.scheduledPickup,
+      pickupScheduleSelected: pickupScheduleSelected ?? this.pickupScheduleSelected,
+      pickupSlotsLoading: pickupSlotsLoading ?? this.pickupSlotsLoading,
     );
   }
 }

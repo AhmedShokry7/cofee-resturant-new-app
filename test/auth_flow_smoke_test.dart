@@ -6,8 +6,11 @@ import 'package:new_coffee/features/auth/data/model/auth_exception.dart';
 import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'support/fake_design_repository.dart';
 
 class _FakeAuthRepository implements AuthRepository {
   @override
@@ -73,9 +76,12 @@ void main() {
 
   testWidgets('login failure shows centered dialog', (tester) async {
     await tester.pumpWidget(
-      RepositoryProvider<AuthRepository>(
-        create: (_) => _FakeAuthRepository(),
-        child: const MaterialApp(home: AuthPage()),
+      BlocProvider<DesignCubit>(
+        create: (_) => DesignCubit(repository: FakeDesignRepository()),
+        child: RepositoryProvider<AuthRepository>(
+          create: (_) => _FakeAuthRepository(),
+          child: const MaterialApp(home: AuthPage()),
+        ),
       ),
     );
     await tester.pumpAndSettle();

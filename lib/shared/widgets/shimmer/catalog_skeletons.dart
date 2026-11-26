@@ -31,6 +31,7 @@ class ProductCardSkeleton extends StatelessWidget {
                 : AppDimensions.productCardWidth);
         return SizedBox(
           width: resolved,
+          height: width == null ? null : AppDimensions.productCardHeight,
           child: AspectRatio(
             // Mirrors ProductCard.cardAspectRatio (kept literal to avoid a
             // shared -> feature import).
@@ -168,7 +169,7 @@ class ProductsCarouselSkeleton extends StatelessWidget {
         ],
         SizedBox(height: AppSpacing.md),
         SizedBox(
-          height: AppDimensions.productCardWidth / ProductCard.cardAspectRatio,
+          height: AppDimensions.productCardHeight,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             physics: const NeverScrollableScrollPhysics(),

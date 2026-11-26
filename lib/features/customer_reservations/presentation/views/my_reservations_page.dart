@@ -1,3 +1,4 @@
+import 'package:new_coffee/shared/widgets/refresh_on_return.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:material_ui/material_ui.dart';
@@ -92,11 +93,19 @@ class _MyReservationsViewState extends State<_MyReservationsView> {
         actions: [
           CustomTextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(S.cancel),
+            child: DesignText(
+              S.cancel,
+              page: 'my_reservations',
+              label: 'cancel',
+            ),
           ),
           CustomTextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(S.confirm),
+            child: DesignText(
+              S.confirm,
+              page: 'my_reservations',
+              label: 'confirm',
+            ),
           ),
         ],
       ),
@@ -130,11 +139,19 @@ class _MyReservationsViewState extends State<_MyReservationsView> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(S.cancelReservationConfirm),
+        title: DesignText(
+          S.cancelReservationConfirm,
+          page: 'my_reservations',
+          label: 'cancelReservationConfirm',
+        ),
         actions: [
           CustomTextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(S.cancel),
+            child: DesignText(
+              S.cancel,
+              page: 'my_reservations',
+              label: 'cancel',
+            ),
           ),
           CustomTextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
@@ -267,7 +284,7 @@ class _MyReservationsViewState extends State<_MyReservationsView> {
         actions: [
           CustomTextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(S.back),
+            child: DesignText(S.back, page: 'my_reservations', label: 'back'),
           ),
         ],
       ),
@@ -337,7 +354,7 @@ class _MyReservationsViewState extends State<_MyReservationsView> {
           final eventRequests = state.eventRequests
               .where((event) => event.status.toLowerCase() != 'confirmed')
               .toList(growable: false);
-          return RefreshIndicator(
+          return RefreshOnReturn(
             onRefresh: () => context.read<CustomerReservationsCubit>().load(),
             child: ListView(
               padding: AppLayout.pageBody,
@@ -370,7 +387,8 @@ class _MyReservationsViewState extends State<_MyReservationsView> {
                       'pending',
                       'quoted',
                       'quote_declined',
-                    }.contains(status);
+                    }.contains(status) ||
+                        (status == 'confirmed' && event.customerCanCancel);
                     final start = event.quotedStartAt ?? event.preferredStartAt;
                     final end = event.quotedEndAt ?? event.preferredEndAt;
                     final options = event.quotedSpaceOptions;
@@ -455,16 +473,37 @@ class _MyReservationsViewState extends State<_MyReservationsView> {
                                 ),
                               ),
                               const SizedBox(height: AppSizes.px8),
-                              for (final option in options)
-                                _EventSpaceOptionCard(
-                                  option: option,
-                                  selected:
-                                      '${option['id']}' == selectedSpaceId,
-                                  onTap: () => setState(() {
-                                    _selectedQuoteSpaces[event.id] =
-                                        '${option['id']}';
-                                  }),
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    for (final option in options)
+                                      Padding(
+                                        padding:
+                                            const EdgeInsetsDirectional.only(
+                                              end: AppSpacing.sm,
+                                            ),
+                                        child: SizedBox(
+                                          width:
+                                              MediaQuery.sizeOf(context).width
+                                                  .clamp(280, 600) *
+                                              .61,
+                                          child: _EventSpaceOptionCard(
+                                            option: option,
+                                            selected:
+                                                '${option['id']}' ==
+                                                selectedSpaceId,
+                                            onTap: () => setState(() {
+                                              _selectedQuoteSpaces[event.id] =
+                                                  '${option['id']}';
+                                            }),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
+                              ),
                             ] else if (event.quotedSpaceImageUrl
                                     ?.trim()
                                     .isNotEmpty ==
@@ -593,7 +632,11 @@ class _MyReservationsViewState extends State<_MyReservationsView> {
                                 child: CustomTextButton(
                                   onPressed: () =>
                                       _cancelEvent(context, event.id),
-                                  child: Text(S.cancel),
+                                  child: DesignText(
+                                    S.cancel,
+                                    page: 'my_reservations',
+                                    label: 'cancel',
+                                  ),
                                 ),
                               ),
                           ],
@@ -628,7 +671,7 @@ class _MyReservationsViewState extends State<_MyReservationsView> {
                       'pending',
                       'approved',
                       'confirmed',
-                    }.contains(status);
+                    }.contains(status) && r.customerCanCancel;
                     String fmtDt(DateTime d) =>
                         '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')} '
                         '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
@@ -737,7 +780,11 @@ class _MyReservationsViewState extends State<_MyReservationsView> {
                                       AppIcons.close,
                                       size: AppSizes.px18,
                                     ),
-                                    label: Text(S.cancel),
+                                    label: DesignText(
+                                      S.cancel,
+                                      page: 'my_reservations',
+                                      label: 'cancel',
+                                    ),
                                   ),
                                 ),
                               ],
@@ -754,6 +801,9 @@ class _MyReservationsViewState extends State<_MyReservationsView> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _openForm(context),
+        shape: const CircleBorder(),
+        backgroundColor: AppColor.primaryColor,
+        foregroundColor: AppColor.whiteColor,
         child: const Icon(AppIcons.add),
       ),
     );

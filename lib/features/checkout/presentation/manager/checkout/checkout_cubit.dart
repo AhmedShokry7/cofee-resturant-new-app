@@ -15,6 +15,7 @@ import 'package:new_coffee/features/checkout/data/model/payment_method_model.dar
 import 'package:new_coffee/features/payment/data/model/saved_card_model.dart';
 import 'package:new_coffee/features/addresses/data/repositories/address_repository.dart';
 import 'package:new_coffee/features/checkout/data/repositories/delivery_zone_repository.dart';
+import 'package:new_coffee/features/checkout/data/repositories/pickup_schedule_repository.dart';
 import 'package:new_coffee/features/checkout/data/repositories/payment_method_repository.dart';
 import 'package:new_coffee/features/coupon/data/model/coupon_model.dart';
 import 'package:new_coffee/features/coupon/data/repositories/coupon_repository.dart';
@@ -48,6 +49,54 @@ class CheckoutCubit extends Cubit<CheckoutState> {
 
   /// Branch used for category-scoped coupon validation and delivery zones.
   String? branchId;
+  final _pickupScheduleRepository = const PickupScheduleRepository();
+  DateTime? _pickupSlotsDate;
+
+  Future<void> loadPickupSlots(DateTime date) async {
+    final branch = branchId?.trim() ?? '';
+    if (branch.isEmpty) return;
+    _pickupSlotsDate = DateTime(date.year, date.month, date.day);
+    emit(state.copyWith(pickupSlotsLoading: true, pickupSlots: const [], clearScheduledPickup: true));
+    try {
+      final slots = await _pickupScheduleRepository.available(branch, date);
+      if (branchId != branch || isClosed) return;
+      emit(state.copyWith(pickupSlots: slots.map((slot) => slot.startsAt).toList(), pickupSlotsLoading: false));
+    } catch (_) {
+      if (!isClosed) emit(state.copyWith(pickupSlotsLoading: false, pickupSlots: const []));
+    }
+  }
+
+  Future<void> loadPickupDays() async {
+    final branch = branchId?.trim() ?? '';
+    if (branch.isEmpty) return;
+    emit(state.copyWith(pickupDaysLoading: true, pickupAvailableDays: const [], pickupSlots: const [], clearScheduledPickup: true));
+    try {
+      final days = await _pickupScheduleRepository.availableDays(branch, DateTime.now());
+      if (branchId != branch || isClosed) return;
+      emit(state.copyWith(pickupDaysLoading: false, pickupAvailableDays: days));
+      if (days.isNotEmpty) {
+        final currentDay = _pickupSlotsDate;
+        final selected = currentDay != null && days.any((d) => d == currentDay) ? currentDay : days.first;
+        await loadPickupSlots(selected);
+      }
+    } catch (_) {
+      if (!isClosed) emit(state.copyWith(pickupDaysLoading: false, pickupAvailableDays: const [], pickupSlots: const []));
+    }
+  }
+
+  void setScheduledPickup(DateTime? value) {
+    if (value != null && !state.pickupSlots.any((slot) => slot.isAtSameMomentAs(value))) return;
+    emit(state.copyWith(
+      scheduledPickup: value,
+      clearScheduledPickup: value == null,
+      pickupScheduleSelected: value != null,
+    ));
+  }
+
+  void enablePickupScheduling() => emit(state.copyWith(
+    pickupScheduleSelected: true,
+    clearScheduledPickup: true,
+  ));
 
   /// Monotonic id of the newest coupon validation.
   ///
@@ -306,6 +355,15 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   void setBranch(String? branchId) {
     if (branchId == this.branchId) return;
     this.branchId = branchId;
+    if (state.pickupScheduleSelected) {
+      loadPickupDays();
+    } else {
+      emit(state.copyWith(
+        pickupSlots: const [],
+        clearScheduledPickup: true,
+        pickupScheduleSelected: false,
+      ));
+    }
     // A category-scoped coupon can become valid or invalid at another branch,
     // so a stored approval never silently follows a branch change. The same is
     // true for delivery zones, which are branch-specific.
@@ -397,6 +455,9 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         selectedDeliveryZone: fulfillment.isDelivery
             ? (state.selectedDeliveryZone ?? state.deliveryZones.first)
             : null,
+        clearScheduledPickup: fulfillment.isDelivery,
+        pickupScheduleSelected: fulfillment.isDelivery ? false : state.pickupScheduleSelected,
+        pickupSlots: fulfillment.isDelivery ? const [] : state.pickupSlots,
       ),
     );
     return true;
@@ -762,6 +823,16 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     return applied.discount;
   }
 
+  /// The amount loyalty points are earned on. `place_order()` uses the
+  /// subtotal minus the coupon only, so delivery fee and tax are excluded.
+  /// Uses the server quote when there is one, so both sides agree.
+  double pointsBase(double subtotal) {
+    final quote = state.checkoutQuote;
+    if (quote != null) return quote.subtotal - quote.discountTotal;
+    final base = subtotal - discountFor(subtotal);
+    return base < 0 ? 0 : base;
+  }
+
   /// Single source of truth for the payable breakdown.
   CheckoutSummary summary(double subtotal, [List<CartItem> items = const []]) {
     final quote = state.checkoutQuote;
@@ -887,6 +958,10 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         return false;
       }
     }
+    if (!isDelivery && state.pickupScheduleSelected && state.scheduledPickup == null) {
+      emit(state.copyWith(orderError: AppCopy.pickupScheduleRequired));
+      return false;
+    }
 
     final requestSignature = _orderRequestSignature(
       branchId: branch,
@@ -896,6 +971,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       addressId: isDelivery ? state.selectedAddress!.id : null,
       savedCardId: state.selectedSavedCard?.id,
       couponCode: state.appliedCoupon?.coupon.code,
+      scheduledPickupAt: state.scheduledPickup,
       subscriptionRunId: _subscriptionRunId,
     );
     _orderSubmissionInProgress = true;
@@ -929,6 +1005,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
               deliveryZoneId: orderArgs.deliveryZoneId,
               addressId: orderArgs.addressId,
               couponCode: orderArgs.couponCode,
+              scheduledPickupAt: state.scheduledPickup,
               subscriptionRunId: _subscriptionRunId,
             )
           : await _orders.placeOrder(
@@ -1096,6 +1173,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     required String? savedCardId,
     required String? couponCode,
     String? subscriptionRunId,
+    DateTime? scheduledPickupAt,
   }) {
     final canonical = jsonEncode([
       branchId,
@@ -1105,6 +1183,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       savedCardId,
       couponCode?.trim().toUpperCase(),
       subscriptionRunId,
+      scheduledPickupAt?.toUtc().toIso8601String(),
       for (final item in items)
         [
           item.product.id,

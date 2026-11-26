@@ -23,6 +23,8 @@ import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.da
 import 'package:new_coffee/features/auth/presentation/manager/phone_auth/phone_auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/manager/phone_auth/phone_auth_state.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/phone_auth_page_body.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
+import 'support/fake_design_repository.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 
 /// Phone sign-in against the provider's answers rather than a fake repository.
@@ -55,6 +57,7 @@ Map<String, dynamic> _phoneUser({String phone = _e164}) => {
   'role': 'authenticated',
   'email': '',
   'phone': phone,
+  'phone_confirmed_at': '2026-11-26T00:00:00.000Z',
   'confirmed_at': '2026-11-02T00:00:00Z',
   'user_metadata': <String, dynamic>{},
   'app_metadata': {
@@ -382,40 +385,47 @@ void main() {
       },
     );
 
-    test('the proved number is stored where the app reads a phone', () async {
-      // identity.handle_new_user() copies an email and knows nothing about a
-      // phone, so without this a customer who signed in by SMS has a session and
-      // no number anywhere.
-      final provider = _Provider();
-      SupabaseService.debugSetClient(provider.client());
+    test(
+      'the verified number is cached without a direct profile write',
+      () async {
+        final provider = _Provider();
+        SupabaseService.debugSetClient(provider.client());
 
-      await SupabaseAuthRepository().verifyPhoneCode(
-        phone: _e164,
-        code: '123456',
-      );
+        await SupabaseAuthRepository().verifyPhoneCode(
+          phone: _e164,
+          code: '123456',
+        );
 
-      expect(provider.patchedProfile, isTrue);
-      final stored = jsonDecode(
-        await SharedPref.getValue(key: _profileCacheKey) as String,
-      ) as Map<String, dynamic>;
-      expect(stored['phone'], _e164);
-    });
+        expect(
+          provider.patchedProfile,
+          isFalse,
+          reason: 'a database trigger mirrors only Auth-confirmed phone values',
+        );
+        final stored = jsonDecode(
+          await SharedPref.getValue(key: _profileCacheKey) as String,
+        ) as Map<String, dynamic>;
+        expect(stored['phone'], _e164);
+      },
+    );
 
-    test('a number the customer already stored is not overwritten', () async {
-      final provider = _Provider(phoneInProfile: '+966500000000');
-      SupabaseService.debugSetClient(provider.client());
+    test(
+      'a profile number alone is not treated as Auth verification',
+      () async {
+        final provider = _Provider(phoneInProfile: '+966500000000');
+        SupabaseService.debugSetClient(provider.client());
 
-      await SupabaseAuthRepository().verifyPhoneCode(
-        phone: _e164,
-        code: '123456',
-      );
+        await SupabaseAuthRepository().verifyPhoneCode(
+          phone: _e164,
+          code: '123456',
+        );
 
-      expect(
-        provider.patchedProfile,
-        isFalse,
-        reason: 'what the customer typed on their profile outranks this',
-      );
-    });
+        expect(
+          provider.patchedProfile,
+          isFalse,
+          reason: 'Auth confirmation is the source of phone ownership proof',
+        );
+      },
+    );
 
     test('an expired or replaced code is its own answer', () async {
       final provider = _Provider(
@@ -496,18 +506,21 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        MaterialApp(
-          onGenerateRoute: (settings) {
-            onNavigate(settings.arguments);
-            return MaterialPageRoute<void>(
-              builder: (_) => const SizedBox.shrink(),
-              settings: settings,
-            );
-          },
-          home: Scaffold(
-            body: BlocProvider(
-              create: (context) => PhoneAuthCubit(repository),
-              child: const PhoneAuthPageBody(),
+        BlocProvider(
+          create: (_) => DesignCubit(repository: FakeDesignRepository()),
+          child: MaterialApp(
+            onGenerateRoute: (settings) {
+              onNavigate(settings.arguments);
+              return MaterialPageRoute<void>(
+                builder: (_) => const SizedBox.shrink(),
+                settings: settings,
+              );
+            },
+            home: Scaffold(
+              body: BlocProvider(
+                create: (context) => PhoneAuthCubit(repository),
+                child: const PhoneAuthPageBody(),
+              ),
             ),
           ),
         ),

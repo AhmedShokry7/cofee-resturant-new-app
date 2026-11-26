@@ -174,15 +174,11 @@ class _FeaturedCatalog implements CatalogRepository {
   Future<List<ProductModel>> getProducts({
     String? branchId,
     String? categoryId,
-    double? minPrice,
-    double? maxPrice,
     int limit = 100,
     int offset = 0,
   }) => _inner.getProducts(
     branchId: branchId,
     categoryId: categoryId,
-    minPrice: minPrice,
-    maxPrice: maxPrice,
     limit: limit,
     offset: offset,
   );

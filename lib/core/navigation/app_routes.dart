@@ -6,6 +6,7 @@ import 'package:new_coffee/features/addresses/presentation/views/addresses_page.
 import 'package:new_coffee/features/assistant/presentation/views/assistant_memory_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/email_auth_page.dart';
+import 'package:new_coffee/features/auth/presentation/views/email_otp_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/forget_password_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/phone_auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/reset_password_page.dart';
@@ -38,6 +39,7 @@ import 'package:new_coffee/features/customer_reservations/presentation/views/eve
 import 'package:new_coffee/features/product_subscriptions/presentation/views/my_product_subscriptions_page.dart';
 import 'package:new_coffee/features/product_subscriptions/presentation/views/product_subscription_form_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/my_subscriptions_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/cashier_subscription_consume_page.dart';
 import 'package:new_coffee/features/welcome/presentation/views/welcome_view.dart';
 import 'package:new_coffee/shared/widgets/design_page_sections.dart';
@@ -55,6 +57,20 @@ class AppRoutes {
     ResetPasswordPage.routeName: (context) => const ResetPasswordPage(),
     PhoneAuthPage.routeName: (context) => const PhoneAuthPage(),
     EmailAuthPage.routeName: (context) => const EmailAuthPage(),
+    EmailOtpPage.routeName: (context) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is! EmailOtpPageArgs) {
+        throw ArgumentError.value(
+          args,
+          'arguments',
+          'Email OTP arguments required',
+        );
+      }
+      return EmailOtpPage(
+        email: args.email,
+        isSignupConfirmation: args.isSignupConfirmation,
+      );
+    },
     MainPage.routeName: (context) => MainPage(
       initialTab: MainPage.notificationTabIndex(
         ModalRoute.of(context)?.settings.arguments,
@@ -120,7 +136,14 @@ class AppRoutes {
       const ProductSubscriptionFormPage(),
     ),
     SubscriptionDetailsPage.routeName: (context) =>
-        _designable('subscription_details', const SubscriptionDetailsPage()),
+        _designable(
+          'subscription_details',
+          SubscriptionDetailsPage(
+            initialSubscriptionId: ModalRoute.of(context)?.settings.arguments as String?,
+          ),
+        ),
+    MySubscriptionsPage.routeName: (context) =>
+        _designable('my_subscriptions', const MySubscriptionsPage()),
     CashierSubscriptionConsumePage.routeName: (context) => _designable(
       'cashier_subscription',
       const CashierSubscriptionConsumePage(),

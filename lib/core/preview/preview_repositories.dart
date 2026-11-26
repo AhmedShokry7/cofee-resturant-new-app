@@ -143,6 +143,8 @@ class PreviewSubscriptionRepository implements SubscriptionRepository {
   @override
   Future<CustomerSubscription?> mySubscription() async => null;
   @override
+  Future<List<CustomerSubscription>> mySubscriptions() async => const [];
+  @override
   Future<CustomerSubscription> subscribe({
     required String planId,
     required String idempotencyKey,

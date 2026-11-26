@@ -43,6 +43,11 @@ class OrderFulfillmentSection extends StatelessWidget {
           ),
           if (!view.isDelivery && branch.isNotEmpty)
             OrderFulfillmentRow(icon: AppIcons.store01, label: branch),
+          if (!view.isDelivery && order.scheduledPickupAt != null)
+            OrderFulfillmentRow(
+              icon: AppIcons.calendar03,
+              label: '${S.scheduledPickup}: ${MaterialLocalizations.of(context).formatFullDate(order.scheduledPickupAt!.toLocal())} • ${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(order.scheduledPickupAt!.toLocal()))}',
+            ),
           if (view.isDelivery && label.isNotEmpty)
             OrderFulfillmentRow(icon: AppIcons.mapPin, label: label),
           if (view.isDelivery && details.isNotEmpty && details != label)

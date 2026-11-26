@@ -10,6 +10,18 @@ import 'package:new_coffee/features/menu/data/repositories/batch_product_reposit
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// Earn rules in the order `place_order()` picks them: active rules not past
+/// `valid_to`, newest `valid_from` first. The first entry earns the points.
+List<LoyaltyRule> _earnRulesFrom(List<Map<String, dynamic>> rows) {
+  final now = DateTime.now();
+  final epoch = DateTime.fromMillisecondsSinceEpoch(0);
+  final rules = [for (final row in rows) LoyaltyRule.fromDatabase(row)]
+      .where((rule) => rule.isEffectiveAt(now))
+      .toList();
+  rules.sort((a, b) => (b.validFrom ?? epoch).compareTo(a.validFrom ?? epoch));
+  return rules;
+}
+
 /// Public loyalty catalogue: earn rules, redeemable rewards and currency.
 class LoyaltyCatalog {
   const LoyaltyCatalog({
@@ -23,12 +35,8 @@ class LoyaltyCatalog {
   final String currencyCode;
 
   /// Active rule with the latest validity wins, matching `place_order()`.
-  LoyaltyRule? get activeRule {
-    for (final rule in rules) {
-      if (rule.isActive) return rule;
-    }
-    return null;
-  }
+  /// `rules` is already filtered and ordered that way.
+  LoyaltyRule? get activeRule => rules.isEmpty ? null : rules.first;
 }
 
 /// Server-owned wallet. Null means guest/offline mode, not zero points.
@@ -135,7 +143,7 @@ class LoyaltyRepositoryImpl
     }
 
     return LoyaltyCatalog(
-      rules: [for (final row in ruleRows) LoyaltyRule.fromDatabase(row)],
+      rules: _earnRulesFrom(ruleRows),
       rewards: rewards,
       currencyCode: brandRows.isEmpty
           ? AppConstant.defaultCurrencyCode

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- A reinstall must start with a clean local session. -->
+        <exclude domain="root" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <!-- Do not carry the prior install's session to a transferred device. -->
+        <exclude domain="root" path="." />
+    </device-transfer>
+</data-extraction-rules>

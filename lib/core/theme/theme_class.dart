@@ -307,7 +307,10 @@ class ThemeClass {
         centerTitle: true,
         titleTextStyle: textTheme.titleLarge,
         systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: AppColor.transparent,
+          // Keep the status bar on the same surface as the app bar. A
+          // transparent bar can expose Android's black window background on
+          // edge-to-edge devices, which looks like a black strip over the UI.
+          statusBarColor: AppColor.darkBackground,
           statusBarIconBrightness: Brightness.light,
           systemNavigationBarColor: AppColor.darkSurface,
           systemNavigationBarIconBrightness: Brightness.light,

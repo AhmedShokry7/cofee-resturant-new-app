@@ -1,3 +1,4 @@
+import 'package:new_coffee/shared/widgets/refresh_on_return.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -34,7 +35,7 @@ class LoyaltyHistoryPage extends StatelessWidget {
         if (state.transactions.isEmpty) {
           return Center(child: Text(S.loyaltyNoHistory));
         }
-        return RefreshIndicator(
+        return RefreshOnReturn(
           onRefresh: context.read<LoyaltyCubit>().load,
           child: ListView.separated(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -73,6 +74,13 @@ class LoyaltyHistoryPage extends StatelessWidget {
   );
 }
 
+/// Local date and time as `yyyy/MM/dd hh:mm`, matching the rest of the app.
+String _formatWhen(DateTime date) {
+  final d = date.toLocal();
+  String two(int v) => v.toString().padLeft(2, '0');
+  return '${d.year}/${two(d.month)}/${two(d.day)}  ${two(d.hour)}:${two(d.minute)}';
+}
+
 class _HistoryEntry extends StatelessWidget {
   const _HistoryEntry({required this.transaction});
 
@@ -99,7 +107,7 @@ class _HistoryEntry extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.r12),
             ),
             child: Icon(
-              earned ? AppIcons.back : AppIcons.forward,
+              earned ? AppIcons.arrowUp : AppIcons.arrowDown,
               color: earned ? AppColor.greenColor : AppColor.primaryColor,
             ),
           ),
@@ -111,8 +119,7 @@ class _HistoryEntry extends StatelessWidget {
                 Text(transaction.title, style: AppFonts.medium14(context)),
                 SizedBox(height: AppSpacing.xs),
                 Text(
-                  MaterialLocalizations.of(context)
-                      .formatShortDate(transaction.date),
+                  _formatWhen(transaction.date),
                   style: AppFonts.regular12(context)
                       .copyWith(color: AppColor.greyColor),
                 ),
@@ -120,11 +127,25 @@ class _HistoryEntry extends StatelessWidget {
             ),
           ),
           SizedBox(width: AppSpacing.sm),
-          Text(
-            '${earned ? '+' : ''}${transaction.points}',
-            style: AppFonts.semiBold16(context).copyWith(
-              color: earned ? AppColor.greenColor : AppColor.primaryColor,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${earned ? '+' : '-'}${S.points(transaction.points.abs())}',
+                style: AppFonts.semiBold16(context).copyWith(
+                  color: earned ? AppColor.greenColor : AppColor.primaryColor,
+                ),
+              ),
+              if (transaction.balanceAfter != null) ...[
+                SizedBox(height: AppSpacing.xs),
+                Text(
+                  '${S.yourBalance}: ${S.points(transaction.balanceAfter!)}',
+                  style: AppFonts.regular12(context)
+                      .copyWith(color: AppColor.greyColor),
+                ),
+              ],
+            ],
           ),
         ],
       ),

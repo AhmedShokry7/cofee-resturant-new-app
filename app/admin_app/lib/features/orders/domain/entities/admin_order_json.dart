@@ -1,9 +1,11 @@
 import 'admin_order_item.dart';
 import 'admin_order_record.dart';
+import 'admin_subscription_preorder.dart';
 
 class AdminOrderJson {
   static AdminOrder parse(Map<String, dynamic> json) {
     final rawItems = json['items'] as List<dynamic>? ?? const [];
+    final subscriptionPreorder = _map(json['subscription_preorder']);
     return AdminOrder(
       id: '${json['id'] ?? ''}',
       orderNumber: '${json['order_number'] ?? ''}',
@@ -28,6 +30,12 @@ class AdminOrderJson {
       taxTotal: _number(json['tax_total']),
       grandTotal: _number(json['grand_total']),
       placedAt: DateTime.tryParse('${json['placed_at'] ?? ''}'),
+      scheduledPickupAt: DateTime.tryParse(
+        '${json['scheduled_pickup_at'] ?? ''}',
+      )?.toLocal(),
+      subscriptionPreorder: subscriptionPreorder == null
+          ? null
+          : AdminSubscriptionPreorder.fromJson(subscriptionPreorder),
       items: rawItems
           .whereType<Map>()
           .map(

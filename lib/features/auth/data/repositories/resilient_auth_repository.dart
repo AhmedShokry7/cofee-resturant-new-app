@@ -3,6 +3,7 @@ import 'package:new_coffee/features/auth/data/model/auth_exception.dart';
 import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/data/repositories/signup_email_otp_repository.dart';
+import 'package:new_coffee/features/auth/data/repositories/signup_phone_repository.dart';
 import 'package:new_coffee/features/auth/data/repositories/supabase_auth_repository.dart';
 
 /// Authentication that reconnects instead of giving up.
@@ -17,11 +18,29 @@ import 'package:new_coffee/features/auth/data/repositories/supabase_auth_reposit
 /// is reachable the request goes straight through; when it is not, the
 /// connection is retried a few times and only then is the attempt refused.
 class ResilientAuthRepository
-    implements AuthRepository, SignupEmailOtpRepository {
+    implements
+        AuthRepository,
+        SignupEmailOtpRepository,
+        SignupPhoneRepository,
+        PhoneIdentityRepository {
   ResilientAuthRepository({SupabaseAuthRepository? delegate})
     : _delegate = delegate ?? SupabaseAuthRepository();
 
   final SupabaseAuthRepository _delegate;
+
+  @override
+  Future<void> sendPhoneChangeCode({required String phone}) async =>
+      (await _ready()).sendPhoneChangeCode(phone: phone);
+
+  @override
+  Future<void> resendPhoneChangeCode({required String phone}) async =>
+      (await _ready()).resendPhoneChangeCode(phone: phone);
+
+  @override
+  Future<AuthUser> verifyPhoneChangeCode({
+    required String phone,
+    required String code,
+  }) async => (await _ready()).verifyPhoneChangeCode(phone: phone, code: code);
 
   /// Makes sure the backend is reachable, then returns the real repository.
   ///
@@ -59,6 +78,22 @@ class ResilientAuthRepository
   }) async {
     final repository = await _ready();
     return repository.signUp(name: name, email: email, password: password);
+  }
+
+  @override
+  Future<AuthUser> signUpWithPhone({
+    required String name,
+    required String email,
+    required String password,
+    required String phone,
+  }) async {
+    final repository = await _ready();
+    return repository.signUpWithPhone(
+      name: name,
+      email: email,
+      password: password,
+      phone: phone,
+    );
   }
 
   @override

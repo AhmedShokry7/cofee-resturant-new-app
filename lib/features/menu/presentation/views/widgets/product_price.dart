@@ -8,9 +8,17 @@ import 'package:new_coffee/shared/widgets/price_label.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 class ProductPrice extends StatelessWidget {
-  const ProductPrice({super.key, required this.product});
+  const ProductPrice({
+    super.key,
+    required this.product,
+    this.showOldPrice = true,
+  });
 
   final ProductModel product;
+
+  /// Whether the struck-through old price sits beside the live price. Cards
+  /// that place it on its own line pass false.
+  final bool showOldPrice;
 
   @override
   Widget build(BuildContext context) {
@@ -31,21 +39,38 @@ class ProductPrice extends StatelessWidget {
         // The struck number is the price before the discount (or the admin's
         // compare-at price). Nothing else marks a promotion — the percentage
         // badge is gone, so this row is the whole story.
-        if (product.hasOldPrice) ...[
+        if (showOldPrice && product.hasOldPrice) ...[
           SizedBox(width: AppSizes.px6),
-          Flexible(
-            child: Text(
-              Formatters.amount(product.oldPrice!),
-              style: AppFonts.regular12(context).copyWith(
-                color: AppColor.greyColor,
-                decoration: TextDecoration.lineThrough,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+          Flexible(child: ProductOldPrice(product: product)),
         ],
       ],
+    );
+  }
+}
+
+/// The struck-through price before the discount, on one line.
+///
+/// Always occupies one line: a product without a discount gets a blank line
+/// of the same height, so every card in a row lines up.
+class ProductOldPrice extends StatelessWidget {
+  const ProductOldPrice({super.key, required this.product});
+
+  final ProductModel product;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      product.hasOldPrice ? Formatters.amount(product.oldPrice!) : '\u00A0',
+      style: AppFonts.regular12(context).copyWith(
+        color: AppColor.greyColor,
+        // The strike belongs to a real price only; on the blank placeholder
+        // it would draw a stray dash.
+        decoration: product.hasOldPrice
+            ? TextDecoration.lineThrough
+            : TextDecoration.none,
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
   }
 }

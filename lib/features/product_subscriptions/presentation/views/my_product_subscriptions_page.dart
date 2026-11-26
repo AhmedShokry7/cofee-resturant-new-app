@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
@@ -19,6 +20,7 @@ import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/shared/widgets/design_text.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/app_back_button.dart';
+import 'package:new_coffee/shared/utils/formatters.dart';
 
 class MyProductSubscriptionsPage extends StatelessWidget {
   const MyProductSubscriptionsPage({super.key});
@@ -58,6 +60,39 @@ class _ProductSubscriptionsView extends StatelessWidget {
         return status;
     }
   }
+
+  Widget _statusPill(BuildContext context, String status) {
+    final active = status.toLowerCase() == 'active';
+    final color = active ? AppColor.successColor : AppColor.greyColor;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xxs,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Text(
+        _statusLabel(status),
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+          color: active ? AppColor.successColorDeep : AppColor.greyColor,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  String _dateTime(DateTime value) {
+    final local = value.toLocal();
+    final time = '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+    return '${Formatters.date(local)} · $time';
+  }
+
+  String _itemName(ProductSubscriptionItem item) =>
+      AppLocale.instance.isArabic
+          ? (item.productNameAr ?? item.productNameEn ?? item.productId)
+          : (item.productNameEn ?? item.productNameAr ?? item.productId);
 
   Future<void> _confirmCancel(BuildContext context, String id) async {
     final confirmed = await showDialog<bool>(
@@ -222,97 +257,132 @@ class _ProductSubscriptionsView extends StatelessWidget {
             onRefresh: () => context.read<ProductSubscriptionsCubit>().load(),
             child: ListView.separated(
               padding: AppLayout.pageBody,
-              itemCount: state.items.length,
+              itemCount: state.items.length + 1,
               separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
-              itemBuilder: (_, i) {
-                final s = state.items[i];
-                final isActive = s.status.toLowerCase() == 'active';
-                final isPaused = s.status.toLowerCase() == 'paused';
-                final localNextRun = s.nextRunAt?.toLocal();
-                final nextRun = localNextRun != null
-                    ? '${localNextRun.year}-${localNextRun.month.toString().padLeft(2, '0')}-${localNextRun.day.toString().padLeft(2, '0')} ${localNextRun.hour.toString().padLeft(2, '0')}:${localNextRun.minute.toString().padLeft(2, '0')}'
-                    : null;
-                return Card(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ListTile(
-                        title: Text(s.name ?? S.productSubscriptions),
-                        subtitle: Text(
-                          '${_statusLabel(s.status)} · ${S.repeatInterval(s.intervalValue, s.frequency)}'
-                          '${nextRun != null ? ' · ${S.nextRun}: $nextRun' : ''}'
-                          '${s.items.isNotEmpty ? '\n${s.items.map((item) => '${item.productNameAr ?? item.productNameEn ?? item.productId} × ${item.quantity}').join('، ')}' : ''}',
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: AppColor.primarySoft,
+                      borderRadius: BorderRadius.circular(AppRadius.r16),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(AppIcons.repeat, color: AppColor.primaryColor),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            S.productSubscriptionsDescription,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
                         ),
-                        isThreeLine: nextRun != null || s.items.isNotEmpty,
-                        trailing: PopupMenuButton<String>(
-                          onSelected: (v) {
-                            if (v == 'pause') {
-                              context.read<ProductSubscriptionsCubit>().pause(
-                                s.id,
-                              );
-                            } else if (v == 'resume') {
-                              context.read<ProductSubscriptionsCubit>().resume(
-                                s.id,
-                              );
-                            } else if (v == 'cancel') {
-                              _confirmCancel(context, s.id);
-                            }
-                          },
-                          itemBuilder: (_) => [
-                            if (isActive)
-                              PopupMenuItem(
-                                value: 'pause',
-                                child: Text(S.pause),
+                      ],
+                    ),
+                  );
+                }
+                final subscription = state.items[index - 1];
+                final isActive = subscription.status.toLowerCase() == 'active';
+                final isPaused = subscription.status.toLowerCase() == 'paused';
+                return Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                subscription.name?.trim().isNotEmpty == true
+                                    ? subscription.name!
+                                    : S.productSubscriptions,
+                                style: Theme.of(context).textTheme.titleMedium,
                               ),
-                            if (isPaused)
-                              PopupMenuItem(
-                                value: 'resume',
-                                child: Text(S.resume),
-                              ),
-                            if (isActive || isPaused)
-                              PopupMenuItem(
-                                value: 'cancel',
-                                child: Text(
-                                  S.cancel,
-                                  style: const TextStyle(
-                                    color: AppColor.errorColor,
+                            ),
+                            _statusPill(context, subscription.status),
+                            PopupMenuButton<String>(
+                              onSelected: (value) {
+                                if (value == 'pause') {
+                                  context.read<ProductSubscriptionsCubit>().pause(subscription.id);
+                                } else if (value == 'resume') {
+                                  context.read<ProductSubscriptionsCubit>().resume(subscription.id);
+                                } else if (value == 'cancel') {
+                                  _confirmCancel(context, subscription.id);
+                                }
+                              },
+                              itemBuilder: (_) => [
+                                if (isActive) PopupMenuItem(value: 'pause', child: Text(S.pause)),
+                                if (isPaused) PopupMenuItem(value: 'resume', child: Text(S.resume)),
+                                if (isActive || isPaused)
+                                  PopupMenuItem(
+                                    value: 'cancel',
+                                    child: Text(S.cancel, style: const TextStyle(color: AppColor.errorColor)),
                                   ),
-                                ),
-                              ),
+                              ],
+                            ),
                           ],
                         ),
-                      ),
-                      for (final run in s.pendingRuns)
-                        Padding(
-                          padding: const EdgeInsetsDirectional.fromSTEB(
-                            AppSpacing.md,
-                            0,
-                            AppSpacing.md,
-                            AppSpacing.md,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                '${S.productSubscriptionOrderDue}: ${run.scheduledFor.toLocal().toString().substring(0, 16)}',
-                                style: Theme.of(context).textTheme.titleSmall,
-                              ),
-                              const SizedBox(height: AppSpacing.xs),
-                              CustomFilledButton.icon(
-                                onPressed: isActive
-                                    ? () => _reviewDueRun(context, s, run)
-                                    : null,
-                                icon: const Icon(AppIcons.bag),
-                                label: Text(S.reviewAndConfirmOrder),
-                              ),
-                              CustomTextButton(
-                                onPressed: () => _skipRun(context, run),
-                                child: Text(S.skipThisOccurrence),
-                              ),
-                            ],
-                          ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Wrap(
+                          spacing: AppSpacing.xs,
+                          runSpacing: AppSpacing.xs,
+                          children: [
+                            _detailPill(context, AppIcons.repeat, S.repeatInterval(subscription.intervalValue, subscription.frequency)),
+                            if (subscription.nextRunAt != null)
+                              _detailPill(context, AppIcons.calendar, '${S.nextRun}: ${_dateTime(subscription.nextRunAt!)}'),
+                            _detailPill(context, AppIcons.coffee, _fulfillmentLabel(subscription.fulfillmentType)),
+                          ],
                         ),
-                    ],
+                        if (subscription.items.isNotEmpty) ...[
+                          const SizedBox(height: AppSpacing.md),
+                          Text(S.product, style: Theme.of(context).textTheme.labelLarge),
+                          const SizedBox(height: AppSpacing.xs),
+                          Wrap(
+                            spacing: AppSpacing.xs,
+                            runSpacing: AppSpacing.xs,
+                            children: subscription.items.map((item) => _detailPill(
+                              context,
+                              AppIcons.package,
+                              '${_itemName(item)} × ${item.quantity}',
+                            )).toList(),
+                          ),
+                        ],
+                        for (final run in subscription.pendingRuns) ...[
+                          const SizedBox(height: AppSpacing.md),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(AppSpacing.md),
+                            decoration: BoxDecoration(
+                              color: AppColor.lightGreyColor,
+                              borderRadius: BorderRadius.circular(AppRadius.r12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(S.productSubscriptionOrderDue, style: Theme.of(context).textTheme.labelLarge),
+                                const SizedBox(height: AppSpacing.xxs),
+                                Text(_dateTime(run.scheduledFor)),
+                                const SizedBox(height: AppSpacing.sm),
+                                CustomFilledButton.icon(
+                                  onPressed: isActive ? () => _reviewDueRun(context, subscription, run) : null,
+                                  icon: const Icon(AppIcons.bag),
+                                  label: Text(S.reviewAndConfirmOrder),
+                                ),
+                                Align(
+                                  alignment: AlignmentDirectional.centerEnd,
+                                  child: CustomTextButton(
+                                    onPressed: () => _skipRun(context, run),
+                                    child: Text(S.skipThisOccurrence),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 );
               },
@@ -320,10 +390,32 @@ class _ProductSubscriptionsView extends StatelessWidget {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openForm(context),
-        child: const Icon(AppIcons.add),
+        icon: const Icon(AppIcons.add),
+        label: Text(S.newProductSubscription),
       ),
     );
   }
+
+  String _fulfillmentLabel(String type) => type == 'delivery' ? S.delivery : S.pickup;
+
+  Widget _detailPill(BuildContext context, IconData icon, String label) =>
+      Container(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          AppSpacing.sm, AppSpacing.xxs, AppSpacing.sm, AppSpacing.xxs,
+        ),
+        decoration: BoxDecoration(
+          color: AppColor.lightGreyColor,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: AppSizes.px16, color: AppColor.greyColor),
+            const SizedBox(width: AppSpacing.xxs),
+            Flexible(child: Text(label, style: Theme.of(context).textTheme.labelMedium)),
+          ],
+        ),
+      );
 }

@@ -1,3 +1,4 @@
+import 'package:new_coffee/features/orders/presentation/views/widgets/order_issue_panel.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -94,6 +95,12 @@ class _OrderDetailsViewState extends State<OrderDetailsView> {
           ),
           SizedBox(height: AppSpacing.lg),
           _InvoiceCard(lines: lines),
+          if (order.orderId.isNotEmpty)
+            OrderIssuePanel(
+              key: ValueKey(order.orderId),
+              order: order.orderId,
+              lines: lines,
+            ),
           if (order.orderId.isNotEmpty && widget.invoiceRepository != null) ...[
             SizedBox(height: AppSpacing.md),
             OrderInvoiceCard(
@@ -113,6 +120,13 @@ class _OrderDetailsViewState extends State<OrderDetailsView> {
               ),
             if (order.deliveryFee > 0)
               _DetailRow(label: S.deliveryFee, priceValue: order.deliveryFee),
+            SizedBox(height: AppSpacing.lg),
+          ] else if (order.scheduledPickupAt != null) ...[
+            _DetailRow(
+              label: S.pickupSchedule,
+              value: '${MaterialLocalizations.of(context).formatFullDate(order.scheduledPickupAt!)} • '
+                  '${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(order.scheduledPickupAt!))}',
+            ),
             SizedBox(height: AppSpacing.lg),
           ],
           _DetailRow(label: S.itemsCount, value: "$totalItems"),

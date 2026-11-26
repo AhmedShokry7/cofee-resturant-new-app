@@ -7,6 +7,7 @@ import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/features/auth/data/model/auth_exception.dart';
 import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
+import 'package:new_coffee/features/auth/data/repositories/signup_phone_repository.dart';
 
 part 'auth_state.dart';
 
@@ -30,10 +31,22 @@ class AuthCubit extends Cubit<AuthState> {
     required String name,
     required String email,
     required String password,
+    String? phone,
   }) async {
     if (state is AuthLoading) return;
+    final normalizedPhone = phone?.trim();
     await _authenticate(
-      () => _repository.signUp(name: name, email: email, password: password),
+      () {
+        if (normalizedPhone != null && _repository is SignupPhoneRepository) {
+          return (_repository as SignupPhoneRepository).signUpWithPhone(
+            name: name,
+            email: email,
+            password: password,
+            phone: normalizedPhone,
+          );
+        }
+        return _repository.signUp(name: name, email: email, password: password);
+      },
       // The provider hands back a customer who still has to confirm the
       // address, and an unconfirmed address is not a session worth recording.
       verificationPending: () => _repository.lastSignUpNeedsEmailConfirmation,
@@ -197,6 +210,15 @@ class AuthCubit extends Cubit<AuthState> {
       return AppCopy.authProviderNotEnabled;
     }
     if (lower.contains('otp_expired') || lower.contains('invalid token')) {
+      return AppCopy.authOtpInvalid;
+    }
+    if (lower.contains('phone_exists') ||
+        lower.contains('phone already') ||
+        lower.contains('phone number already') ||
+        lower.contains('phone is already')) {
+      return AppCopy.authPhoneInUse;
+    }
+    if (lower.contains('phone verification failed')) {
       return AppCopy.authOtpInvalid;
     }
     if (lower.contains('invalid_phone') || lower.contains('invalid phone')) {

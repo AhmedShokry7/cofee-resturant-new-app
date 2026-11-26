@@ -23,16 +23,18 @@ import 'package:new_coffee/core/theme/tokens.dart';
 /// available, and uses [CachedNetworkImage] for loading and caching the remote
 /// image.
 class ProductCard extends StatelessWidget {
-  /// Width-to-height ratio of the grid/carousel card. The image area is
-  /// [Expanded], so growing the card height flows entirely into a larger
-  /// product image while title, description, price and actions keep their
-  /// fixed slots.
+  /// Width-to-height ratio of the grid card. The grid width comes from the
+  /// screen, so the height follows the ratio. The image area is [Expanded],
+  /// so the extra height goes to the product image while the text and actions
+  /// keep their fixed slots.
   static const double cardAspectRatio = AppDimensions.productCardAspect;
 
   /// Width of a card inside a horizontal strip (home carousel), in logical
-  /// pixels. Wide enough for the price and the struck-through old price to
-  /// sit side by side without either of them being cut.
+  /// pixels.
   static const double stripWidth = AppDimensions.productCardWidth;
+
+  /// Height of a card inside a horizontal strip, in logical pixels.
+  static const double stripHeight = AppDimensions.productCardHeight;
 
   const ProductCard({
     super.key,
@@ -85,11 +87,11 @@ class ProductCard extends StatelessWidget {
     // unbounded horizontally. Give only the latter an explicit width.
     return LayoutBuilder(
       builder: (context, constraints) {
-        final width = constraints.maxWidth.isFinite
-            ? constraints.maxWidth
-            : stripWidth;
+        final isStrip = !constraints.maxWidth.isFinite;
+        final width = isStrip ? stripWidth : constraints.maxWidth;
         return SizedBox(
           width: width,
+          height: isStrip ? stripHeight : null,
           child: AspectRatio(
             aspectRatio: cardAspectRatio,
             child: GestureDetector(
@@ -165,11 +167,20 @@ class ProductCard extends StatelessWidget {
                         ],
                       ],
                     ),
+                    if (showPrice) ...[
+                      SizedBox(height: AppSpacing.xxs),
+                      ProductOldPrice(product: product),
+                    ],
                     SizedBox(height: AppSizes.px6),
                     Row(
                       children: [
                         if (showPrice)
-                          Expanded(child: ProductPrice(product: product))
+                          Expanded(
+                            child: ProductPrice(
+                              product: product,
+                              showOldPrice: false,
+                            ),
+                          )
                         else
                           const SizedBox.shrink(),
                         SizedBox(width: AppSpacing.xs),

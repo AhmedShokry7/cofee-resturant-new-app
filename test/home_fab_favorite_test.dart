@@ -274,8 +274,11 @@ void main() {
       await tester.pump();
 
       final strip = tester.getSize(find.byType(ListView));
-      expect(strip.height, closeTo(168 / ProductCard.cardAspectRatio, 1));
-      expect(find.byType(ProductCard), findsWidgets);
+      expect(strip.height, closeTo(ProductCard.stripHeight, 1));
+      expect(
+        tester.getSize(find.byType(ProductCard).first),
+        Size(ProductCard.stripWidth, ProductCard.stripHeight),
+      );
     });
   });
 

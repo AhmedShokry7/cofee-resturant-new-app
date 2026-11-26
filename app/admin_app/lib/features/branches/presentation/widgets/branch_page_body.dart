@@ -31,6 +31,8 @@ class BranchPageBody extends StatelessWidget {
     this.onManagePricing,
     this.errorMessage,
     this.onRefresh,
+    this.onManagePickupSchedules,
+    this.onManageCancellationPolicy,
   });
 
   final List<AdminBranch> branches;
@@ -48,6 +50,8 @@ class BranchPageBody extends StatelessWidget {
   final ValueChanged<AdminBranch> onDelete;
   final String? errorMessage;
   final VoidCallback? onRefresh;
+  final VoidCallback? onManagePickupSchedules;
+  final VoidCallback? onManageCancellationPolicy;
 
   @override
   Widget build(BuildContext context) {
@@ -76,6 +80,16 @@ class BranchPageBody extends StatelessWidget {
               title: S.branches,
               subtitle: S.branchesDescription,
               actions: [
+                if (canManage && onManagePickupSchedules != null)
+                  AdminCreateButton(
+                    label: S.pickupScheduleTitle,
+                    onPressed: onManagePickupSchedules!,
+                  ),
+                if (canManage && onManageCancellationPolicy != null)
+                  AdminCreateButton(
+                    label: S.reservationCancellationPolicy,
+                    onPressed: onManageCancellationPolicy!,
+                  ),
                 if (canManage)
                   AdminCreateButton(
                     key: const Key('branch-add'),

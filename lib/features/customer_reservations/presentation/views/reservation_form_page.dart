@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
+import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/features/customer_reservations/data/repositories/customer_reservation_repository.dart';
@@ -122,13 +123,13 @@ class _ReservationFormPageState extends State<ReservationFormPage> {
     }
     if (!reservedFor.isAfter(DateTime.now())) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(S.reservationMustBeFuture)));
+          .showSnackBar(SnackBar(content: DesignText(S.reservationMustBeFuture, page: 'reservation_form', label: 'reservationMustBeFuture')));
       return;
     }
     final durationMinutes = requestedEndAt.difference(reservedFor).inMinutes;
     if (durationMinutes < 30 || durationMinutes > 480) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(S.reservationDurationInvalid)));
+          .showSnackBar(SnackBar(content: DesignText(S.reservationDurationInvalid, page: 'reservation_form', label: 'reservationDurationInvalid')));
       return;
     }
     setState(() => _saving = true);
@@ -144,12 +145,12 @@ class _ReservationFormPageState extends State<ReservationFormPage> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(S.reservationSubmitted)));
+          .showSnackBar(SnackBar(content: DesignText(S.reservationSubmitted, page: 'reservation_form', label: 'reservationSubmitted')));
       Navigator.of(context).pop(true);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(S.couldNotSubmitReservation)));
+          .showSnackBar(SnackBar(content: DesignText(S.couldNotSubmitReservation, page: 'reservation_form', label: 'couldNotSubmitReservation')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -236,10 +237,17 @@ class _ReservationFormPageState extends State<ReservationFormPage> {
                       PositionedDirectional(
                         top: 6,
                         end: 6,
-                        child: CustomIconButton.filledTonal(
+                        child: IconButton.filled(
                           tooltip: 'عرض الصورة',
+                          style: IconButton.styleFrom(
+                            backgroundColor: AppColor.primaryColor,
+                            shape: const CircleBorder(),
+                          ),
                           onPressed: () => _showSpaceImage(space),
-                          icon: const Icon(AppIcons.view),
+                          icon: const Icon(
+                            AppIcons.view,
+                            color: AppColor.whiteColor,
+                          ),
                         ),
                       ),
                     if (selected)
@@ -334,7 +342,7 @@ class _ReservationFormPageState extends State<ReservationFormPage> {
                   if (_branches.isEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                      child: Text(S.noBranchesAvailable),
+                      child: DesignText(S.noBranchesAvailable, page: 'reservation_form', label: 'noBranchesAvailable'),
                     ),
                   DropdownButtonFormField<String>(
                     initialValue: _branchId,
@@ -366,11 +374,11 @@ class _ReservationFormPageState extends State<ReservationFormPage> {
                     items: [
                       DropdownMenuItem(
                         value: 'table',
-                        child: Text(S.tableReservation),
+                        child: DesignText(S.tableReservation, page: 'reservation_form', label: 'tableReservation'),
                       ),
                       DropdownMenuItem(
                         value: 'room',
-                        child: Text(S.roomReservation),
+                        child: DesignText(S.roomReservation, page: 'reservation_form', label: 'roomReservation'),
                       ),
                     ],
                     onChanged: (value) {
@@ -394,7 +402,7 @@ class _ReservationFormPageState extends State<ReservationFormPage> {
                           ),
                         ),
                         ChoiceChip(
-                          label: Text(S.noPreference),
+                          label: DesignText(S.noPreference, page: 'reservation_form', label: 'noPreference'),
                           selected: _spaceId == null,
                           labelStyle: Theme.of(context).textTheme.labelLarge
                               ?.copyWith(
@@ -446,7 +454,7 @@ class _ReservationFormPageState extends State<ReservationFormPage> {
                   const SizedBox(height: AppSpacing.md),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(S.date),
+                    title: DesignText(S.date, page: 'reservation_form', label: 'date'),
                     subtitle: Text(
                       '${_date.year}-${_date.month.toString().padLeft(2, '0')}-${_date.day.toString().padLeft(2, '0')}',
                     ),
@@ -463,7 +471,7 @@ class _ReservationFormPageState extends State<ReservationFormPage> {
                   ),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(S.time),
+                    title: DesignText(S.time, page: 'reservation_form', label: 'time'),
                     subtitle: Text(
                       '${_start.format(context)} - ${_end.format(context)}',
                     ),

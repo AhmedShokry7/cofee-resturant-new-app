@@ -104,7 +104,10 @@ class PaymentMethodBottomBar extends StatelessWidget {
     // a payment that failed left the retap on the same unpaid order instead of
     // creating a second one.
     await checkout.settleOrderAttempt();
-    await loyalty.earnForOrder(total, serverPointsEarned: order?.pointsEarned);
+    await loyalty.earnForOrder(
+      checkout.pointsBase(cart.state.total),
+      serverPointsEarned: order?.pointsEarned,
+    );
     cart.clear();
     await cart.flushServerSync();
     navigator.pushNamedAndRemoveUntil(

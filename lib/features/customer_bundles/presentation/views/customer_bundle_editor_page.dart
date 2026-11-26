@@ -90,7 +90,7 @@ class _CustomerBundleEditorPageState extends State<CustomerBundleEditorPage> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialog) => AlertDialog(
           scrollable: true,
-          title: Text(S.addItem),
+          title: DesignText(S.addItem, page: 'customer_bundle_editor', label: 'addItem'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -125,7 +125,7 @@ class _CustomerBundleEditorPageState extends State<CustomerBundleEditorPage> {
                           })
                           .toList(growable: false);
                       if (matches.isEmpty) {
-                        return Center(child: Text(S.noProductsFound));
+                        return Center(child: DesignText(S.noProductsFound, page: 'customer_bundle_editor', label: 'noProductsFound'));
                       }
                       return ListView.builder(
                         itemCount: matches.length,
@@ -199,7 +199,7 @@ class _CustomerBundleEditorPageState extends State<CustomerBundleEditorPage> {
           actions: [
             CustomTextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: Text(S.cancel),
+              child: DesignText(S.cancel, page: 'customer_bundle_editor', label: 'cancel'),
             ),
             CustomBtn(
               text: S.addItem,
@@ -271,7 +271,7 @@ class _CustomerBundleEditorPageState extends State<CustomerBundleEditorPage> {
       if (!mounted) return;
       if (products.isEmpty) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(S.productUnavailable)));
+            .showSnackBar(SnackBar(content: DesignText(S.productUnavailable, page: 'customer_bundle_editor', label: 'productUnavailable')));
         return;
       }
       await Navigator.of(context)
@@ -279,7 +279,7 @@ class _CustomerBundleEditorPageState extends State<CustomerBundleEditorPage> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(S.couldNotLoadProduct)));
+          .showSnackBar(SnackBar(content: DesignText(S.couldNotLoadProduct, page: 'customer_bundle_editor', label: 'couldNotLoadProduct')));
     }
   }
 
@@ -287,7 +287,7 @@ class _CustomerBundleEditorPageState extends State<CustomerBundleEditorPage> {
     final name = _name.text.trim();
     if (_items.isEmpty) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(S.addAtLeastOneBundleProduct)));
+          .showSnackBar(SnackBar(content: DesignText(S.addAtLeastOneBundleProduct, page: 'customer_bundle_editor', label: 'addAtLeastOneBundleProduct')));
       return;
     }
     if (name.isEmpty) return;
@@ -312,12 +312,12 @@ class _CustomerBundleEditorPageState extends State<CustomerBundleEditorPage> {
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(S.bundleSaved)));
+          .showSnackBar(SnackBar(content: DesignText(S.bundleSaved, page: 'customer_bundle_editor', label: 'bundleSaved')));
       Navigator.of(context).pop(true);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(S.couldNotSaveBundle)));
+          .showSnackBar(SnackBar(content: DesignText(S.couldNotSaveBundle, page: 'customer_bundle_editor', label: 'couldNotSaveBundle')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -344,7 +344,7 @@ class _CustomerBundleEditorPageState extends State<CustomerBundleEditorPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(S.couldNotLoadBundles),
+                      DesignText(S.couldNotLoadBundles, page: 'customer_bundle_editor', label: 'couldNotLoadBundles'),
                       const SizedBox(height: AppSpacing.md),
                       CustomBtn(
                         text: S.retry,
@@ -381,7 +381,7 @@ class _CustomerBundleEditorPageState extends State<CustomerBundleEditorPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(S.personalBundlesAreSavedLists),
+                          DesignText(S.personalBundlesAreSavedLists, page: 'customer_bundle_editor', label: 'personalBundlesAreSavedLists'),
                           const SizedBox(height: AppSpacing.xs),
                           Text(
                             S.personalBundleEditorPriceNote,
@@ -403,7 +403,7 @@ class _CustomerBundleEditorPageState extends State<CustomerBundleEditorPage> {
                       CustomTextButton.icon(
                         onPressed: _addItemDialog,
                         icon: const Icon(AppIcons.add),
-                        label: Text(S.addItem),
+                        label: DesignText(S.addItem, page: 'customer_bundle_editor', label: 'addItem'),
                       ),
                     ],
                   ),
@@ -412,7 +412,7 @@ class _CustomerBundleEditorPageState extends State<CustomerBundleEditorPage> {
                       padding: const EdgeInsets.symmetric(
                         vertical: AppSpacing.lg,
                       ),
-                      child: Center(child: Text(S.noBundleItems)),
+                      child: Center(child: DesignText(S.noBundleItems, page: 'customer_bundle_editor', label: 'noBundleItems')),
                     ),
                   ..._items.asMap().entries.map((entry) {
                     final i = entry.key;

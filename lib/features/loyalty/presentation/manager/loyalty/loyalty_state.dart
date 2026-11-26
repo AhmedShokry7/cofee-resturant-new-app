@@ -55,9 +55,11 @@ class LoyaltyState {
   /// never described would invent a status the account does not hold.
   String get tierLabel => S.tierLabel(tier);
 
+  /// The rule that earns points. The same one `place_order()` uses.
+  LoyaltyRule? get activeRule => rules.isEmpty ? null : rules.first;
+
   /// Earn rate currently advertised by the server. Null until loaded.
-  double? get pointsPerCurrencyUnit =>
-      rules.isEmpty ? null : rules.first.pointsPerCurrencyUnit;
+  double? get pointsPerCurrencyUnit => activeRule?.pointsPerCurrencyUnit;
 
   LoyaltyState copyWith({
     int? balance,

@@ -253,10 +253,10 @@ abstract final class AppDimensions {
   static const double categoryTile = AppSizes.px56;
 
   /// The width of a product card in a horizontal strip.
-  ///
-  /// Wide enough for the price and the struck-through old price to sit side by
-  /// side without either of them being cut.
-  static const double productCardWidth = 168.0;
+  static const double productCardWidth = 180.0;
+
+  /// The height of a product card in a horizontal strip.
+  static const double productCardHeight = 284.0;
 
   /// The width-to-height ratio of a product card.
   static const double productCardAspect = 0.60;

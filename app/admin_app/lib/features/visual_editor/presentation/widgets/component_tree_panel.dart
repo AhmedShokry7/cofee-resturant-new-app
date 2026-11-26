@@ -891,7 +891,7 @@ class _ComponentRow extends StatelessWidget {
     required this.onToggleVisibility,
     required this.allowReorder,
     required this.dark,
-  }) : labelOverride = null : subtitleOverride;
+  });
 
   final EditableComponent component;
   final int index;
@@ -902,13 +902,6 @@ class _ComponentRow extends StatelessWidget {
   final VoidCallback onToggleVisibility;
   final bool allowReorder;
   final bool dark;
-
-  /// في الشجرة التشريحية (الترحيب): اسم يوصف الدور الحقيقي للصف لا اسم
-  /// السجل — عقدة واحدة (المسافات) تظهر بصفّين بموضعين مختلفين.
-  final String? labelOverride;
-
-  /// بديل نص المعاينة تحت الاسم.
-  final String? subtitleOverride;
 
   @override
   Widget build(BuildContext context) {
@@ -1033,11 +1026,10 @@ class _ComponentRow extends StatelessWidget {
                             children: [
                               Flexible(
                                 child: Text(
-                                  labelOverride ??
-                                      (isSplash
-                                          ? S.visualEditorSplashImage
-                                          : entry?.displayName ??
-                                                component.componentType),
+                                  isSplash
+                                      ? S.visualEditorSplashImage
+                                      : entry?.displayName ??
+                                            component.componentType,
                                   style: TextStyle(
                                     fontSize: 11.5,
                                     fontWeight: isSelected
@@ -1079,7 +1071,7 @@ class _ComponentRow extends StatelessWidget {
                           ),
                           const SizedBox(height: 1.5),
                           Text(
-                            subtitleOverride ?? previewStr,
+                            previewStr,
                             style: TextStyle(
                               fontSize: 9.5,
                               color: muted,

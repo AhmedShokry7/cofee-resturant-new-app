@@ -61,8 +61,9 @@ class SearchCubit extends Cubit<SearchState> {
   /// so they never re-run a query the customer has already replaced.
   String _latestQuery = '';
 
-  /// Current server page set. Filters and sort are sent to the search RPC so
-  /// pagination covers matching products, not just the first page.
+  /// Current server page set for the query. Filters and sort are applied to
+  /// this loaded set locally so opening the filter sheet does not repeat the
+  /// same search request.
   List<ProductModel> _queryResults = const [];
   String? _loadedResultKey;
   int _nextOffset = 0;
@@ -202,10 +203,7 @@ class SearchCubit extends Cubit<SearchState> {
       final page = await _catalog.search(
         current.query,
         branchId: _effectiveBranch,
-        categoryId: current.category,
-        minPrice: current.minPrice,
-        maxPrice: current.maxPrice,
-        sort: _serverSort(current.sort),
+        sort: _serverSort(SearchSort.relevance),
         limit: 100,
         offset: _nextOffset,
       );
@@ -262,10 +260,6 @@ class SearchCubit extends Cubit<SearchState> {
       final key = [
         _effectiveBranch ?? '',
         query.trim().toLowerCase(),
-        category ?? '',
-        minPrice?.toString() ?? '',
-        maxPrice?.toString() ?? '',
-        effectiveSort.name,
       ].join('|');
       if (_loadedResultKey != key) {
         _queryResults = const [];

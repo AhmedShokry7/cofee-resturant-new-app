@@ -83,7 +83,7 @@ class HomeProductsCarousel extends StatelessWidget {
         SizedBox(height: AppSpacing.xs),
 
         SizedBox(
-          height: ProductCard.stripWidth / ProductCard.cardAspectRatio,
+          height: ProductCard.stripHeight,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: displayed.length,

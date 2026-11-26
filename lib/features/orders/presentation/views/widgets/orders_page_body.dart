@@ -1,3 +1,4 @@
+import 'package:new_coffee/shared/widgets/refresh_on_return.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -49,7 +50,7 @@ class OrdersPageBody extends StatelessWidget {
                   subtitle: S.ordersEmptyHint,
                 );
               }
-              return RefreshIndicator(
+              return RefreshOnReturn(
                 onRefresh: () => context.read<OrdersCubit>().refresh(),
                 child: ListView.builder(
                   padding: AppLayout.pageBody,

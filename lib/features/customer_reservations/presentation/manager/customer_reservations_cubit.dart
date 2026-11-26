@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/customer_reservations/data/repositories/customer_reservation_repository.dart';
 
 import 'customer_reservations_state.dart';
@@ -48,7 +49,10 @@ class CustomerReservationsCubit extends Cubit<CustomerReservationsState> {
 
   Future<void> cancelEventRequest(String id) async {
     try {
-      await _repo.cancelEventRequest(id);
+      final cancelled = await _repo.cancelEventRequest(id);
+      if (!cancelled) {
+        throw StateError(S.reservationCancellationWindowClosed);
+      }
       await load();
     } catch (e) {
       emit(state.copyWith(error: e.toString()));

@@ -13,6 +13,7 @@ import 'package:new_coffee/features/auth/data/model/auth_form_rules.dart';
 import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/data/repositories/signup_email_otp_repository.dart';
+import 'package:new_coffee/features/auth/data/repositories/signup_phone_repository.dart';
 import 'package:new_coffee/features/notifications/data/services/push_service.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 // The Supabase SDK ships its own AuthUser and AuthException. This layer deals
@@ -29,7 +30,11 @@ import 'package:supabase_flutter/supabase_flutter.dart'
 /// Every method verifies the caller's intent against the server. No method
 /// invents a user, and no method accepts an identity the server did not issue.
 class SupabaseAuthRepository
-    implements AuthRepository, SignupEmailOtpRepository {
+    implements
+        AuthRepository,
+        SignupEmailOtpRepository,
+        SignupPhoneRepository,
+        PhoneIdentityRepository {
   /// [recoverySessionWait] is how long the reset screen waits for the emailed
   /// link; it is a parameter only so a test can prove the wait runs out
   /// without spending twenty seconds doing it.
@@ -117,7 +122,10 @@ class SupabaseAuthRepository
       // The account's own number first: for a phone sign-in it is the value the
       // provider confirmed, while `user_metadata.phone` is only what a signup
       // form chose to send.
-      phone: user.phone ?? metadata?['phone']?.toString(),
+      phone: user.phoneConfirmedAt != null
+          ? user.phone
+          : metadata?['phone']?.toString(),
+      phoneVerified: user.phoneConfirmedAt != null,
     );
   }
 
@@ -129,7 +137,7 @@ class SupabaseAuthRepository
     _guard;
     try {
       final response = await _client.auth.signInWithPassword(
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         password: password,
       );
       final user = response.user;
@@ -175,14 +183,44 @@ class SupabaseAuthRepository
     required String email,
     required String password,
   }) async {
+    return _signUp(name: name, email: email, password: password);
+  }
+
+  @override
+  Future<AuthUser> signUpWithPhone({
+    required String name,
+    required String email,
+    required String password,
+    required String phone,
+  }) async {
+    final normalizedPhone = AuthFormRules.e164Of(phone);
+    if (normalizedPhone == null) {
+      throw const AuthException('invalid phone number');
+    }
+    return _signUp(
+      name: name,
+      email: email,
+      password: password,
+      phone: normalizedPhone,
+    );
+  }
+
+  Future<AuthUser> _signUp({
+    required String name,
+    required String email,
+    required String password,
+    String? phone,
+  }) async {
     _guard;
     _signUpNeedsConfirmation = false;
+    final metadata = <String, dynamic>{'full_name': name.trim()};
+    if (phone != null) metadata['phone'] = phone;
     try {
       final response = await _client.auth.signUp(
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         password: password,
         // identity.handle_new_user() reads this to create identity.profiles.
-        data: {'full_name': name.trim()},
+        data: metadata,
         // With email confirmation on, Supabase returns the user but no session.
         emailRedirectTo: AppConfig.passwordRecoveryRedirect.isEmpty
             ? null
@@ -238,7 +276,7 @@ class SupabaseAuthRepository
   Future<void> sendPasswordResetEmail({required String email}) async {
     _guard;
     await _client.auth.resetPasswordForEmail(
-      email.trim(),
+      email.trim().toLowerCase(),
       redirectTo: AppConfig.passwordRecoveryRedirect.isEmpty
           ? null
           : AppConfig.passwordRecoveryRedirect,
@@ -364,7 +402,8 @@ class SupabaseAuthRepository
       id: refreshed.id,
       name: fullName.trim(),
       email: refreshed.email,
-      phone: phone?.trim(),
+      phone: phone?.trim() ?? refreshed.phone,
+      phoneVerified: refreshed.phoneConfirmedAt != null,
     );
     await _cacheProfile(result);
     return result;
@@ -406,22 +445,36 @@ class SupabaseAuthRepository
     if (cached != null && cached.id == user.id) {
       // Refresh in background without blocking the UI.
       unawaited(_refreshProfileCache(user));
-      return cached;
+      return AuthUser(
+        id: cached.id,
+        name: cached.name,
+        email: user.email,
+        phone: user.phoneConfirmedAt != null
+            ? user.phone
+            : user.userMetadata?['phone']?.toString(),
+        phoneVerified: user.phoneConfirmedAt != null,
+      );
     }
     final domain = _toDomain(user);
     try {
       final row = await _client
           .from('profiles')
-          .select('phone')
+          .select('phone, phone_verified_at, full_name')
           .eq('id', user.id)
           .maybeSingle();
       final phone = row?['phone']?.toString();
-      final result = (phone != null && phone.isNotEmpty)
+      final verifiedAt = row?['phone_verified_at'];
+      final isVerified =
+          user.phoneConfirmedAt != null &&
+          verifiedAt != null &&
+          phone == user.phone;
+      final result = isVerified
           ? AuthUser(
               id: domain.id,
-              name: domain.name,
+              name: row?['full_name']?.toString() ?? domain.name,
               email: domain.email,
               phone: phone,
+              phoneVerified: true,
             )
           : domain;
       await _cacheProfile(result);
@@ -445,6 +498,7 @@ class SupabaseAuthRepository
         'name': user.name,
         'email': user.email,
         'phone': user.phone,
+        'phone_verified': user.phoneVerified,
       }),
     );
   }
@@ -459,6 +513,7 @@ class SupabaseAuthRepository
         name: json['name']?.toString(),
         email: json['email']?.toString(),
         phone: json['phone']?.toString(),
+        phoneVerified: json['phone_verified'] == true,
       );
     } catch (_) {
       return null;
@@ -480,7 +535,10 @@ class SupabaseAuthRepository
           id: domain.id,
           name: (name != null && name.isNotEmpty) ? name : domain.name,
           email: domain.email,
-          phone: (phone != null && phone.isNotEmpty) ? phone : domain.phone,
+          phone: user.phoneConfirmedAt != null && phone == user.phone
+              ? phone
+              : null,
+          phoneVerified: user.phoneConfirmedAt != null && phone == user.phone,
         ),
       );
     } catch (_) {}
@@ -661,6 +719,70 @@ class SupabaseAuthRepository
   }
 
   @override
+  Future<void> sendPhoneChangeCode({required String phone}) async {
+    _guard;
+    final e164 = AuthFormRules.e164Of(phone);
+    if (e164 == null) throw const AuthException('invalid phone number');
+    if (_client.auth.currentUser == null) {
+      throw const AuthException('not signed in');
+    }
+    try {
+      await _client.auth.updateUser(UserAttributes(phone: e164));
+    } catch (error) {
+      throw AuthException(_mapAuthError(error));
+    }
+  }
+
+  @override
+  Future<void> resendPhoneChangeCode({required String phone}) async {
+    _guard;
+    final e164 = AuthFormRules.e164Of(phone);
+    if (e164 == null) throw const AuthException('invalid phone number');
+    if (_client.auth.currentUser == null) {
+      throw const AuthException('not signed in');
+    }
+    try {
+      await _client.auth.resend(type: OtpType.phoneChange, phone: e164);
+    } catch (error) {
+      throw AuthException(_mapAuthError(error));
+    }
+  }
+
+  @override
+  Future<AuthUser> verifyPhoneChangeCode({
+    required String phone,
+    required String code,
+  }) async {
+    _guard;
+    final e164 = AuthFormRules.e164Of(phone);
+    if (e164 == null) throw const AuthException('invalid phone number');
+    try {
+      final current = _client.auth.currentUser;
+      if (current == null) throw const AuthException('not signed in');
+      final response = await _client.auth.verifyOTP(
+        phone: e164,
+        token: code.trim(),
+        type: OtpType.phoneChange,
+      );
+      final user = response.user;
+      if (user == null ||
+          user.id != current.id ||
+          user.phone != e164 ||
+          user.phoneConfirmedAt == null) {
+        throw const AuthException('phone verification failed');
+      }
+      await _requireCustomerAccount(user.id);
+      final domain = _toDomain(user);
+      await _cacheProfile(domain);
+      return domain;
+    } on AuthException {
+      rethrow;
+    } catch (error) {
+      throw AuthException(_mapAuthError(error));
+    }
+  }
+
+  @override
   Future<AuthUser> verifyPhoneCode({
     required String phone,
     required String code,
@@ -682,7 +804,6 @@ class SupabaseAuthRepository
       // belongs to staff has no customer row, and letting it in produces a
       // broken store instead of a clear answer.
       await _requireCustomerAccount(user.id);
-      await _storeVerifiedPhone(user.id, e164);
       final domain = _toDomain(user);
       await _cacheProfile(domain);
       return domain;
@@ -690,40 +811,6 @@ class SupabaseAuthRepository
       rethrow;
     } catch (error) {
       throw AuthException(_mapAuthError(error));
-    }
-  }
-
-  /// The number the customer just proved, in the row the app reads.
-  ///
-  /// `identity.handle_new_user()` (003_identity_01_profiles.sql) copies the
-  /// email of a new account into identity.profiles and knows nothing about a
-  /// phone, so a customer who arrives by SMS has a session, a profile row, and
-  /// no number anywhere the profile screen or the admin panel looks. The
-  /// trigger is not rewritten for this: the session that was just issued *is*
-  /// the proof that the number belongs to them, and `profiles_update_own`
-  /// (019_rls_01_identity.sql) lets them write their own row.
-  ///
-  /// An existing number is never overwritten - a customer who added one from
-  /// their profile keeps what they typed.
-  Future<void> _storeVerifiedPhone(String uid, String phone) async {
-    try {
-      final row = await _client
-          .from('profiles')
-          .select('phone')
-          .eq('id', uid)
-          .maybeSingle();
-      final current = (row?['phone'] ?? '').toString().trim();
-      if (current.isNotEmpty) return;
-      await _client
-          .from('profiles')
-          .update(<String, dynamic>{
-            'phone': phone,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', uid);
-    } catch (error) {
-      // The session is real either way; this only fills a display value.
-      debugPrint('[Auth] verified phone could not be stored: $error');
     }
   }
 
@@ -743,7 +830,7 @@ class SupabaseAuthRepository
   @override
   Future<void> sendEmailCode({required String email}) async {
     _guard;
-    final address = email.trim();
+    final address = email.trim().toLowerCase();
     if (AuthFormRules.email(address) != null) {
       throw const AuthException('invalid email');
     }
@@ -763,7 +850,7 @@ class SupabaseAuthRepository
   @override
   Future<void> resendSignupConfirmationCode({required String email}) async {
     _guard;
-    final address = email.trim();
+    final address = email.trim().toLowerCase();
     if (AuthFormRules.email(address) != null) {
       throw const AuthException('invalid email');
     }
@@ -782,7 +869,7 @@ class SupabaseAuthRepository
     required String code,
   }) async {
     _guard;
-    final address = email.trim();
+    final address = email.trim().toLowerCase();
     if (AuthFormRules.email(address) != null) {
       throw const AuthException('invalid email');
     }
@@ -815,7 +902,7 @@ class SupabaseAuthRepository
     required String code,
   }) async {
     _guard;
-    final address = email.trim();
+    final address = email.trim().toLowerCase();
     if (AuthFormRules.email(address) != null) {
       throw const AuthException('invalid email');
     }

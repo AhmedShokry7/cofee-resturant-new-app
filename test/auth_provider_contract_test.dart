@@ -80,6 +80,7 @@ SupabaseClient _client({
   required List<String> seen,
   required bool signupReturnsSession,
   required bool hasCustomerRow,
+  void Function(Map<String, dynamic> data)? onSignup,
 }) {
   return SupabaseClient(
     'https://login.test',
@@ -97,6 +98,8 @@ SupabaseClient _client({
         return _json(_session(), 200, request);
       }
       if (path.endsWith('/auth/v1/signup')) {
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        onSignup?.call(body['data'] as Map<String, dynamic>);
         // With confirmation on, the server answers with the user and no
         // session; with it off, it answers with a session.
         return _json(
@@ -153,6 +156,32 @@ void main() {
 
       expect(repository.lastSignUpNeedsEmailConfirmation, isTrue);
     });
+
+    test(
+      'customer phone is signup metadata and does not request an SMS',
+      () async {
+        final seen = <String>[];
+        Map<String, dynamic>? signupData;
+        SupabaseService.debugSetClient(
+          _client(
+            seen: seen,
+            signupReturnsSession: false,
+            hasCustomerRow: true,
+            onSignup: (data) => signupData = data,
+          ),
+        );
+
+        await SupabaseAuthRepository().signUpWithPhone(
+          name: 'Ahmed',
+          email: _email,
+          password: 'secret123',
+          phone: '0501234567',
+        );
+
+        expect(signupData?['phone'], '+966501234567');
+        expect(seen.any((path) => path.contains('/otp')), isFalse);
+      },
+    );
 
     test(
       'no session marker is written, so the next start asks again',

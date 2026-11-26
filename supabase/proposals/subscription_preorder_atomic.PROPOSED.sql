@@ -1,0 +1,97 @@
+-- Subscription preorder SQL implementation blocker analysis.
+--
+-- STATUS: NOT EXECUTABLE. This file intentionally contains comments only. Do not
+-- run it, move it into a numbered migration, or deploy it. A previously drafted
+-- function body was removed because it fabricated a paid state and did not match
+-- the documented RPC contract closely enough to be safe.
+--
+-- BLOCKERS THAT PREVENT A SAFE place_subscription_preorder RPC
+--
+-- 1. Funding and accounting semantics are unresolved. An active subscription
+--    can be backed by a captured payment, a free plan, or a loyalty reward, so
+--    its existence does not prove cash payment or deferred revenue. Migration
+--    262 issues an invoice for any non-cancelled order with payment_status='paid'
+--    and has no zero-total exception. Reports also count paid/refunded orders
+--    and compare invoice totals with order payment transactions. Do not set
+--    'paid', create a gateway transaction, infer revenue recognition, or use a
+--    zero-total shortcut. See subscription_preorder_accounting_decision.md;
+--    finance must decide invoice/VAT and revenue treatment before executable SQL.
+--
+-- 2. Mandatory product modifiers are unsupported. The current plan product
+--    selection exposes base product IDs only; there is no trusted option
+--    validation/snapshot/entitlement rule. Any product with a required modifier
+--    must be excluded from the list and rejected at submission until the product
+--    contract supports modifiers. This is a product coverage limitation, not a
+--    reason to accept a fabricated default option.
+--
+-- 3. The draft does not match the documented RPC surface. The contract calls
+--    for public.list_my_subscription_preorders with line-level order/product fields
+--    and public.admin_order_subscription_details(p_order_id). A draft summary
+--    list and wholesale replacement of public.admin_orders() are not equivalent.
+--    Implement the exact documented surface; do not replace a broad existing
+--    admin endpoint just to attach subscription details.
+--
+-- 4. The lifecycle assumes 'completed' is pickup handoff and uses the existing
+--    status trigger to finalize consumption. Confirm kitchen.complete_ticket and
+--    all status transitions mean physical customer handoff, not merely kitchen
+--    preparation. No-show expiry/release policy is also undecided; reservations
+--    must not silently expire or release until an explicit business rule exists.
+--
+-- 5. The RPC depends on the local pickup scheduling migration being applied and
+--    on its exact slot trigger/function signatures. No local SQL parser or
+--    isolated database run has validated the proposed body, underlying trigger
+--    ordering, invoice effects, or rollback behavior. It is not safe to claim a
+--    runnable complete implementation based on source inspection alone.
+--
+-- PROPOSED IMPLEMENTATION STRUCTURE (not SQL to execute)
+--
+-- A. Read RPCs, SECURITY DEFINER with empty search_path and explicit owner gate:
+--    public.list_my_subscription_preorder_branches(subscription_id)
+--      -> branch_id, code, name_ar, name_en for active eligible branches.
+--    public.list_my_subscription_preorder_products(subscription_id, branch_id)
+--      -> included active products, localized names/descriptions/image,
+--         branch availability/estimate, and can_preorder=false when a required
+--         modifier exists. Never treat the display estimate as an order price.
+--    public.my_subscription_preorders(subscription_id)
+--      -> line-level order, branch, scheduled time, product, quantity,
+--         reservation status, and creation time, owner-gated.
+--
+-- B. Atomic writer public.place_subscription_preorder(subscription_id,
+--    branch_id, lines, idempotency_key, scheduled_pickup_at):
+--      1) Authenticate; validate strict line shape, quantities, and unique IDs.
+--      2) Acquire the established per-user/idempotency transaction lock. On a
+--         retry, compare canonical subscription, branch, time, and lines against
+--         the saved preorder event; return the original order only on exact match.
+--      3) Lock the owned active subscription; validate plan, branch, included
+--         products, product availability, quota, and no required modifiers.
+--      4) Validate the exact pickup slot with the local scheduling RPC; let the
+--         same transaction's capacity trigger claim it.
+--      5) Insert normal pickup order + zero-priced item snapshots only after
+--         payment/invoice semantics are decided. The chosen payment state must
+--         truthfully represent a prepaid entitlement and pass order constraints,
+--         invoice logic, and operational status flow.
+--      6) Apply the existing reward-order inventory check/decrement once, then
+--         create server-generated subscription_consumptions reservations and
+--         update cups_reserved atomically. Failure at any stage rolls everything
+--         back. Reuse order/KDS triggers rather than creating parallel tickets.
+--      7) Insert order status history, canonical preorder event, subscription
+--         event, deduplicated notification with branch and pickup time, and
+--         return the order plus remaining/reserved cups.
+--
+-- C. Lifecycle and hardening after the above contract is validated:
+--      - Revoke direct authenticated execution of unsafe standalone reservation
+--        entrypoints; only the atomic writer may create reservations.
+--      - On confirmed physical handoff, atomically decrement cups_reserved,
+--        increment cups_used, insert one idempotent subscription_usage row and
+--        record a subscription event.
+--      - On an authorized cancellation, release reserved cups once. Define the
+--        no-show/expiry policy before adding automatic release behavior.
+--      - Implement the narrow admin_order_subscription_details(order_id) RPC
+--        using orders.read and identity.can_manage_branch(order.branch_id),
+--        returning only that order's subscription summary.
+--
+-- NEXT REQUIRED WORK: resolve blockers 1 and 4 with source-level contract
+-- review, then write the SQL against the exact current schema and run the
+-- acceptance test in an isolated non-production database. Do not apply to any
+-- live database. The acceptance test itself is not evidence until run against
+-- the finalized implementation.

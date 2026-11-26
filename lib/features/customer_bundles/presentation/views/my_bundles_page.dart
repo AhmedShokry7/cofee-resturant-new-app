@@ -1,3 +1,4 @@
+import 'package:new_coffee/shared/widgets/refresh_on_return.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:material_ui/material_ui.dart';
@@ -44,11 +45,11 @@ class _MyBundlesView extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(S.deleteBundleConfirm),
+        title: DesignText(S.deleteBundleConfirm, page: 'my_bundles', label: 'deleteBundleConfirm'),
         actions: [
           CustomTextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(S.cancel),
+            child: DesignText(S.cancel, page: 'my_bundles', label: 'cancel'),
           ),
           CustomTextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
@@ -101,7 +102,7 @@ class _MyBundlesView extends StatelessWidget {
               onAction: () => _openEditor(context),
             );
           }
-          return RefreshIndicator(
+          return RefreshOnReturn(
             onRefresh: () => context.read<CustomerBundlesCubit>().load(),
             child: ListView.separated(
               padding: AppLayout.pageBody,
@@ -112,8 +113,8 @@ class _MyBundlesView extends StatelessWidget {
                   return Card(
                     child: ListTile(
                       leading: const Icon(AppIcons.information),
-                      title: Text(S.personalBundlesAreSavedLists),
-                      subtitle: Text(S.personalBundleCurrentPriceNote),
+                      title: DesignText(S.personalBundlesAreSavedLists, page: 'my_bundles', label: 'personalBundlesAreSavedLists'),
+                      subtitle: DesignText(S.personalBundleCurrentPriceNote, page: 'my_bundles', label: 'personalBundleCurrentPriceNote'),
                     ),
                   );
                 }
@@ -158,8 +159,8 @@ class _MyBundlesView extends StatelessWidget {
                         }
                       },
                       itemBuilder: (_) => [
-                        PopupMenuItem(value: 'edit', child: Text(S.edit)),
-                        PopupMenuItem(value: 'dup', child: Text(S.duplicate)),
+                        PopupMenuItem(value: 'edit', child: DesignText(S.edit, page: 'my_bundles', label: 'edit')),
+                        PopupMenuItem(value: 'dup', child: DesignText(S.duplicate, page: 'my_bundles', label: 'duplicate')),
                         PopupMenuItem(
                           value: 'fav',
                           child: Text(b.isFavorite ? S.unfavorite : S.favorite),

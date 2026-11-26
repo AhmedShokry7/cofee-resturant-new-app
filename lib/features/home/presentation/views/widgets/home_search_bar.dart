@@ -24,6 +24,8 @@ class HomeSearchBar extends StatelessWidget {
         color: SearchPill.fill(),
         shape: SearchPill.shape(),
         child: InkWell(
+          splashColor: AppColor.transparent,
+          highlightColor: AppColor.transparent,
           onTap: () {
             context.read<SearchCubit>().search('');
             Navigator.of(context).pushNamed(SearchPage.routeName);

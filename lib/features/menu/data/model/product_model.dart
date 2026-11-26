@@ -43,6 +43,7 @@ class ProductModel {
     this.relatedProductIds = const [],
     this.averageRating = 0,
     this.reviewCount = 0,
+    this.allergens = const [],
   }) : _legacyName = name ?? '',
        _legacyCategory = category ?? '',
        _legacyDescription = description ?? '';
@@ -144,6 +145,7 @@ class ProductModel {
   /// Aggregate of published customer reviews, loaded in batches for listings.
   final double averageRating;
   final int reviewCount;
+  final List<String> allergens;
 
   /// First usable product image, with legacy and secondary-image fallbacks.
   String? get displayImageUrl {
@@ -272,6 +274,9 @@ class ProductModel {
           const [],
       averageRating: Db.asDouble(json['average_rating']),
       reviewCount: Db.asInt(json['review_count']),
+      allergens: (json['allergens'] as List? ?? const [])
+          .map((e) => e.toString())
+          .toList(growable: false),
     );
   }
 

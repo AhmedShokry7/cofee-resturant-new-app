@@ -29,7 +29,7 @@ void main() {
               onOffer: ({
                 required id,
                 required amount,
-                required spaceId,
+                required List<String> spaceIds,
                 required startAt,
                 required endAt,
                 note,
@@ -59,7 +59,7 @@ void main() {
             onOffer: ({
               required id,
               required amount,
-              required spaceId,
+              required List<String> spaceIds,
               required startAt,
               required endAt,
               note,

@@ -107,7 +107,7 @@ void main() {
       // The derived-height strip is laid out; only viewport-visible cards are built,
       // exactly like the real horizontal carousel.
       final strip = tester.getSize(find.byType(ListView));
-      expect(strip.height, closeTo(168 / ProductCard.cardAspectRatio, 1));
+      expect(strip.height, closeTo(ProductCard.stripHeight, 1));
       expect(find.byType(ProductCardSkeleton), findsWidgets);
       // Scrolling reveals more skeleton cards, proving all four exist.
       await tester.drag(find.byType(ListView), const Offset(-400, 0));

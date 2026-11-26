@@ -152,6 +152,19 @@ class OrderCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: AppSizes.px10),
+              if (order.subscriptionPreorder != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSizes.px8),
+                  child: Text(
+                    S.orderSubscriptionPreorder,
+                    style: const TextStyle(
+                      color: AppColor.adminAccent,
+                      fontSize: AppFontSizes.size10_5,
+                      fontWeight: AppFontWeights.semiBold,
+                      height: AppTextHeights.line1_5,
+                    ),
+                  ),
+                ),
               Row(
                 children: [
                   AdminAvatarImage(url: order.customerAvatarUrl, size: 38),

@@ -1,3 +1,4 @@
+import 'package:admin_app/features/orders/presentation/widgets/order_issue_panel.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
@@ -13,6 +14,7 @@ import 'package:admin_app/features/orders/presentation/widgets/order_detail_stat
 import 'package:admin_app/features/orders/presentation/widgets/order_fulfillment_section.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_items_list.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_payment_section.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_subscription_preorder_section.dart';
 
 class OrderDetailBody extends StatelessWidget {
   const OrderDetailBody({
@@ -61,6 +63,9 @@ class OrderDetailBody extends StatelessWidget {
       onOpen: (value) => onSelectOrder(value.id),
     );
     final fulfillment = OrderFulfillmentSection(order: order);
+    final subscriptionPreorder = order.subscriptionPreorder == null
+        ? null
+        : OrderSubscriptionPreorderSection(order: order);
     final map =
         controller.deliveryLatitude != null &&
             controller.deliveryLongitude != null
@@ -74,6 +79,15 @@ class OrderDetailBody extends StatelessWidget {
 
     final main = <Widget>[
       items,
+      if (subscriptionPreorder != null) ...[
+        const SizedBox(height: AppSizes.px12),
+        subscriptionPreorder,
+      ],
+      OrderIssuePanel(
+        key: ValueKey(order.id),
+        order: order.id,
+        canManage: controller.canManage,
+      ),
       const SizedBox(height: AppSizes.px12),
       payment,
     ];
@@ -131,6 +145,10 @@ class OrderDetailBody extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               items,
+              if (subscriptionPreorder != null) ...[
+                const SizedBox(height: AppSizes.px12),
+                subscriptionPreorder,
+              ],
               const SizedBox(height: AppSizes.px12),
               payment,
               const SizedBox(height: AppSizes.px12),

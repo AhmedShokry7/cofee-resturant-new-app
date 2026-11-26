@@ -8,6 +8,7 @@ import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart'
 import 'package:new_coffee/features/auth/data/repositories/resilient_auth_repository.dart';
 import 'package:new_coffee/features/auth/data/repositories/supabase_auth_repository.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
+import 'package:new_coffee/features/auth/presentation/views/email_otp_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/sign_up_page_body.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
@@ -119,6 +120,15 @@ void main() {
               create: (_) => AuthCubit(repository),
               child: MaterialApp(
                 routes: {
+                  EmailOtpPage.routeName: (context) {
+                    final args =
+                        ModalRoute.of(context)!.settings.arguments!
+                            as EmailOtpPageArgs;
+                    return EmailOtpPage(
+                      email: args.email,
+                      isSignupConfirmation: args.isSignupConfirmation,
+                    );
+                  },
                   // The handover target. The real home page needs the whole
                   // provider tree, which is irrelevant to the question this
                   // group asks.
@@ -136,8 +146,9 @@ void main() {
       final fields = find.byType(TextField);
       await tester.enterText(fields.at(0), 'Ahmed');
       await tester.enterText(fields.at(1), 'a@b.com');
-      await tester.enterText(fields.at(2), 'secret');
+      await tester.enterText(fields.at(2), '0501234567');
       await tester.enterText(fields.at(3), 'secret');
+      await tester.enterText(fields.at(4), 'secret');
       await tester.tap(find.byType(CustomBtn));
       await tester.pumpAndSettle();
     }
@@ -146,8 +157,8 @@ void main() {
         'dropped into the app', (tester) async {
       await signUp(tester, needs: true);
 
-      expect(find.text(S.signUpEmailVerification), findsOneWidget);
-      expect(find.byType(SignUpPageBody), findsOneWidget);
+      expect(find.text(S.verificationCode), findsOneWidget);
+      expect(find.byType(SignUpPageBody), findsNothing);
     });
 
     testWidgets('a confirmed address gets no verification dialog', (

@@ -1,3 +1,9 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/shared/widgets/design_text.dart';
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
@@ -34,10 +40,97 @@ class _EventRequestFormPageState extends State<EventRequestFormPage> {
   bool _branchLoadFailed = false;
   bool _saving = false;
 
+  SharedPreferences? _prefs;
+  String? _draftKey;
+  bool _submitted = false;
+  Timer? _debounce;
+
+  Future<void> _initialize() async {
+    try {
+      final userId = SupabaseService.client.auth.currentUser?.id;
+      if (userId != null) {
+        _draftKey = 'event_request_draft_v1_$userId';
+        final prefs = await SharedPreferences.getInstance();
+        if (!mounted) return;
+        _prefs = prefs;
+        final raw = prefs.getString(_draftKey!);
+        if (raw != null) {
+          final draft = jsonDecode(raw) as Map<String, dynamic>;
+          _note.text = draft['note'] as String? ?? '';
+          _services.text = draft['services'] as String? ?? '';
+          _occasionName.text = draft['name'] as String? ?? '';
+          _branchId = draft['branch'] as String?;
+          final occasion = draft['occasion'];
+          if ([
+            'birthday',
+            'graduation',
+            'family_gathering',
+            'other',
+          ].contains(occasion))
+            _occasion = occasion as String;
+          final space = draft['space'];
+          if (['any', 'room', 'table'].contains(space))
+            _space = space as String;
+          final reminder = draft['reminder'];
+          if ([60, 180, 1440].contains(reminder))
+            _reminderMinutes = reminder as int;
+          _guests = ((draft['guests'] as int?) ?? 10).clamp(2, 40);
+          final date = DateTime.tryParse(draft['date'] as String? ?? '');
+          if (date != null &&
+              !date.isBefore(DateUtils.dateOnly(DateTime.now())) &&
+              date.isBefore(DateTime.now().add(const Duration(days: 366))))
+            _date = date;
+          TimeOfDay restoreTime(String key, TimeOfDay fallback) {
+            final minutes = draft[key];
+            if (minutes is! int || minutes < 0 || minutes >= 1440)
+              return fallback;
+            return TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60);
+          }
+
+          _start = restoreTime('start', _start);
+          _end = restoreTime('end', _end);
+        }
+      }
+    } catch (_) {
+      /* A draft is optional. */
+    }
+    if (mounted) await _loadBranches();
+  }
+
+  void _saveDraft() {
+    if (_submitted || _loading || _prefs == null || _draftKey == null) return;
+    unawaited(
+      _prefs!.setString(
+        _draftKey!,
+        jsonEncode({
+          'note': _note.text,
+          'services': _services.text,
+          'name': _occasionName.text,
+          'branch': _branchId,
+          'occasion': _occasion,
+          'space': _space,
+          'guests': _guests,
+          'reminder': _reminderMinutes,
+          'date': _date.toIso8601String(),
+          'start': _start.hour * 60 + _start.minute,
+          'end': _end.hour * 60 + _end.minute,
+        }),
+      ),
+    );
+  }
+
+  void _changed() {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), _saveDraft);
+  }
+
   @override
   void initState() {
     super.initState();
-    _loadBranches();
+    _initialize();
+    for (final controller in [_note, _services, _occasionName]) {
+      controller.addListener(_changed);
+    }
   }
 
   Future<void> _loadBranches() async {
@@ -49,7 +142,10 @@ class _EventRequestFormPageState extends State<EventRequestFormPage> {
       if (!mounted) return;
       setState(() {
         _branches = List<Map<String, dynamic>>.from(rows);
-        _branchId = _branches.isEmpty ? null : _branches.first['id'] as String;
+        if (!_branches.any((b) => b['id'] == _branchId))
+          _branchId = _branches.isEmpty
+              ? null
+              : _branches.first['id'] as String;
         _loading = false;
         _branchLoadFailed = false;
       });
@@ -66,15 +162,14 @@ class _EventRequestFormPageState extends State<EventRequestFormPage> {
   DateTime _at(TimeOfDay time) =>
       DateTime(_date.year, _date.month, _date.day, time.hour, time.minute);
   String _branchName(Map<String, dynamic> branch) =>
-      '${branch['name_ar'] ?? branch['name_en'] ?? ''}';
+      '${branch[AppLocale.instance.isArabic ? 'name_ar' : 'name_en'] ?? branch['name_ar'] ?? branch['name_en'] ?? ''}';
 
   Future<void> _submit() async {
     final branch = _branchId;
     if (branch == null) return;
     if (_occasion == 'other' && _occasionName.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('اكتب اسم المناسبة أولاً.')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.eventFormNameRequired)));
       return;
     }
     var startAt = _at(_start), endAt = _at(_end);
@@ -83,11 +178,8 @@ class _EventRequestFormPageState extends State<EventRequestFormPage> {
     if (!startAt.isAfter(DateTime.now()) ||
         duration.inMinutes < 30 ||
         duration.inMinutes > 480) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('اختر موعداً مستقبلياً ومدة بين 30 دقيقة و8 ساعات.'),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.eventFormInvalidTime)));
       return;
     }
     setState(() => _saving = true);
@@ -104,22 +196,17 @@ class _EventRequestFormPageState extends State<EventRequestFormPage> {
         note: _note.text,
         reminderMinutes: _reminderMinutes,
       );
+      _submitted = true;
+      _debounce?.cancel();
+      if (_draftKey != null) unawaited(_prefs?.remove(_draftKey!));
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'تم إرسال طلب المناسبة. سيظهر الحجز بعد قبول عرض الفرع.',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.eventFormSubmitted)));
       Navigator.of(context).pop(true);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تعذر إرسال الطلب. تحقق من البيانات وحاول مرة أخرى.'),
-          ),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(S.eventFormSubmitFailed)));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -128,6 +215,8 @@ class _EventRequestFormPageState extends State<EventRequestFormPage> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
+    _saveDraft();
     _note.dispose();
     _services.dispose();
     _occasionName.dispose();
@@ -139,14 +228,14 @@ class _EventRequestFormPageState extends State<EventRequestFormPage> {
     child: Scaffold(
       appBar: AppBar(
         leading: const AppBackButton(),
-        title: const DesignText(
-          'طلب مناسبة خاصة',
+        title: DesignText(
+          S.eventFormTitle,
           page: 'event_request_form',
           label: 'title',
         ),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : _branchLoadFailed
           ? Center(
               child: CustomFilledButton.tonal(
@@ -157,11 +246,15 @@ class _EventRequestFormPageState extends State<EventRequestFormPage> {
                   });
                   _loadBranches();
                 },
-                child: const Text('تعذر تحميل الفروع · إعادة المحاولة'),
+                child: DesignText(
+                  S.eventFormRetryBranches,
+                  page: 'event_request_form',
+                  label: 'retryBranches',
+                ),
               ),
             )
           : _branches.isEmpty
-          ? const Center(child: Text('لا توجد فروع متاحة لطلب المناسبة.'))
+          ? Center(child: Text(S.eventFormNoBranches))
           : ListView(
               padding: AppLayout.pageBody,
               children: [
@@ -169,7 +262,7 @@ class _EventRequestFormPageState extends State<EventRequestFormPage> {
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     child: Text(
-                      'أرسل تفاصيل مناسبتك، وسيراجعها الفرع ويرسل لك السعر والمكان والموعد المقترح. لن يصبح الحجز مؤكداً إلا بعد موافقتك على العرض.',
+                      S.eventFormDescription,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ),
@@ -177,7 +270,13 @@ class _EventRequestFormPageState extends State<EventRequestFormPage> {
                 const SizedBox(height: AppSizes.px12),
                 DropdownButtonFormField<String>(
                   initialValue: _branchId,
-                  decoration: const InputDecoration(labelText: 'الفرع'),
+                  decoration: InputDecoration(
+                    label: DesignText(
+                      S.eventFormBranch,
+                      page: 'event_request_form',
+                      label: 'branch',
+                    ),
+                  ),
                   items: _branches
                       .map(
                         (b) => DropdownMenuItem(
@@ -186,31 +285,43 @@ class _EventRequestFormPageState extends State<EventRequestFormPage> {
                         ),
                       )
                       .toList(),
-                  onChanged: (v) => setState(() => _branchId = v),
+                  onChanged: (v) => setState(() {
+                    _branchId = v;
+                    _changed();
+                  }),
                 ),
                 const SizedBox(height: AppSizes.px12),
                 DropdownButtonFormField<String>(
                   initialValue: _occasion,
-                  decoration: const InputDecoration(labelText: 'نوع المناسبة'),
-                  items: const [
+                  decoration: InputDecoration(
+                    label: DesignText(
+                      S.eventFormOccasion,
+                      page: 'event_request_form',
+                      label: 'occasion',
+                    ),
+                  ),
+                  items: [
                     DropdownMenuItem(
                       value: 'birthday',
-                      child: Text('عيد ميلاد'),
+                      child: Text(S.eventFormBirthday),
                     ),
                     DropdownMenuItem(
                       value: 'graduation',
-                      child: Text('حفل تخرج'),
+                      child: Text(S.eventFormGraduation),
                     ),
                     DropdownMenuItem(
                       value: 'family_gathering',
-                      child: Text('تجمع عائلي'),
+                      child: Text(S.eventFormFamily),
                     ),
                     DropdownMenuItem(
                       value: 'other',
-                      child: Text('مناسبة أخرى'),
+                      child: Text(S.eventFormOther),
                     ),
                   ],
-                  onChanged: (v) => setState(() => _occasion = v ?? 'other'),
+                  onChanged: (v) => setState(() {
+                    _occasion = v ?? 'other';
+                    _changed();
+                  }),
                 ),
                 if (_occasion == 'other') ...[
                   const SizedBox(height: AppSizes.px12),
@@ -218,48 +329,71 @@ class _EventRequestFormPageState extends State<EventRequestFormPage> {
                     controller: _occasionName,
                     maxLength: 120,
                     textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: 'اسم المناسبة',
-                      hintText: 'مثال: حفل زفاف أو افتتاح',
+                    decoration: InputDecoration(
+                      label: DesignText(
+                        S.eventFormOccasionName,
+                        page: 'event_request_form',
+                        label: 'occasionName',
+                      ),
+                      hintText: S.eventFormOccasionHint,
                     ),
                   ),
                 ],
                 const SizedBox(height: AppSizes.px12),
                 DropdownButtonFormField<String>(
                   initialValue: _space,
-                  decoration: const InputDecoration(
-                    labelText: 'المكان المطلوب',
-                  ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'any',
-                      child: Text('غرفة أو طاولة حسب المتاح'),
+                  decoration: InputDecoration(
+                    label: DesignText(
+                      S.eventFormSpace,
+                      page: 'event_request_form',
+                      label: 'space',
                     ),
-                    DropdownMenuItem(value: 'room', child: Text('غرفة خاصة')),
-                    DropdownMenuItem(value: 'table', child: Text('طاولة')),
+                  ),
+                  items: [
+                    DropdownMenuItem(value: 'any', child: Text(S.eventFormAny)),
+                    DropdownMenuItem(
+                      value: 'room',
+                      child: Text(S.eventFormRoom),
+                    ),
+                    DropdownMenuItem(
+                      value: 'table',
+                      child: Text(S.eventFormTable),
+                    ),
                   ],
-                  onChanged: (v) => setState(() => _space = v ?? 'any'),
+                  onChanged: (v) => setState(() {
+                    _space = v ?? 'any';
+                    _changed();
+                  }),
                 ),
                 const SizedBox(height: AppSizes.px12),
                 DropdownButtonFormField<int>(
                   initialValue: _reminderMinutes,
-                  decoration: const InputDecoration(
-                    labelText: 'ذكرني قبل المناسبة',
+                  decoration: InputDecoration(
+                    label: DesignText(
+                      S.eventFormReminder,
+                      page: 'event_request_form',
+                      label: 'reminder',
+                    ),
                   ),
-                  items: const [
-                    DropdownMenuItem(value: 60, child: Text('بساعة')),
-                    DropdownMenuItem(value: 180, child: Text('بـ 3 ساعات')),
-                    DropdownMenuItem(value: 1440, child: Text('بيوم')),
+                  items: [
+                    DropdownMenuItem(value: 60, child: Text(S.eventFormHour)),
+                    DropdownMenuItem(
+                      value: 180,
+                      child: Text(S.eventFormThreeHours),
+                    ),
+                    DropdownMenuItem(value: 1440, child: Text(S.eventFormDay)),
                   ],
-                  onChanged: (value) =>
-                      setState(() => _reminderMinutes = value ?? 1440),
+                  onChanged: (value) => setState(() {
+                    _reminderMinutes = value ?? 1440;
+                    _changed();
+                  }),
                 ),
-                const Align(
+                Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: Padding(
                     padding: EdgeInsets.only(top: AppSpacing.xs),
                     child: Text(
-                      'سيصلك التذكير بعد تأكيد الحجز، ويظهر أيضًا في الصفحة الرئيسية.',
+                      S.eventFormReminderHint,
                       style: TextStyle(fontSize: AppFontSizes.size12),
                     ),
                   ),
@@ -267,7 +401,11 @@ class _EventRequestFormPageState extends State<EventRequestFormPage> {
                 const SizedBox(height: AppSizes.px12),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('تاريخ المناسبة'),
+                  title: DesignText(
+                    S.eventFormEventDate,
+                    page: 'event_request_form',
+                    label: 'eventDate',
+                  ),
                   subtitle: Text('${_date.year}/${_date.month}/${_date.day}'),
                   trailing: const Icon(AppIcons.calendar),
                   onTap: () async {
@@ -277,24 +415,34 @@ class _EventRequestFormPageState extends State<EventRequestFormPage> {
                       firstDate: DateTime.now(),
                       lastDate: DateTime.now().add(const Duration(days: 365)),
                     );
-                    if (d != null) setState(() => _date = d);
+                    if (d != null)
+                      setState(() {
+                        _date = d;
+                        _changed();
+                      });
                   },
                 ),
                 Row(
                   children: [
                     Expanded(
                       child: _timePicker(
-                        'من',
+                        S.eventFormFrom,
                         _start,
-                        (v) => setState(() => _start = v),
+                        (v) => setState(() {
+                          _start = v;
+                          _changed();
+                        }),
                       ),
                     ),
                     const SizedBox(width: AppSizes.px12),
                     Expanded(
                       child: _timePicker(
-                        'إلى',
+                        S.eventFormTo,
                         _end,
-                        (v) => setState(() => _end = v),
+                        (v) => setState(() {
+                          _end = v;
+                          _changed();
+                        }),
                       ),
                     ),
                   ],
@@ -302,22 +450,37 @@ class _EventRequestFormPageState extends State<EventRequestFormPage> {
                 const SizedBox(height: AppSizes.px12),
                 DropdownButtonFormField<int>(
                   initialValue: _guests,
-                  decoration: const InputDecoration(labelText: 'عدد الضيوف'),
+                  decoration: InputDecoration(
+                    label: DesignText(
+                      S.eventFormGuests,
+                      page: 'event_request_form',
+                      label: 'guests',
+                    ),
+                  ),
                   items: List.generate(39, (i) => i + 2)
                       .map(
-                        (n) =>
-                            DropdownMenuItem(value: n, child: Text('$n ضيف')),
+                        (n) => DropdownMenuItem(
+                          value: n,
+                          child: Text(S.eventFormGuestCount(n)),
+                        ),
                       )
                       .toList(),
-                  onChanged: (v) => setState(() => _guests = v ?? 2),
+                  onChanged: (v) => setState(() {
+                    _guests = v ?? 2;
+                    _changed();
+                  }),
                 ),
                 const SizedBox(height: AppSizes.px12),
                 TextField(
                   controller: _services,
                   maxLength: 500,
-                  decoration: const InputDecoration(
-                    labelText: 'الخدمات المطلوبة (اختياري)',
-                    hintText: 'مثل: تزيين، كيكة، تجهيزات خاصة',
+                  decoration: InputDecoration(
+                    label: DesignText(
+                      S.eventFormServices,
+                      page: 'event_request_form',
+                      label: 'services',
+                    ),
+                    hintText: S.eventFormServicesHint,
                   ),
                 ),
                 const SizedBox(height: AppSizes.px8),
@@ -325,8 +488,12 @@ class _EventRequestFormPageState extends State<EventRequestFormPage> {
                   controller: _note,
                   maxLines: 3,
                   maxLength: 500,
-                  decoration: const InputDecoration(
-                    labelText: 'ملاحظات للفرع (اختياري)',
+                  decoration: InputDecoration(
+                    label: DesignText(
+                      S.eventFormNote,
+                      page: 'event_request_form',
+                      label: 'note',
+                    ),
                   ),
                 ),
                 const SizedBox(height: AppSizes.px20),
@@ -341,7 +508,11 @@ class _EventRequestFormPageState extends State<EventRequestFormPage> {
                           ),
                         )
                       : const Icon(AppIcons.sent),
-                  label: const Text('إرسال طلب المناسبة'),
+                  label: DesignText(
+                    S.eventFormSendRequest,
+                    page: 'event_request_form',
+                    label: 'sendRequest',
+                  ),
                 ),
               ],
             ),

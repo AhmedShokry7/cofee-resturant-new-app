@@ -123,6 +123,8 @@ class LoyaltyRule {
     required this.nameEn,
     required this.pointsPerCurrencyUnit,
     this.isActive = true,
+    this.validFrom,
+    this.validTo,
   });
 
   final String code;
@@ -130,12 +132,20 @@ class LoyaltyRule {
   final String nameEn;
   final double pointsPerCurrencyUnit;
   final bool isActive;
+  final DateTime? validFrom;
+  final DateTime? validTo;
 
   String get name =>
       pickText((ar: nameAr, en: nameEn), isArabic: AppLocale.instance.isArabic);
 
+  /// Same rule as `place_order()`: active, and not past `valid_to`.
+  bool isEffectiveAt(DateTime now) =>
+      isActive && (validTo == null || validTo!.isAfter(now));
+
+  /// Floor of the exact amount, like `place_order()`. The epsilon stops binary
+  /// floating point from dropping a whole point (6.9999999 must stay 7).
   int pointsFor(double amount) =>
-      (amount * pointsPerCurrencyUnit).floor().clamp(0, 1 << 31);
+      (amount * pointsPerCurrencyUnit + 1e-9).floor().clamp(0, 1 << 31);
 
   factory LoyaltyRule.fromDatabase(Map<String, dynamic> json) {
     final map = Db.asMap(json);
@@ -145,6 +155,8 @@ class LoyaltyRule {
       nameEn: Db.text(map['name_en']),
       pointsPerCurrencyUnit: Db.asDouble(map['points_per_currency_unit']),
       isActive: Db.asBool(map['is_active'], fallback: true),
+      validFrom: Db.asDateTimeOrNull(map['valid_from']),
+      validTo: Db.asDateTimeOrNull(map['valid_to']),
     );
   }
 }

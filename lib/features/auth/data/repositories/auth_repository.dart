@@ -58,3 +58,13 @@ abstract class AuthRepository {
   /// into "no" and send an unconfirmed customer into the app.
   bool get lastSignUpNeedsEmailConfirmation => false;
 }
+
+/// The current Supabase identity's phone-linking flow, separate from sign-in.
+abstract interface class PhoneIdentityRepository {
+  Future<void> sendPhoneChangeCode({required String phone});
+  Future<void> resendPhoneChangeCode({required String phone});
+  Future<AuthUser> verifyPhoneChangeCode({
+    required String phone,
+    required String code,
+  });
+}

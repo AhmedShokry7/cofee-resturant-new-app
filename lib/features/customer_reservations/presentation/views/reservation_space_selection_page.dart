@@ -1,4 +1,5 @@
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:material_ui/material_ui.dart';
@@ -130,10 +131,17 @@ class _ReservationSpaceSelectionPageState
                                 PositionedDirectional(
                                   top: 6,
                                   end: 6,
-                                  child: CustomIconButton.filledTonal(
+                                  child: IconButton.filled(
                                     tooltip: 'عرض الصورة',
+                                    style: IconButton.styleFrom(
+                                      backgroundColor: AppColor.primaryColor,
+                                      shape: const CircleBorder(),
+                                    ),
                                     onPressed: () => _showPhoto(space),
-                                    icon: const Icon(AppIcons.view),
+                                    icon: const Icon(
+                                      AppIcons.view,
+                                      color: AppColor.whiteColor,
+                                    ),
                                   ),
                                 ),
                               if (selected)

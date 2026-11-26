@@ -312,6 +312,7 @@ abstract interface class CheckoutQuoteRepository {
     String? couponCode,
     String? note,
     String? subscriptionRunId,
+    DateTime? scheduledPickupAt,
   });
 }
 

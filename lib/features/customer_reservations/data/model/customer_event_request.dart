@@ -26,6 +26,7 @@ class CustomerEventRequest {
     this.createdAt,
     this.reminderMinutes = 1440,
     this.reminderAt,
+    this.customerCanCancel = true,
   });
 
   final String id;
@@ -52,6 +53,7 @@ class CustomerEventRequest {
   final DateTime? createdAt;
   final int reminderMinutes;
   final DateTime? reminderAt;
+  final bool customerCanCancel;
 
   factory CustomerEventRequest.fromJson(Map<String, dynamic> json) =>
       CustomerEventRequest(
@@ -86,5 +88,6 @@ class CustomerEventRequest {
         createdAt: Db.asDateTimeOrNull(json['created_at']),
         reminderMinutes: Db.asInt(json['reminder_minutes'], fallback: 1440),
         reminderAt: Db.asDateTimeOrNull(json['reminder_at']),
+        customerCanCancel: json['customer_can_cancel'] != false,
       );
 }

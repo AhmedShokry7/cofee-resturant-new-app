@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -27,29 +25,8 @@ import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
-class HomePageBody extends StatefulWidget {
+class HomePageBody extends StatelessWidget {
   const HomePageBody({super.key});
-
-  @override
-  State<HomePageBody> createState() => _HomePageBodyState();
-}
-
-class _HomePageBodyState extends State<HomePageBody> {
-  Timer? _reminderExpiryTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    _reminderExpiryTimer = Timer.periodic(const Duration(minutes: 1), (_) {
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _reminderExpiryTimer?.cancel();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {

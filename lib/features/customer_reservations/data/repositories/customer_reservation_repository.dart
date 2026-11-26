@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:new_coffee/core/services/supabase_service.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/customer_reservations/data/model/customer_reservation.dart';
 import 'package:new_coffee/features/customer_reservations/data/model/customer_event_request.dart';
 
@@ -56,7 +57,13 @@ class CustomerReservationRepository {
   }
 
   Future<void> cancel(String id) async {
-    await _db.rpc('cancel_my_reservation', params: {'p_id': id});
+    final cancelled = await _db.rpc(
+      'cancel_my_reservation',
+      params: {'p_id': id},
+    );
+    if (cancelled != true) {
+      throw StateError(S.reservationCancellationWindowClosed);
+    }
   }
 
   Future<List<CustomerEventRequest>> listMyEventRequests() async {

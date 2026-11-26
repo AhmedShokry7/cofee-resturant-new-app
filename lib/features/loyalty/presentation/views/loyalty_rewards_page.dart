@@ -1,3 +1,4 @@
+import 'package:new_coffee/shared/widgets/refresh_on_return.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -119,7 +120,7 @@ class _RewardList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
+    return RefreshOnReturn(
       onRefresh: context.read<LoyaltyCubit>().load,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),

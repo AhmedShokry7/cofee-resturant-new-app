@@ -233,16 +233,18 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
   /// This remains a device wallet until the server-backed checkout places a
   /// real order. `place_order()` is the only writer of server points, so this
   /// method deliberately does not touch the server ledger.
+  /// `pointsBase` is the subtotal minus the coupon (see
+  /// `CheckoutCubit.pointsBase`), never the grand total.
   Future<int> earnForOrder(
-    double orderTotal, {
+    double pointsBase, {
     int? serverPointsEarned,
     // Null rather than `S.orderPurchaseLabel`: a localized getter is not a
     // compile-time constant, so it cannot be a default value. Resolved inside
     // so it still resolves in the *current* language.
     String? title,
   }) async {
-    final rule = state.rules.isEmpty ? null : state.rules.first;
-    final points = serverPointsEarned ?? rule?.pointsFor(orderTotal) ?? 0;
+    final rule = state.activeRule;
+    final points = serverPointsEarned ?? rule?.pointsFor(pointsBase) ?? 0;
     if (isClosed) return 0;
 
     if (!state.isGuest) {

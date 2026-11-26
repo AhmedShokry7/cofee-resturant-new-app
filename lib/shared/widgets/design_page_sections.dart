@@ -54,7 +54,7 @@ class DesignPageSectionsAbove extends StatelessWidget {
     if (built.isEmpty) return content;
     // Other published sections may be tall. Keep the search UI usable and let
     // them scroll within a bounded area.
-    if (pageId == 'search') {
+    {
       return LayoutBuilder(
         builder: (context, constraints) {
           final maxSectionHeight = constraints.maxHeight.isFinite
@@ -77,12 +77,6 @@ class DesignPageSectionsAbove extends StatelessWidget {
         },
       );
     }
-    return Column(
-      children: [
-        ...built,
-        Expanded(child: content),
-      ],
-    );
   }
 }
 

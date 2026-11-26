@@ -64,6 +64,10 @@ class _FakeRepository implements SubscriptionRepository {
   @override
   Future<CustomerSubscription?> mySubscription() async => subscription;
 
+  @override
+  Future<List<CustomerSubscription>> mySubscriptions() async =>
+      subscription == null ? const [] : [subscription!];
+
   List<SubscriptionPlanProduct> planProductsToReturn = const [];
   Object? planProductsError;
 
@@ -472,22 +476,26 @@ void main() {
       await cubit.close();
     });
 
-    test('cancelling drops the pass with the subscription', () async {
-      final repository = _FakeRepository()
-        ..subscription = const CustomerSubscription(
-          id: 'sub-1',
-          planId: 'plan-1',
-        );
-      final cubit = SubscriptionCubit(repository: repository);
-      await cubit.load();
-      await cubit.showQr();
+    test(
+      'cancelling keeps the subscription in history and drops its pass',
+      () async {
+        final repository = _FakeRepository()
+          ..subscription = const CustomerSubscription(
+            id: 'sub-1',
+            planId: 'plan-1',
+          );
+        final cubit = SubscriptionCubit(repository: repository);
+        await cubit.load();
+        await cubit.showQr();
 
-      expect(await cubit.cancel(), isTrue);
+        expect(await cubit.cancel(), isTrue);
 
-      expect(cubit.state.subscription, isNull);
-      expect(cubit.state.qrToken, isNull);
-      await cubit.close();
-    });
+        expect(cubit.state.subscription?.status, 'cancelled');
+        expect(cubit.state.subscriptions.single.status, 'cancelled');
+        expect(cubit.state.qrToken, isNull);
+        await cubit.close();
+      },
+    );
 
     test('a branch change re-reads the plans of that branch', () async {
       final repository = _FakeRepository()..plansToReturn = [_plan()];

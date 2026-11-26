@@ -508,7 +508,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         if (_repository is BulkNotificationsReadRepository) {
           await (_repository as BulkNotificationsReadRepository).markAllRead();
         } else {
-          await _markUnreadPages();
+          await _markUnreadPages(notifications);
         }
         if (isClosed || generation != _loadGeneration) return;
         notifications = await _repository.listNotifications(
@@ -554,20 +554,21 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     }
   }
 
-  Future<void> _markUnreadPages() async {
+  Future<void> _markUnreadPages(List<NotificationModel> firstPage) async {
     var offset = 0;
+    var page = firstPage;
+    var limit = pageSize + 1;
     while (true) {
-      final page = await _repository.listNotifications(
-        limit: 200,
-        offset: offset,
-      );
+
       final unread = [
         for (final item in page)
           if (!item.isRead) item.id,
       ];
       if (unread.isNotEmpty) await _repository.markRead(unread);
-      if (page.length < 200) return;
+      if (page.length < limit) return;
       offset += page.length;
+      limit = 200;
+      page = await _repository.listNotifications(limit: limit, offset: offset);
     }
   }
 
