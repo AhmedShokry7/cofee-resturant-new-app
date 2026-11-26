@@ -79,9 +79,7 @@ class CustomerEventRequest {
             .whereType<Map>()
             .map((option) => Map<String, dynamic>.from(option))
             .toList(growable: false),
-        quotedSpaceImageUrl: Db.textOrNull(
-          json['quoted_space_image_url'],
-        ),
+        quotedSpaceImageUrl: Db.textOrNull(json['quoted_space_image_url']),
         quotedStartAt: Db.asDateTimeOrNull(json['quoted_start_at']),
         quotedEndAt: Db.asDateTimeOrNull(json['quoted_end_at']),
         quoteExpiresAt: Db.asDateTimeOrNull(json['quote_expires_at']),

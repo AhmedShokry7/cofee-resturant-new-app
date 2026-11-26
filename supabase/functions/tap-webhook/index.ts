@@ -265,7 +265,8 @@ export async function handleRequest(
     );
     const order = Array.isArray(orderRows) ? orderRows[0] : null;
     if (
-      !order || order.test_only === true || String(order.id) !== String(orderId) ||
+      !order || order.test_only === true ||
+      String(order.id) !== String(orderId) ||
       roundAmount(
           Number(order.grand_total),
           String(order.currency_code ?? "SAR"),
@@ -306,7 +307,8 @@ export async function handleRequest(
   }
 
   const newStatus = mapTapStatus(status);
-  const verified = newStatus === "captured" || newStatus === "authorized";
+  // A payment authorization must not grant a prepaid entitlement.
+  const verified = newStatus === "captured";
   const now = new Date().toISOString();
   await deps.fetch(
     `/payment_transactions?provider=eq.tap&provider_reference=eq.${

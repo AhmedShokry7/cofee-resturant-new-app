@@ -12,7 +12,7 @@ if (-not (Test-Path -LiteralPath $envPath -PathType Leaf)) {
 
 $values = @{}
 foreach ($line in Get-Content -LiteralPath $envPath) {
-  if ($line -match '^\s*(SUPABASE_URL|SUPABASE_PUBLISHABLE_KEY|GOOGLE_SERVER_CLIENT_ID)\s*=\s*(.*?)\s*$') {
+  if ($line -match '^\s*(SUPABASE_URL|SUPABASE_PUBLISHABLE_KEY|GOOGLE_SERVER_CLIENT_ID|MOYASAR_PUBLISHABLE_KEY|USE_MOYASAR)\s*=\s*(.*?)\s*$') {
     $values[$matches[1]] = $matches[2].Trim('"').Trim("'")
   }
 }
@@ -33,6 +33,17 @@ $jsonValues = [ordered]@{
 $googleClientId = $values['GOOGLE_SERVER_CLIENT_ID']
 if ($googleClientId) {
   $jsonValues['GOOGLE_SERVER_CLIENT_ID'] = $googleClientId
+}
+$moyasarPublicKey = $values['MOYASAR_PUBLISHABLE_KEY']
+$useMoyasar = $values['USE_MOYASAR']
+if ($useMoyasar -eq 'true') {
+  if ($moyasarPublicKey -notmatch '^pk_test_[A-Za-z0-9_-]+$') {
+    throw 'USE_MOYASAR=true requires a Moyasar pk_test_ publishable key.'
+  }
+  $jsonValues['MOYASAR_PUBLISHABLE_KEY'] = $moyasarPublicKey
+  $jsonValues['USE_MOYASAR'] = 'true'
+} elseif ($useMoyasar -and $useMoyasar -ne 'false') {
+  throw 'USE_MOYASAR must be true or false.'
 }
 $json = $jsonValues | ConvertTo-Json
 [System.IO.File]::WriteAllText(

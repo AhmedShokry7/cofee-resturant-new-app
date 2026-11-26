@@ -129,19 +129,21 @@ class AppRoutes {
         _designable('event_request_form', const EventRequestFormPage()),
     MyProductSubscriptionsPage.routeName: (context) => _designable(
       'my_product_subscriptions',
-      const MyProductSubscriptionsPage(),
+      MyProductSubscriptionsPage(
+        subscriptionId: ModalRoute.of(context)?.settings.arguments as String?,
+      ),
     ),
     ProductSubscriptionFormPage.routeName: (context) => _designable(
       'product_subscription_form',
       const ProductSubscriptionFormPage(),
     ),
-    SubscriptionDetailsPage.routeName: (context) =>
-        _designable(
-          'subscription_details',
-          SubscriptionDetailsPage(
-            initialSubscriptionId: ModalRoute.of(context)?.settings.arguments as String?,
-          ),
-        ),
+    SubscriptionDetailsPage.routeName: (context) => _designable(
+      'subscription_details',
+      SubscriptionDetailsPage(
+        initialSubscriptionId:
+            ModalRoute.of(context)?.settings.arguments as String?,
+      ),
+    ),
     MySubscriptionsPage.routeName: (context) =>
         _designable('my_subscriptions', const MySubscriptionsPage()),
     CashierSubscriptionConsumePage.routeName: (context) => _designable(

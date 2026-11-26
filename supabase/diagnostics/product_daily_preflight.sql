@@ -1,0 +1,1 @@
+select pg_get_functiondef('subscriptions.customer_product_subscription_next_run(timestamp with time zone,text,integer)'::regprocedure) as next_run, pg_get_functiondef('public.create_customer_product_subscription(jsonb)'::regprocedure) as create_rpc, (select pg_get_constraintdef(oid) from pg_constraint where conname='ck_cps_recurrence') as recurrence_check;

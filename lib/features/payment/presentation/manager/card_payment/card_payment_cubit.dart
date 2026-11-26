@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/core/locale/app_copy.dart';
 import 'package:new_coffee/features/payment/data/repositories/tap_payment_repository.dart';
+import 'package:new_coffee/features/payment/data/moyasar_checkout_config.dart';
+import 'package:new_coffee/features/payment/data/repositories/moyasar_payment_repository.dart';
 
 import 'card_payment_state.dart';
 
@@ -42,6 +44,59 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
     _savedCardId = savedCardId;
     if (reset && !isClosed) {
       emit(const CardPaymentState());
+    }
+  }
+
+  /// Prices the payment on Supabase before the Moyasar SDK opens its form.
+  /// The returned ID is also sent as Moyasar's `givenID`, binding verification
+  /// to this user-owned order and preventing a client supplied price from
+  /// being accepted as proof of payment.
+  Future<void> prepareMoyasarPayment() async {
+    if (!MoyasarCheckoutConfig.enabled || state.isBusy) return;
+    final repository = this.repository;
+    if (repository is! MoyasarPaymentOperations) {
+      emit(
+        state.copyWith(
+          status: CardPaymentStatus.paymentFailed,
+          errorMessage: AppCopy.paymentRetryLater,
+        ),
+      );
+      return;
+    }
+    final moyasarRepository = repository as MoyasarPaymentOperations;
+    emit(
+      state.copyWith(
+        status: CardPaymentStatus.creatingCharge,
+        clearError: true,
+        clearChargeId: true,
+        clearTransactionUrl: true,
+      ),
+    );
+    try {
+      final intent = await moyasarRepository.preparePayment(
+        orderId: _orderId,
+        subscriptionId: _subscriptionId,
+      );
+      if (isClosed) return;
+      if (intent.paymentId.isEmpty || intent.amount < 100) {
+        throw StateError('Invalid payment intent');
+      }
+      emit(
+        state.copyWith(
+          status: CardPaymentStatus.chargeCreated,
+          chargeId: intent.paymentId,
+          paymentAmountMinor: intent.amount,
+          paymentCurrency: intent.currency,
+        ),
+      );
+    } catch (_) {
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          status: CardPaymentStatus.paymentFailed,
+          errorMessage: AppCopy.paymentRetryLater,
+        ),
+      );
     }
   }
 

@@ -1,0 +1,1 @@
+select s.user_id::text as user_id, right(coalesce(p.phone,''),4) as phone_last4, count(*) as subscriptions, max(s.created_at) as latest, string_agg(distinct s.status,',') as statuses from subscriptions.customer_product_subscriptions s left join identity.profiles p on p.id=s.user_id group by s.user_id,p.phone order by latest desc limit 10;

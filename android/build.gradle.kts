@@ -27,6 +27,20 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
+// Keep Android library plugins aligned with the SDK required by the app's
+// resolved AndroidX dependencies (some Flutter plugins still declare API 33).
+subprojects {
+    afterEvaluate {
+        val androidExtension = extensions.findByName("android") ?: return@afterEvaluate
+        val compileSdkSetter = androidExtension.javaClass.methods.firstOrNull {
+            it.name in setOf("setCompileSdkVersion", "compileSdkVersion") &&
+                it.parameterCount == 1 &&
+                (it.parameterTypes[0] == Int::class.javaPrimitiveType ||
+                    it.parameterTypes[0] == Int::class.javaObjectType)
+        }
+        compileSdkSetter?.invoke(androidExtension, 36)
+    }
+}
 subprojects {
     project.evaluationDependsOn(":app")
 }

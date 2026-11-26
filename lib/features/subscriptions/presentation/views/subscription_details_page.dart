@@ -21,6 +21,7 @@ import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:qr/qr.dart';
 import 'package:new_coffee/shared/widgets/app_back_button.dart';
+import 'package:new_coffee/features/subscriptions/data/repositories/subscription_preorder_repository.dart';
 
 class SubscriptionDetailsPage extends StatelessWidget {
   const SubscriptionDetailsPage({super.key, this.initialSubscriptionId});
@@ -40,11 +41,9 @@ class SubscriptionDetailsPage extends StatelessWidget {
           final cubit = SubscriptionCubit(
             repository: context.read<SubscriptionRepository>(),
             branchId: context.read<BranchCubit>().state.selected?.id,
+            initialSubscriptionId: initialSubscriptionId,
           );
-          cubit.load().then((_) {
-            final id = initialSubscriptionId;
-            if (id != null) cubit.selectSubscription(id);
-          });
+          cubit.load();
           return cubit;
         },
         // A renewal is priced by the plan the selected branch sells (083
@@ -82,7 +81,7 @@ class _SubscriptionDetailsViewState extends State<_SubscriptionDetailsView> {
     final cubit = context.read<SubscriptionCubit>();
     return Scaffold(
       appBar: AppBar(
-        leading: _showDetails
+        leading: _showDetails && !widget.initiallyShowingDetails
             ? IconButton(
                 tooltip: S.mySubscriptionsBack,
                 icon: const Icon(Icons.arrow_back),
@@ -90,7 +89,7 @@ class _SubscriptionDetailsViewState extends State<_SubscriptionDetailsView> {
               )
             : const AppBackButton(),
         title: DesignText(
-          S.mySubscription,
+          S.planSubscriptionsTitle,
           page: 'subscription_details',
           label: 'mySubscription',
         ),
@@ -183,7 +182,15 @@ class _MySubscriptionsOverview extends StatelessWidget {
         .where((item) => item.isPendingPayment)
         .toList();
     final previous = subscriptions
-        .where((item) => !item.isActive && !item.isPendingPayment)
+        .where(
+          (item) =>
+              !item.isActive &&
+              !item.isPendingPayment &&
+              !{
+                'cancelled',
+                'canceled',
+              }.contains(item.status.trim().toLowerCase()),
+        )
         .toList();
     return ListView(
       padding: EdgeInsets.all(AppSpacing.lg),
@@ -288,19 +295,37 @@ class _SubscriptionBody extends StatelessWidget {
         ],
         _SubscriptionSummary(subscription: subscription),
         SizedBox(height: AppSpacing.md),
-        _SubscriptionFacts(subscription: subscription),
-        SizedBox(height: AppSpacing.sm),
         if (subscription.isActive) ...[
           CustomFilledButton(
-            onPressed: busy
-                ? null
-                : () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) =>
-                          SubscriptionPreorderPage(subscription: subscription),
-                    ),
-                  ),
-            child: Text(S.subscriptionPreorderTitle),
+            onPressed: busy ? null : () => _showQr(context),
+            child: Text(S.redeemAtBranch),
+          ),
+          FutureBuilder(
+            future: const SubscriptionPreorderRepository().eligibleBranches(
+              subscription.id,
+            ),
+            builder: (context, snapshot) =>
+                snapshot.hasData && snapshot.data!.isNotEmpty
+                ? Column(
+                    children: [
+                      CustomFilledButton(
+                        onPressed: busy
+                            ? null
+                            : () => Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => SubscriptionPreorderPage(
+                                    subscription: subscription,
+                                  ),
+                                ),
+                              ),
+                        child: Text(S.subscriptionPreorderTitle),
+                      ),
+                      SubscriptionPreorderHistorySection(
+                        subscriptionId: subscription.id,
+                      ),
+                    ],
+                  )
+                : const SizedBox.shrink(),
           ),
           SizedBox(height: AppSpacing.sm),
           Card(
@@ -312,7 +337,7 @@ class _SubscriptionBody extends StatelessWidget {
           ),
           SizedBox(height: AppSpacing.md),
         ],
-        SubscriptionPreorderHistorySection(subscriptionId: subscription.id),
+        _SubscriptionFacts(subscription: subscription),
         SizedBox(height: AppSpacing.md),
         Card(
           margin: EdgeInsets.zero,

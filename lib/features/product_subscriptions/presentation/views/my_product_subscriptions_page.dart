@@ -22,24 +22,34 @@ import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/app_back_button.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 
+import 'product_subscription_summary_card.dart';
+
 class MyProductSubscriptionsPage extends StatelessWidget {
-  const MyProductSubscriptionsPage({super.key});
+  const MyProductSubscriptionsPage({
+    super.key,
+    this.subscriptionId,
+    this.repository,
+  });
+  final String? subscriptionId;
+  final ProductSubscriptionRepository? repository;
   static const routeName = '/my-product-subscriptions';
 
   @override
   Widget build(BuildContext context) {
     return AuthGuard(
       child: BlocProvider(
-        create: (_) =>
-            ProductSubscriptionsCubit(ProductSubscriptionRepository())..load(),
-        child: const _ProductSubscriptionsView(),
+        create: (_) => ProductSubscriptionsCubit(
+          repository ?? ProductSubscriptionRepository(),
+        )..load(),
+        child: _ProductSubscriptionsView(subscriptionId: subscriptionId),
       ),
     );
   }
 }
 
 class _ProductSubscriptionsView extends StatelessWidget {
-  const _ProductSubscriptionsView();
+  const _ProductSubscriptionsView({this.subscriptionId});
+  final String? subscriptionId;
 
   Future<void> _openForm(BuildContext context) async {
     await Navigator.of(context)
@@ -85,14 +95,14 @@ class _ProductSubscriptionsView extends StatelessWidget {
 
   String _dateTime(DateTime value) {
     final local = value.toLocal();
-    final time = '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+    final time =
+        '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
     return '${Formatters.date(local)} · $time';
   }
 
-  String _itemName(ProductSubscriptionItem item) =>
-      AppLocale.instance.isArabic
-          ? (item.productNameAr ?? item.productNameEn ?? item.productId)
-          : (item.productNameEn ?? item.productNameAr ?? item.productId);
+  String _itemName(ProductSubscriptionItem item) => AppLocale.instance.isArabic
+      ? (item.productNameAr ?? item.productNameEn ?? item.productId)
+      : (item.productNameEn ?? item.productNameAr ?? item.productId);
 
   Future<void> _confirmCancel(BuildContext context, String id) async {
     final confirmed = await showDialog<bool>(
@@ -244,7 +254,17 @@ class _ProductSubscriptionsView extends StatelessWidget {
               onAction: () => context.read<ProductSubscriptionsCubit>().load(),
             );
           }
-          if (state.items.isEmpty) {
+          final items = state.items
+              .where(
+                (item) =>
+                    (subscriptionId != null || !{
+                      'cancelled',
+                      'canceled',
+                    }.contains(item.status.trim().toLowerCase())) &&
+                    (subscriptionId == null || item.id == subscriptionId),
+              )
+              .toList();
+          if (items.isEmpty) {
             return EmptyState(
               icon: AppIcons.repeat,
               title: S.noProductSubscriptionsYet,
@@ -257,31 +277,40 @@ class _ProductSubscriptionsView extends StatelessWidget {
             onRefresh: () => context.read<ProductSubscriptionsCubit>().load(),
             child: ListView.separated(
               padding: AppLayout.pageBody,
-              itemCount: state.items.length + 1,
+              itemCount: items.length + (subscriptionId == null ? 1 : 0),
               separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
               itemBuilder: (context, index) {
-                if (index == 0) {
-                  return Container(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: AppColor.primarySoft,
-                      borderRadius: BorderRadius.circular(AppRadius.r16),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(AppIcons.repeat, color: AppColor.primaryColor),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: Text(
-                            S.productSubscriptionsDescription,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ),
-                      ],
+                if (subscriptionId == null && index == 0) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                    child: Text(
+                      S.productSubscriptionsShortIntro,
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   );
                 }
-                final subscription = state.items[index - 1];
+                final subscription =
+                    items[index - (subscriptionId == null ? 1 : 0)];
+                if (subscriptionId == null) {
+                  return ProductSubscriptionSummaryCard(
+                    subscription: subscription,
+                    onOpen: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => BlocProvider.value(
+                            value: context.read<ProductSubscriptionsCubit>(),
+                            child: _ProductSubscriptionsView(
+                              subscriptionId: subscription.id,
+                            ),
+                          ),
+                        ),
+                      );
+                      if (context.mounted) {
+                        context.read<ProductSubscriptionsCubit>().load();
+                      }
+                    },
+                  );
+                }
                 final isActive = subscription.status.toLowerCase() == 'active';
                 final isPaused = subscription.status.toLowerCase() == 'paused';
                 return Card(
@@ -305,48 +334,96 @@ class _ProductSubscriptionsView extends StatelessWidget {
                             PopupMenuButton<String>(
                               onSelected: (value) {
                                 if (value == 'pause') {
-                                  context.read<ProductSubscriptionsCubit>().pause(subscription.id);
+                                  context
+                                      .read<ProductSubscriptionsCubit>()
+                                      .pause(subscription.id);
                                 } else if (value == 'resume') {
-                                  context.read<ProductSubscriptionsCubit>().resume(subscription.id);
+                                  context
+                                      .read<ProductSubscriptionsCubit>()
+                                      .resume(subscription.id);
                                 } else if (value == 'cancel') {
                                   _confirmCancel(context, subscription.id);
                                 }
                               },
                               itemBuilder: (_) => [
-                                if (isActive) PopupMenuItem(value: 'pause', child: Text(S.pause)),
-                                if (isPaused) PopupMenuItem(value: 'resume', child: Text(S.resume)),
+                                if (isActive)
+                                  PopupMenuItem(
+                                    value: 'pause',
+                                    child: Text(S.pause),
+                                  ),
+                                if (isPaused)
+                                  PopupMenuItem(
+                                    value: 'resume',
+                                    child: Text(S.resume),
+                                  ),
                                 if (isActive || isPaused)
                                   PopupMenuItem(
                                     value: 'cancel',
-                                    child: Text(S.cancel, style: const TextStyle(color: AppColor.errorColor)),
+                                    child: Text(
+                                      S.cancel,
+                                      style: const TextStyle(
+                                        color: AppColor.errorColor,
+                                      ),
+                                    ),
                                   ),
                               ],
                             ),
                           ],
                         ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Wrap(
-                          spacing: AppSpacing.xs,
-                          runSpacing: AppSpacing.xs,
-                          children: [
-                            _detailPill(context, AppIcons.repeat, S.repeatInterval(subscription.intervalValue, subscription.frequency)),
-                            if (subscription.nextRunAt != null)
-                              _detailPill(context, AppIcons.calendar, '${S.nextRun}: ${_dateTime(subscription.nextRunAt!)}'),
-                            _detailPill(context, AppIcons.coffee, _fulfillmentLabel(subscription.fulfillmentType)),
-                          ],
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          S.repeatInterval(
+                            subscription.intervalValue,
+                            subscription.frequency,
+                          ),
+                          style: Theme.of(context).textTheme.titleSmall,
                         ),
+                        if (subscription.pendingRuns.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: AppSpacing.xs),
+                            child: Text(
+                              S.productSubscriptionReadyLabel,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          )
+                        else if (subscription.nextRunAt != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: AppSpacing.xs),
+                            child: Text(
+                              '${S.nextRun}: ${_dateTime(subscription.nextRunAt!)}',
+                            ),
+                          ),
+                        Text(_fulfillmentLabel(subscription.fulfillmentType)),
                         if (subscription.items.isNotEmpty) ...[
                           const SizedBox(height: AppSpacing.md),
-                          Text(S.product, style: Theme.of(context).textTheme.labelLarge),
+                          Text(
+                            S.product,
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
                           const SizedBox(height: AppSpacing.xs),
-                          Wrap(
-                            spacing: AppSpacing.xs,
-                            runSpacing: AppSpacing.xs,
-                            children: subscription.items.map((item) => _detailPill(
-                              context,
-                              AppIcons.package,
-                              '${_itemName(item)} × ${item.quantity}',
-                            )).toList(),
+                          for (final item in subscription.items)
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(Icons.local_cafe_outlined),
+                              title: Text(_itemName(item)),
+                              trailing: Text('× ${item.quantity}'),
+                            ),
+                        ],
+                        if (isActive && subscription.pendingRuns.isEmpty) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(S.productSubscriptionWaitingShort),
+                        ],
+                        if (isPaused) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(S.productSubscriptionPausedHelp),
+                          CustomFilledButton(
+                            onPressed: () => context
+                                .read<ProductSubscriptionsCubit>()
+                                .resume(subscription.id),
+                            child: Text(S.resume),
                           ),
                         ],
                         for (final run in subscription.pendingRuns) ...[
@@ -356,17 +433,28 @@ class _ProductSubscriptionsView extends StatelessWidget {
                             padding: const EdgeInsets.all(AppSpacing.md),
                             decoration: BoxDecoration(
                               color: AppColor.lightGreyColor,
-                              borderRadius: BorderRadius.circular(AppRadius.r12),
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.r12,
+                              ),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(S.productSubscriptionOrderDue, style: Theme.of(context).textTheme.labelLarge),
+                                Text(
+                                  S.productSubscriptionOrderDue,
+                                  style: Theme.of(context).textTheme.labelLarge,
+                                ),
                                 const SizedBox(height: AppSpacing.xxs),
                                 Text(_dateTime(run.scheduledFor)),
                                 const SizedBox(height: AppSpacing.sm),
                                 CustomFilledButton.icon(
-                                  onPressed: isActive ? () => _reviewDueRun(context, subscription, run) : null,
+                                  onPressed: isActive
+                                      ? () => _reviewDueRun(
+                                          context,
+                                          subscription,
+                                          run,
+                                        )
+                                      : null,
                                   icon: const Icon(AppIcons.bag),
                                   label: Text(S.reviewAndConfirmOrder),
                                 ),
@@ -390,32 +478,16 @@ class _ProductSubscriptionsView extends StatelessWidget {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openForm(context),
-        icon: const Icon(AppIcons.add),
-        label: Text(S.newProductSubscription),
-      ),
+      floatingActionButton: subscriptionId != null
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => _openForm(context),
+              icon: const Icon(AppIcons.add),
+              label: Text(S.newProductSubscription),
+            ),
     );
   }
 
-  String _fulfillmentLabel(String type) => type == 'delivery' ? S.delivery : S.pickup;
-
-  Widget _detailPill(BuildContext context, IconData icon, String label) =>
-      Container(
-        padding: const EdgeInsetsDirectional.fromSTEB(
-          AppSpacing.sm, AppSpacing.xxs, AppSpacing.sm, AppSpacing.xxs,
-        ),
-        decoration: BoxDecoration(
-          color: AppColor.lightGreyColor,
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: AppSizes.px16, color: AppColor.greyColor),
-            const SizedBox(width: AppSpacing.xxs),
-            Flexible(child: Text(label, style: Theme.of(context).textTheme.labelMedium)),
-          ],
-        ),
-      );
+  String _fulfillmentLabel(String type) =>
+      type == 'delivery' ? S.delivery : S.pickup;
 }

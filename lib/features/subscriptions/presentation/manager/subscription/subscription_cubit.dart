@@ -13,9 +13,12 @@ part 'subscription_state.dart';
 /// The customer's coffee subscription: the plans on sale, the active one and
 /// the QR pass that spends it.
 class SubscriptionCubit extends Cubit<SubscriptionState> {
-  SubscriptionCubit({required this._repository, String? branchId})
-    : _selectedBranchId = branchId,
-      super(const SubscriptionState());
+  SubscriptionCubit({
+    required this._repository,
+    String? branchId,
+    this._initialSubscriptionId,
+  }) : _selectedBranchId = branchId,
+       super(const SubscriptionState());
 
   final SubscriptionRepository _repository;
 
@@ -25,6 +28,7 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
   /// lives on the shell under these pages, so it is state the cubit has to hold
   /// rather than a value each read is handed.
   String? _selectedBranchId;
+  String? _initialSubscriptionId;
 
   /// Moves the page to another branch and re-reads what that branch sells.
   ///
@@ -77,7 +81,12 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
       final subscriptions = results[1] as List<CustomerSubscription>;
       // A new pending-payment row can be newer than the customer's usable
       // active subscription. Keep the current entitlement selected first.
+      final requestedSubscription = subscriptions
+          .where((item) => item.id == _initialSubscriptionId)
+          .firstOrNull;
+      _initialSubscriptionId = null;
       final subscription =
+          requestedSubscription ??
           subscriptions.where((item) => item.isActive).firstOrNull ??
           subscriptions.where((item) => item.isPendingPayment).firstOrNull ??
           subscriptions.firstOrNull;

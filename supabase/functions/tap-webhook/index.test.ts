@@ -169,6 +169,29 @@ Deno.test("5. the transaction is marked captured and verified", async () => {
   assertEquals(body.card_last4, "4242");
 });
 
+Deno.test("an authorized charge does not mark an order paid or activate a subscription", async () => {
+  const deps = createDeps({
+    txRows: [{ ...transaction, order_id: null, subscription_id: "sub_1" }],
+    subRows: [{ id: "sub_1", plan: { price: 100, currency_code: "SAR" } }],
+  });
+  const res = await handleRequest(
+    await createRequest({ ...charge, status: "AUTHORIZED" }),
+    deps as any,
+  );
+  assertEquals(res.status, 200);
+  const txPatch = deps.calls.find(
+    (call) =>
+      call.method === "PATCH" && call.path.includes("payment_transactions"),
+  );
+  assert(txPatch);
+  assertEquals(JSON.parse(txPatch.body).status, "authorized");
+  assertEquals(JSON.parse(txPatch.body).verified_by_server, false);
+  assertEquals(JSON.parse(txPatch.body).paid_at, null);
+  assert(
+    !deps.calls.some((call) => call.path.includes("activate_subscription")),
+  );
+});
+
 Deno.test("6. an event for an unknown charge is ignored", async () => {
   const deps = createDeps({ txRows: [] });
   const res = await handleRequest(await createRequest(charge), deps as any);

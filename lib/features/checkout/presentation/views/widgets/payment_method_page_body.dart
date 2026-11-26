@@ -11,6 +11,7 @@ import 'package:new_coffee/features/payment/presentation/views/add_card_page.dar
 import 'package:new_coffee/features/payment/data/model/saved_card_model.dart';
 import 'package:new_coffee/features/payment/presentation/views/widgets/add_card_tile.dart';
 import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
+import 'package:new_coffee/features/payment/data/moyasar_checkout_config.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/payment_option_tile.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 import 'package:new_coffee/shared/widgets/selection_radio.dart';
@@ -44,54 +45,56 @@ class PaymentMethodPageBody extends StatelessWidget {
               SizedBox(height: AppSpacing.lg),
               Text(S.creditDebitCard, style: AppFonts.semiBold16(context)),
               SizedBox(height: AppSpacing.md),
-              AddCardTile(
-                onTap: () =>
-                    Navigator.of(context).pushNamed(AddCardPage.routeName),
-              ),
+              if (!MoyasarCheckoutConfig.enabled)
+                AddCardTile(
+                  onTap: () =>
+                      Navigator.of(context).pushNamed(AddCardPage.routeName),
+                ),
               // Saved cards first, so a customer who already saved one sees it
               // before anything else. Selecting one makes the checkout charge it
               // directly instead of asking for the number again.
-              BlocBuilder<SavedCardsCubit, SavedCardsState>(
-                builder: (context, saved) {
-                  if (saved.cards.isEmpty) {
-                    // A signed-in customer whose cards could not be read must
-                    // not be left choosing between "add a new card" and a card
-                    // the server already holds.
-                    final error = saved.loadErrorCopy;
-                    if (error == null) return const SizedBox.shrink();
-                    return Padding(
-                      padding: EdgeInsets.only(top: AppSpacing.sm),
-                      child: Text(
-                        error,
-                        style: AppFonts.medium14(context)
-                            .copyWith(color: AppColor.errorColor),
-                      ),
-                    );
-                  }
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: AppSpacing.sm),
-                      Text(
-                        S.payWithSavedCard,
-                        style: AppFonts.medium14(context),
-                      ),
-                      SizedBox(height: AppSpacing.sm),
-                      for (final card in saved.cards)
-                        _SavedCardRow(
-                          card: card,
-                          selected: state.selectedSavedCard?.id == card.id,
-                          onTap: () =>
-                              context.read<CheckoutCubit>().selectSavedCard(
-                                state.selectedSavedCard?.id == card.id
-                                    ? null
-                                    : card,
-                              ),
+              if (!MoyasarCheckoutConfig.enabled)
+                BlocBuilder<SavedCardsCubit, SavedCardsState>(
+                  builder: (context, saved) {
+                    if (saved.cards.isEmpty) {
+                      // A signed-in customer whose cards could not be read must
+                      // not be left choosing between "add a new card" and a card
+                      // the server already holds.
+                      final error = saved.loadErrorCopy;
+                      if (error == null) return const SizedBox.shrink();
+                      return Padding(
+                        padding: EdgeInsets.only(top: AppSpacing.sm),
+                        child: Text(
+                          error,
+                          style: AppFonts.medium14(context)
+                              .copyWith(color: AppColor.errorColor),
                         ),
-                    ],
-                  );
-                },
-              ),
+                      );
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: AppSpacing.sm),
+                        Text(
+                          S.payWithSavedCard,
+                          style: AppFonts.medium14(context),
+                        ),
+                        SizedBox(height: AppSpacing.sm),
+                        for (final card in saved.cards)
+                          _SavedCardRow(
+                            card: card,
+                            selected: state.selectedSavedCard?.id == card.id,
+                            onTap: () =>
+                                context.read<CheckoutCubit>().selectSavedCard(
+                                  state.selectedSavedCard?.id == card.id
+                                      ? null
+                                      : card,
+                                ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
               SizedBox(height: AppSpacing.xl),
               Text(S.morePaymentOptions, style: AppFonts.semiBold16(context)),
               SizedBox(height: AppSpacing.md),

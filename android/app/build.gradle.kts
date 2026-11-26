@@ -50,7 +50,8 @@ android {
     // google-services plugin finds the matching client in google-services.json
     // and nothing has to be translated between the two.
     namespace = "com.example.new_coffee"
-    compileSdk = flutter.compileSdkVersion
+    // Payment and platform plugins now require Android API 36 at compile time.
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

@@ -1,0 +1,5 @@
+select jsonb_build_object(
+ 'package_purchases',(select coalesce(jsonb_agg(row_to_json(x)::jsonb),'[]'::jsonb) from (select left(md5(s.user_id::text),10) customer_ref,s.status,count(*) cycles,coalesce(sum(s.cups_entitled+s.cups_carried_over-s.cups_used-s.cups_reserved),0) remaining_units,coalesce(sum(s.cups_reserved),0) reserved_units from subscriptions.subscriptions s group by left(md5(s.user_id::text),10),s.status) x),
+ 'package_payment_totals',(select coalesce(jsonb_agg(row_to_json(x)::jsonb),'[]'::jsonb) from (select t.status,t.currency_code,count(*) transactions,coalesce(sum(t.amount),0) amount from payments.payment_transactions t where t.subscription_id is not null group by t.status,t.currency_code) x),
+ 'product_schedules',(select coalesce(jsonb_agg(row_to_json(x)::jsonb),'[]'::jsonb) from (select left(md5(s.user_id::text),10) customer_ref,s.status,s.recurrence_type,count(*) schedules from subscriptions.customer_product_subscriptions s group by left(md5(s.user_id::text),10),s.status,s.recurrence_type) x)
+) as impact;

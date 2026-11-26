@@ -383,11 +383,12 @@ class _MyReservationsViewState extends State<_MyReservationsView> {
                   const SizedBox(height: AppSpacing.sm),
                   ...eventRequests.map((event) {
                     final status = event.status.toLowerCase();
-                    final canCancel = const {
-                      'pending',
-                      'quoted',
-                      'quote_declined',
-                    }.contains(status) ||
+                    final canCancel =
+                        const {
+                          'pending',
+                          'quoted',
+                          'quote_declined',
+                        }.contains(status) ||
                         (status == 'confirmed' && event.customerCanCancel);
                     final start = event.quotedStartAt ?? event.preferredStartAt;
                     final end = event.quotedEndAt ?? event.preferredEndAt;
@@ -667,11 +668,13 @@ class _MyReservationsViewState extends State<_MyReservationsView> {
                 if (_selectedTab == 0)
                   ...state.items.map((r) {
                     final status = r.status.toLowerCase();
-                    final canCancel = const {
-                      'pending',
-                      'approved',
-                      'confirmed',
-                    }.contains(status) && r.customerCanCancel;
+                    final canCancel =
+                        const {
+                          'pending',
+                          'approved',
+                          'confirmed',
+                        }.contains(status) &&
+                        r.customerCanCancel;
                     String fmtDt(DateTime d) =>
                         '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')} '
                         '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';

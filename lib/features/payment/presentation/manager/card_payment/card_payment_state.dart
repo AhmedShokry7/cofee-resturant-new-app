@@ -29,6 +29,8 @@ class CardPaymentState {
     this.errorMessage,
     this.chargeId,
     this.transactionUrl,
+    this.paymentAmountMinor,
+    this.paymentCurrency,
   });
 
   final CardPaymentStatus status;
@@ -38,6 +40,8 @@ class CardPaymentState {
   String? get errorMessageCopy => errorMessage?.copy;
   final String? chargeId;
   final String? transactionUrl;
+  final int? paymentAmountMinor;
+  final String? paymentCurrency;
 
   bool get isBusy =>
       status == CardPaymentStatus.tokenizing ||
@@ -54,6 +58,8 @@ class CardPaymentState {
     bool clearChargeId = false,
     String? transactionUrl,
     bool clearTransactionUrl = false,
+    int? paymentAmountMinor,
+    String? paymentCurrency,
   }) {
     return CardPaymentState(
       status: status ?? this.status,
@@ -62,6 +68,8 @@ class CardPaymentState {
       transactionUrl: clearTransactionUrl
           ? null
           : (transactionUrl ?? this.transactionUrl),
+      paymentAmountMinor: paymentAmountMinor ?? this.paymentAmountMinor,
+      paymentCurrency: paymentCurrency ?? this.paymentCurrency,
     );
   }
 }

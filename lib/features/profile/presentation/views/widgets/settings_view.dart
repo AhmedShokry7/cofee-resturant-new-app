@@ -132,7 +132,8 @@ class _SettingsEntries extends StatelessWidget {
         ProfileMenuTile(
           icon: AppIcons.calendar,
           label: S.mySubscription,
-          onTap: () => Navigator.of(context).pushNamed(MySubscriptionsPage.routeName),
+          onTap: () =>
+              Navigator.of(context).pushNamed(MySubscriptionsPage.routeName),
         ),
         ProfileMenuTile(
           icon: AppIcons.coupon,
@@ -249,8 +250,14 @@ class _AccountDeletionTileState extends State<_AccountDeletionTile> {
         title: Text(S.deleteAccountTitle),
         content: Text(S.deleteAccountConfirmation),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(S.cancel)),
-          TextButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(S.deleteAccountTitle)),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(S.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(S.deleteAccountTitle),
+          ),
         ],
       ),
     );
@@ -260,10 +267,12 @@ class _AccountDeletionTileState extends State<_AccountDeletionTile> {
       await _repository.requestDeletion();
       await _load();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.deleteAccountRequested)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.deleteAccountRequested)));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.deleteAccountRequestFailed)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.deleteAccountRequestFailed)));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -284,8 +293,11 @@ class _AccountDeletionTileState extends State<_AccountDeletionTile> {
       label: S.deleteAccountTitle,
       subtitle: _loading ? S.deleteAccountSubmitting : subtitle,
       opensPage: false,
-      onTap: status == 'pending' || status == 'processing' || status == 'completed'
-          ? () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(subtitle ?? S.deleteAccountPending)))
+      onTap:
+          status == 'pending' || status == 'processing' || status == 'completed'
+          ? () => ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(subtitle ?? S.deleteAccountPending)),
+            )
           : _requestDeletion,
     );
   }

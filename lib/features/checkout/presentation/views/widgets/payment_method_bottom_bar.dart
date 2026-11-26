@@ -9,6 +9,7 @@ import 'package:new_coffee/features/loyalty/presentation/manager/loyalty/loyalty
 import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_state.dart';
 import 'package:new_coffee/features/payment/presentation/views/card_payment_page.dart';
+import 'package:new_coffee/features/payment/data/moyasar_checkout_config.dart';
 import 'package:new_coffee/shared/widgets/primary_bottom_bar.dart';
 
 class PaymentMethodBottomBar extends StatelessWidget {
@@ -26,7 +27,9 @@ class PaymentMethodBottomBar extends StatelessWidget {
 
     final placed = await checkout.placeOrder(
       items: items,
-      savedCardId: checkout.state.selectedSavedCard?.id,
+      savedCardId: MoyasarCheckoutConfig.enabled
+          ? null
+          : checkout.state.selectedSavedCard?.id,
     );
     if (!context.mounted) return;
 
@@ -48,7 +51,8 @@ class PaymentMethodBottomBar extends StatelessWidget {
     final isOnline = selectedMethod?.isOnline ?? false;
     // A stored card can only pay a card method. Apple Pay and cash must never
     // be settled with the card the customer saved earlier.
-    final savedCard = selectedMethod?.isCardMethod == true
+    final savedCard =
+        !MoyasarCheckoutConfig.enabled && selectedMethod?.isCardMethod == true
         ? checkout.state.selectedSavedCard
         : null;
 

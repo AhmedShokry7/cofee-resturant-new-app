@@ -10,20 +10,26 @@ class S {
       _ar ? 'جدولة الاستلام' : 'Pickup schedule';
   static String get reservationCancellationPolicy =>
       _ar ? 'مهلة إلغاء الحجوزات' : 'Reservation cancellation cutoff';
-  static String get tableCancellationCutoffHours =>
-      _ar ? 'مهلة إلغاء الطاولة (بالساعات)' : 'Table cancellation cutoff (hours)';
-  static String get eventCancellationCutoffHours =>
-      _ar ? 'مهلة إلغاء المناسبة (بالساعات)' : 'Event cancellation cutoff (hours)';
-  static String get reservationPolicyHoursHint =>
-      _ar ? 'من 0 إلى 168 ساعة. صفر يسمح بالإلغاء حتى بداية الموعد.' : 'Enter 0–168. Zero allows cancellation until the reservation starts.';
-  static String get reservationPolicyLoadFailed =>
-      _ar ? 'تعذر تحميل إعدادات مهلة الإلغاء' : 'Could not load cancellation settings';
+  static String get tableCancellationCutoffHours => _ar
+      ? 'مهلة إلغاء الطاولة (بالساعات)'
+      : 'Table cancellation cutoff (hours)';
+  static String get eventCancellationCutoffHours => _ar
+      ? 'مهلة إلغاء المناسبة (بالساعات)'
+      : 'Event cancellation cutoff (hours)';
+  static String get reservationPolicyHoursHint => _ar
+      ? 'من 0 إلى 168 ساعة. صفر يسمح بالإلغاء حتى بداية الموعد.'
+      : 'Enter 0–168. Zero allows cancellation until the reservation starts.';
+  static String get reservationPolicyLoadFailed => _ar
+      ? 'تعذر تحميل إعدادات مهلة الإلغاء'
+      : 'Could not load cancellation settings';
   static String get reservationPolicySaveFailed =>
       _ar ? 'تعذر حفظ مهلة الإلغاء' : 'Could not save cancellation settings';
-  static String get reservationPolicyInvalid =>
-      _ar ? 'أدخل عدد ساعات صحيحًا بين 0 و168' : 'Enter a valid number from 0 to 168 hours';
-  static String get reservationPolicyPermissionDenied =>
-      _ar ? 'ليس لديك صلاحية لتعديل هذا الإعداد' : 'You cannot change this setting';
+  static String get reservationPolicyInvalid => _ar
+      ? 'أدخل عدد ساعات صحيحًا بين 0 و168'
+      : 'Enter a valid number from 0 to 168 hours';
+  static String get reservationPolicyPermissionDenied => _ar
+      ? 'ليس لديك صلاحية لتعديل هذا الإعداد'
+      : 'You cannot change this setting';
   static String get pickupAddWindow => _ar ? 'إضافة فترة' : 'Add window';
   static String get pickupWindows => _ar ? 'فترات العمل' : 'Working windows';
   static String get pickupExceptions =>
@@ -992,7 +998,8 @@ class S {
       _ar ? 'سحب الدعوة' : 'Withdraw invite';
   static String get staffInvitationCancelledDone =>
       _ar ? 'تم سحب الدعوة' : 'The invitation was withdrawn';
-  static String get staffInvitationDelete => _ar ? 'حذف الدعوة' : 'Delete invite';
+  static String get staffInvitationDelete =>
+      _ar ? 'حذف الدعوة' : 'Delete invite';
   static String staffInvitationDeleteConfirm(String name) => _ar
       ? 'سيُحذف سجل دعوة $name نهائيًا. إذا كانت مقبولة فلن يتأثر حساب الموظف.'
       : 'The invitation record for $name will be deleted permanently. If accepted, the staff account will remain.';

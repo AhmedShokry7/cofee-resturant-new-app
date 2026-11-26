@@ -1570,9 +1570,8 @@ class S {
   static String get subscriptionPlans =>
       _ar ? 'باقات اشتراك القهوة' : 'Coffee subscription plans';
   static String get mySubscription => _ar ? 'اشتراكي' : 'My subscription';
-  static String get allMySubscriptionsIntro => _ar
-      ? 'كل اشتراكاتك في مكان واحد'
-      : 'All your subscriptions in one place';
+  static String get allMySubscriptionsIntro =>
+      _ar ? 'كل اشتراكاتك في مكان واحد' : 'All your subscriptions in one place';
   static String get reservationCancellationWindowClosed => _ar
       ? 'انتهت مهلة إلغاء الحجز، تواصل مع الفرع للمساعدة.'
       : 'The cancellation window has closed. Contact the branch for help.';
@@ -1684,6 +1683,31 @@ class S {
   static String get productSubscriptionsDescription => _ar
       ? 'طلبات متكررة بجدول من اختيارك، مع تأكيدك قبل كل طلب.'
       : 'Recurring orders on your schedule, with your confirmation each time.';
+  static String get productSubscriptionsShortIntro => _ar
+      ? 'طلباتك المتكررة، جاهزة للمراجعة عند موعدها.'
+      : 'Your recurring orders, ready to review when due.';
+  static String get productSubscriptionWaitingShort => _ar
+      ? 'عند حلول الموعد، راجع المنتجات وأكّد الطلب من هنا. الدفع عند التأكيد.'
+      : 'When due, review and confirm your order here. Payment is due at confirmation.';
+  static String get productSubscriptionReadyLabel =>
+      _ar ? 'طلب مستحق للمراجعة الآن' : 'Order ready to review now';
+  static String get planSubscriptionsTitle =>
+      _ar ? 'اشتراكات الباقات' : 'Plan subscriptions';
+  static String get subscriptionDetailsAction => _ar
+      ? 'عرض التفاصيل واستخدام الاشتراك'
+      : 'View details and use subscription';
+  static String get productSubscriptionUse => _ar
+      ? 'هذا اشتراك لجدولة طلباتك المتكررة. عند حلول الموعد، اضغط «مراجعة وتأكيد الطلب» لإرسال المنتجات للسلة واختيار الاستلام أو التوصيل وإتمام الدفع. لن يبدأ التحضير قبل تأكيد الطلب.'
+      : 'This subscription schedules recurring orders. When an order is due, review and confirm it to add the products to checkout and complete payment. Preparation starts after confirmation.';
+  static String get productSubscriptionWaiting => _ar
+      ? 'لا يوجد طلب مستحق للتأكيد الآن. عند الموعد القادم سيظهر هنا زر مراجعة وتأكيد الطلب.'
+      : 'No order is due for confirmation yet. The review and confirm button appears here when the next order is due.';
+  static String get productSubscriptionPausedHelp => _ar
+      ? 'الاشتراك متوقف مؤقتًا. استأنفه لاستقبال الطلبات الدورية القادمة.'
+      : 'This subscription is paused. Resume it to receive upcoming recurring orders.';
+  static String get redeemAtBranch => _ar
+      ? 'استلم منتجاتك من الفرع — عرض الرمز'
+      : 'Collect at the branch — show code';
   static String get noProductSubscriptionsYet =>
       _ar ? 'لا توجد اشتراكات بعد' : 'No subscriptions yet';
   static String get couldNotLoadProductSubscriptions =>

@@ -1,3 +1,4 @@
+-- SUPERSEDED: reviewed and applied as migrations/20261126195000_reservation_cancellation_cutoff.sql. Do not deploy this draft.
 -- PROPOSAL ONLY. Do not apply until reviewed and explicitly approved.
 -- Store branch-level cancellation deadlines in core.branches.settings.
 -- Values are minutes before the reserved start. Zero means cancel until start.
@@ -209,20 +210,28 @@ declare
   v_cutoff integer;
 begin
   if v_uid is null then raise exception 'not authenticated' using errcode = '42501'; end if;
+  -- Read first without locking to establish whether this is a draft request
+  -- or a confirmed event. Confirmed cancellations lock reservation then event,
+  -- matching cancel_my_reservation and avoiding an inverse lock order.
   select * into v_event from floor.customer_event_requests e
-   where e.id=p_id and e.user_id=v_uid for update;
+   where e.id=p_id and e.user_id=v_uid;
   if not found then return false; end if;
   if v_event.status in ('pending','quoted','quote_declined') then
     update floor.customer_event_requests
        set status='cancelled',cancelled_at=now(),updated_at=now()
-     where id=v_event.id;
-    return true;
+     where id=v_event.id and user_id=v_uid
+       and status in ('pending','quoted','quote_declined');
+    return found;
   end if;
   if v_event.status <> 'confirmed' or v_event.reservation_id is null then return false; end if;
 
   select * into v_res from floor.reservations r
    where r.id=v_event.reservation_id and r.user_id=v_uid for update;
   if not found or v_res.status not in ('pending','approved','confirmed') then return false; end if;
+  select * into v_event from floor.customer_event_requests e
+   where e.id=p_id and e.user_id=v_uid for update;
+  if not found or v_event.status <> 'confirmed'
+     or v_event.reservation_id <> v_res.id then return false; end if;
   select coalesce((b.settings->>'event_cancel_cutoff_minutes')::integer,0)
     into v_cutoff from core.branches b where b.id=v_event.branch_id;
   if v_res.reserved_for <= now() + make_interval(mins => v_cutoff) then return false; end if;
@@ -240,3 +249,4 @@ revoke all on function public.cancel_my_customer_event_request(uuid) from public
 grant execute on function public.cancel_my_customer_event_request(uuid) to authenticated;
 
 commit;
+

@@ -26,8 +26,9 @@ class SplashBrandMark extends StatelessWidget {
   Widget build(BuildContext context) {
     final shortestSide = MediaQuery.sizeOf(context).shortestSide;
     final defaultWidth = (shortestSide * widthRatio).clamp(minWidth, maxWidth);
+    final maxImageWidth = shortestSide < minWidth ? minWidth : shortestSide;
     final width = (settings.imageWidth ?? defaultWidth)
-        .clamp(40, shortestSide)
+        .clamp(40.0, maxImageWidth)
         .toDouble();
     final imageHeight =
         settings.imageShape == 'circle' || settings.imageShape == 'square'

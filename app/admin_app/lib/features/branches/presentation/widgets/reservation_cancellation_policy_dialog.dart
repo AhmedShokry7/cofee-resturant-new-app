@@ -4,7 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/models/admin_branch.dart';
-import 'package:admin_app/core/services/supabase_service.dart';
+import 'package:admin_app/features/branches/data/repositories/reservation_cancellation_policy_repository.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 
 Future<void> showReservationCancellationPolicyDialog({
   required BuildContext context,
@@ -17,8 +18,13 @@ Future<void> showReservationCancellationPolicyDialog({
 /// Branch-specific customer cancellation cutoffs. Values are entered in hours
 /// and stored by the backend as minutes.
 class ReservationCancellationPolicyDialog extends StatefulWidget {
-  const ReservationCancellationPolicyDialog({super.key, required this.branch});
+  const ReservationCancellationPolicyDialog({
+    super.key,
+    required this.branch,
+    this.repository,
+  });
   final AdminBranch branch;
+  final ReservationCancellationPolicyRepository? repository;
 
   @override
   State<ReservationCancellationPolicyDialog> createState() =>
@@ -31,6 +37,9 @@ class _ReservationCancellationPolicyDialogState
   final _eventHours = TextEditingController();
   bool _loading = true;
   bool _saving = false;
+  bool _loaded = false;
+  late final _repository =
+      widget.repository ?? ReservationCancellationPolicyRepository();
   String? _error;
 
   @override
@@ -48,14 +57,15 @@ class _ReservationCancellationPolicyDialogState
 
   Future<void> _read() async {
     try {
-      final result = await SupabaseService.client.rpc(
-        'admin_get_reservation_cancellation_policy',
-        params: {'p_branch_id': widget.branch.id},
-      );
-      if (result is! Map) throw StateError(S.reservationPolicyLoadFailed);
-      final row = Map<String, dynamic>.from(result);
-      _tableHours.text = (((row['table_cutoff_minutes'] as num?)?.toDouble() ?? 0) / 60).toString();
-      _eventHours.text = (((row['event_cutoff_minutes'] as num?)?.toDouble() ?? 0) / 60).toString();
+      final row = await _repository.load(widget.branch.id);
+      if (!mounted) return;
+      _tableHours.text =
+          (((row['table_cutoff_minutes'] as num?)?.toDouble() ?? 0) / 60)
+              .toString();
+      _eventHours.text =
+          (((row['event_cutoff_minutes'] as num?)?.toDouble() ?? 0) / 60)
+              .toString();
+      _loaded = true;
     } catch (_) {
       _error = S.reservationPolicyLoadFailed;
     } finally {
@@ -64,36 +74,36 @@ class _ReservationCancellationPolicyDialogState
   }
 
   int? _minutes(String value) {
-    final hours = double.tryParse(value.trim());
-    if (hours == null || hours < 0 || hours > 168) return null;
+    final hours = double.tryParse(normalizeDigits(value.trim()));
+    if (hours == null || !hours.isFinite || hours < 0 || hours > 168) {
+      return null;
+    }
     return (hours * 60).round();
   }
 
   Future<void> _save() async {
+    if (!_loaded || _saving) return;
     final table = _minutes(_tableHours.text);
     final event = _minutes(_eventHours.text);
     if (table == null || event == null) {
       setState(() => _error = S.reservationPolicyInvalid);
       return;
     }
-    setState(() { _saving = true; _error = null; });
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     try {
-      final result = await SupabaseService.client.rpc(
-        'admin_set_reservation_cancellation_policy',
-        params: {
-          'p_branch_id': widget.branch.id,
-          'p_table_cutoff_minutes': table,
-          'p_event_cutoff_minutes': event,
-        },
-      );
-      if (result is! Map || result['ok'] != true) {
-        throw StateError(S.reservationPolicySaveFailed);
-      }
+      await _repository.save(widget.branch.id, table, event);
       if (mounted) Navigator.of(context).pop();
     } on PostgrestException catch (error) {
-      if (mounted) setState(() => _error = error.code == '42501'
-          ? S.reservationPolicyPermissionDenied
-          : S.reservationPolicySaveFailed);
+      if (mounted) {
+        setState(
+          () => _error = error.code == '42501'
+              ? S.reservationPolicyPermissionDenied
+              : S.reservationPolicySaveFailed,
+        );
+      }
     } catch (_) {
       if (mounted) setState(() => _error = S.reservationPolicySaveFailed);
     } finally {
@@ -105,21 +115,59 @@ class _ReservationCancellationPolicyDialogState
   Widget build(BuildContext context) => AlertDialog(
     title: Text(S.reservationCancellationPolicy),
     content: _loading
-        ? const SizedBox(height: 72, child: Center(child: CircularProgressIndicator()))
+        ? const SizedBox(
+            height: 72,
+            child: Center(child: CircularProgressIndicator()),
+          )
         : SizedBox(
             width: 420,
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Text(widget.branch.nameFor(AppLocale.instance.language)),
-              const SizedBox(height: 12),
-              TextField(controller: _tableHours, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: S.tableCancellationCutoffHours, helperText: S.reservationPolicyHoursHint)),
-              const SizedBox(height: 12),
-              TextField(controller: _eventHours, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: S.eventCancellationCutoffHours, helperText: S.reservationPolicyHoursHint)),
-              if (_error != null) ...[const SizedBox(height: 12), Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error))],
-            ]),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(widget.branch.nameFor(AppLocale.instance.language)),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _tableHours,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: S.tableCancellationCutoffHours,
+                    helperText: S.reservationPolicyHoursHint,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _eventHours,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: S.eventCancellationCutoffHours,
+                    helperText: S.reservationPolicyHoursHint,
+                  ),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
     actions: [
-      TextButton(onPressed: _saving ? null : () => Navigator.of(context).pop(), child: Text(S.cancel)),
-      FilledButton(onPressed: _loading || _saving ? null : _save, child: Text(_saving ? S.saving : S.save)),
+      TextButton(
+        onPressed: _saving ? null : () => Navigator.of(context).pop(),
+        child: Text(S.cancel),
+      ),
+      FilledButton(
+        onPressed: _loading || _saving || !_loaded ? null : _save,
+        child: Text(_saving ? S.saving : S.save),
+      ),
     ],
   );
 }

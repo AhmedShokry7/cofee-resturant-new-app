@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:card_flutter/card_flutter.dart';
+import 'package:moyasar/moyasar.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/core/theme/app_icons.dart';
@@ -8,6 +9,7 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/features/payment/data/repositories/tap_payment_repository.dart';
 import 'package:new_coffee/features/payment/data/tap_checkout_config.dart';
+import 'package:new_coffee/features/payment/data/moyasar_checkout_config.dart';
 import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_state.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
@@ -109,6 +111,9 @@ class _CardPaymentPageState extends State<CardPaymentPage>
       savedCardId: widget.savedCardId,
       reset: !alreadyCharged,
     );
+    if (MoyasarCheckoutConfig.enabled && !alreadyCharged) {
+      unawaited(cubit.prepareMoyasarPayment());
+    }
     if (alreadyCharged) {
       // The charge was created before this page was opened (the saved-card
       // flow), so its redirect URL is never announced by a state change: it
@@ -206,8 +211,31 @@ class _CardPaymentPageState extends State<CardPaymentPage>
         ),
         chargesSavedCard: _chargesSavedCard,
         on3DSLaunch: _launch3DS,
+        onMoyasarResult: _handleMoyasarResult,
       ),
     );
+  }
+
+  Future<void> _handleMoyasarResult(dynamic result) async {
+    if (!mounted) return;
+    final outcome = await context.read<CardPaymentCubit>().verifyCharge();
+    if (!mounted) return;
+    switch (outcome) {
+      case PaymentOutcome.succeeded:
+        _finish();
+      case PaymentOutcome.pending:
+        _showMessage(S.paymentProcessing);
+      case PaymentOutcome.failed:
+        _showMessage(
+          context.read<CardPaymentCubit>().state.errorMessageCopy ??
+              S.paymentFailed,
+        );
+      case null:
+        if (result is PaymentResponse &&
+            result.status == PaymentStatus.initiated) {
+          _showMessage(S.paymentProcessing);
+        }
+    }
   }
 }
 
@@ -216,10 +244,12 @@ class _CardPaymentView extends StatelessWidget {
     required this.sdkConfiguration,
     required this.chargesSavedCard,
     required this.on3DSLaunch,
+    required this.onMoyasarResult,
   });
 
   final Map<String, dynamic> sdkConfiguration;
   final Function(String) on3DSLaunch;
+  final Function(dynamic) onMoyasarResult;
 
   /// A stored card is charged without the card form: there is nothing for the
   /// customer to type.
@@ -246,6 +276,8 @@ class _CardPaymentView extends StatelessWidget {
               Expanded(
                 child: chargesSavedCard
                     ? _SavedCardPaymentNotice(state: state)
+                    : MoyasarCheckoutConfig.enabled
+                    ? _buildMoyasarForm(context, state, onMoyasarResult)
                     : SingleChildScrollView(
                         padding: EdgeInsets.all(AppSpacing.lg),
                         child: TapCardViewWidget(
@@ -277,7 +309,7 @@ class _CardPaymentView extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                 ),
-              if (!chargesSavedCard)
+              if (!chargesSavedCard && !MoyasarCheckoutConfig.enabled)
                 PrimaryBottomBar(
                   text: S.confirmPayment,
                   isLoading: state.isBusy,
@@ -287,6 +319,40 @@ class _CardPaymentView extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildMoyasarForm(
+    BuildContext context,
+    CardPaymentState state,
+    Function(dynamic) onResult,
+  ) {
+    if (MoyasarCheckoutConfig.publishableKey.isEmpty) {
+      return const Center(
+        child: Text('Moyasar test publishable key is missing.'),
+      );
+    }
+    if (state.chargeId == null || state.paymentAmountMinor == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final config = PaymentConfig(
+      publishableApiKey: MoyasarCheckoutConfig.publishableKey,
+      amount: state.paymentAmountMinor!,
+      currency: state.paymentCurrency ?? 'SAR',
+      description: 'New Coffee payment',
+      metadata: {'payment_id': state.chargeId!},
+      givenID: state.chargeId,
+    );
+    return Material(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.all(AppSpacing.lg),
+        child: CreditCard(
+          config: config,
+          locale: const Localization.ar(),
+          onPaymentResult: onResult,
+        ),
+      ),
     );
   }
 }

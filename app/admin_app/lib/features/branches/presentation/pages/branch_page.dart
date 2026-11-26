@@ -187,7 +187,10 @@ class _BranchPageState extends State<BranchPage> {
       ),
     );
     if (branch == null || !mounted) return;
-    await showReservationCancellationPolicyDialog(context: context, branch: branch);
+    await showReservationCancellationPolicyDialog(
+      context: context,
+      branch: branch,
+    );
   }
 
   void _showMessage(String message, {bool error = false}) {
@@ -229,8 +232,10 @@ class _BranchPageState extends State<BranchPage> {
             onChangeImage: _changeImage,
             onManageDelivery: _manageDelivery,
             onManagePricing: widget.canManagePricing ? _managePricing : null,
-            onManagePickupSchedules: () => _managePickupSchedules(state.branches),
-            onManageCancellationPolicy: () => _manageCancellationPolicy(state.branches),
+            onManagePickupSchedules: () =>
+                _managePickupSchedules(state.branches),
+            onManageCancellationPolicy: () =>
+                _manageCancellationPolicy(state.branches),
             onToggleActive: _toggleActive,
             onDelete: _delete,
             errorMessage: state.errorMessage,

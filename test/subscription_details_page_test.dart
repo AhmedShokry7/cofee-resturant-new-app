@@ -594,7 +594,7 @@ void main() {
     },
   );
 
-  testWidgets('cancelled subscriptions are grouped under previous history', (
+  testWidgets('cancelled subscriptions are hidden from the overview', (
     tester,
   ) async {
     _setSurface(tester);
@@ -619,11 +619,7 @@ void main() {
     await _pumpPage(tester, repository, openSubscription: false);
 
     expect(find.text(S.noSubscriptionYet), findsOneWidget);
-    expect(find.text(S.previousSubscriptions(2)), findsOneWidget);
+    expect(find.text(S.previousSubscriptions(2)), findsNothing);
     expect(find.text('Monthly plan'), findsNothing);
-
-    await tester.tap(find.text(S.previousSubscriptions(2)));
-    await tester.pumpAndSettle();
-    expect(find.text('Monthly plan'), findsNWidgets(2));
   });
 }
