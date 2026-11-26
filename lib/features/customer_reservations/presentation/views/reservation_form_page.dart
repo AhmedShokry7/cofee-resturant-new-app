@@ -1,26 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:new_coffee/features/customer_reservations/data/repositories/customer_reservation_repository.dart';
+import 'package:new_coffee/shared/widgets/auth_guard.dart';
+import 'package:new_coffee/shared/widgets/design_text.dart';
 
 class ReservationFormPage extends StatefulWidget {
   const ReservationFormPage({super.key});
   static const routeName = '/reservation-form';
+
   @override
   State<ReservationFormPage> createState() => _ReservationFormPageState();
 }
 
 class _ReservationFormPageState extends State<ReservationFormPage> {
-  final _repo = CustomerReservationRepository();
-  String? _branchId;
-  DateTime _date = DateTime.now().add(const Duration(days: 1));
-  TimeOfDay _time = const TimeOfDay(hour: 19, minute: 0);
-  int _party = 2;
-  String _type = 'table';
   final _note = TextEditingController();
+  DateTime _date = DateTime.now().add(const Duration(days: 1));
+  TimeOfDay _start = const TimeOfDay(hour: 18, minute: 0);
+  TimeOfDay _end = const TimeOfDay(hour: 20, minute: 0);
+  int _party = 2;
   bool _saving = false;
-  List<Map<String, dynamic>> _branches = [];
+  List<Map<String, dynamic>> _branches = const [];
+  String? _branchId;
+  bool _loadingBranches = true;
 
   @override
   void initState() {
@@ -30,32 +34,53 @@ class _ReservationFormPageState extends State<ReservationFormPage> {
 
   Future<void> _loadBranches() async {
     try {
-      final client = SupabaseService.client;
-      if (client == null) return;
-      final rows = await client.from('branches').select('id,name_ar,name_en').eq('is_active', true).order('name_ar');
-      final list = (rows as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      final c = SupabaseService.client;
+      final rows = await c.from('branches').select('id,name_ar,name_en').eq('is_active', true);
+      if (!mounted) return;
       setState(() {
-        _branches = list;
-        if (_branches.isNotEmpty) _branchId = _branches.first['id']?.toString();
+        _branches = List<Map<String, dynamic>>.from(rows);
+        _branchId = _branches.isNotEmpty ? _branches.first['id'] as String : null;
+        _loadingBranches = false;
       });
-    } catch (_) {}
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingBranches = false);
+    }
   }
+
+  @override
+  void dispose() {
+    _note.dispose();
+    super.dispose();
+  }
+
+  DateTime _combine(DateTime d, TimeOfDay t) =>
+      DateTime(d.year, d.month, d.day, t.hour, t.minute);
 
   Future<void> _submit() async {
     if (_branchId == null) return;
     setState(() => _saving = true);
     try {
-      final dt = DateTime(_date.year, _date.month, _date.day, _time.hour, _time.minute);
-      await _repo.create(
+      final reservedFor = _combine(_date, _start);
+      var requestedEndAt = _combine(_date, _end);
+      if (!requestedEndAt.isAfter(reservedFor)) {
+        requestedEndAt = requestedEndAt.add(const Duration(days: 1));
+      }
+      await CustomerReservationRepository().create(
         branchId: _branchId!,
-        reservedFor: dt,
+        reservedFor: reservedFor,
+        requestedEndAt: requestedEndAt,
         partySize: _party,
         note: _note.text.trim().isEmpty ? null : _note.text.trim(),
-        reservationType: _type,
       );
-      if (mounted) Navigator.of(context).pop(true);
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.reservationSubmitted)));
+      Navigator.of(context).pop(true);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.couldNotSubmitReservation)));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -63,62 +88,97 @@ class _ReservationFormPageState extends State<ReservationFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(S.myReservations)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          DropdownButtonFormField<String>(
-            value: _branchId,
-            items: _branches
-                .map((b) => DropdownMenuItem(value: b['id']?.toString(), child: Text((b['name_ar'] ?? b['name_en'] ?? '').toString())))
-                .toList(),
-            onChanged: (v) => setState(() => _branchId = v),
-            decoration: const InputDecoration(labelText: 'Branch'),
+    return AuthGuard(
+      child: Scaffold(
+        appBar: AppBar(
+          title: DesignText(
+            S.newReservation,
+            page: 'reservation_form',
+            label: 'title',
           ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            value: _type,
-            items: const [
-              DropdownMenuItem(value: 'table', child: Text('Table')),
-              DropdownMenuItem(value: 'room', child: Text('Room')),
-              DropdownMenuItem(value: 'event', child: Text('Event')),
-              DropdownMenuItem(value: 'private', child: Text('Private')),
-            ],
-            onChanged: (v) => setState(() => _type = v ?? 'table'),
-            decoration: const InputDecoration(labelText: 'Type'),
-          ),
-          const SizedBox(height: 12),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text('Date: ${_date.toLocal().toString().split(' ').first}'),
-            trailing: const Icon(Icons.calendar_today),
-            onTap: () async {
-              final d = await showDatePicker(context: context, firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 365)), initialDate: _date);
-              if (d != null) setState(() => _date = d);
-            },
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text('Time: ${_time.format(context)}'),
-            trailing: const Icon(Icons.access_time),
-            onTap: () async {
-              final t = await showTimePicker(context: context, initialTime: _time);
-              if (t != null) setState(() => _time = t);
-            },
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<int>(
-            value: _party,
-            items: List.generate(20, (i) => DropdownMenuItem(value: i + 1, child: Text('${i + 1}'))),
-            onChanged: (v) => setState(() => _party = v ?? 2),
-            decoration: const InputDecoration(labelText: 'Party size'),
-          ),
-          const SizedBox(height: 12),
-          TextField(controller: _note, decoration: const InputDecoration(labelText: 'Note'), maxLines: 3),
-          const SizedBox(height: 20),
-          ElevatedButton(onPressed: _saving ? null : _submit, child: _saving ? const CircularProgressIndicator() : const Text('Submit request')),
-        ],
+        ),
+        body: _loadingBranches
+            ? const Center(child: CircularProgressIndicator())
+            : ListView(
+                padding: AppLayout.pageBody,
+                children: [
+                  DropdownButtonFormField<String>(
+                    initialValue: _branchId,
+                    decoration: InputDecoration(labelText: S.branch),
+                    isExpanded: true,
+                    items: _branches
+                        .map((b) => DropdownMenuItem<String>(
+                              value: b['id'] as String,
+                              child: Text(
+                                (b['name_ar'] ?? b['name_en'] ?? '').toString(),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ))
+                        .toList(),
+                    onChanged: (v) => setState(() => _branchId = v),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(S.date),
+                    subtitle: Text('${_date.year}-${_date.month.toString().padLeft(2, '0')}-${_date.day.toString().padLeft(2, '0')}'),
+                    trailing: const Icon(Icons.calendar_today_outlined),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _date,
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (picked != null) setState(() => _date = picked);
+                    },
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(S.time),
+                    subtitle: Text(
+                      '${_start.format(context)} - ${_end.format(context)}',
+                    ),
+                    trailing: const Icon(Icons.access_time),
+                    onTap: () async {
+                      final s = await showTimePicker(context: context, initialTime: _start);
+                      if (s == null || !mounted) return;
+                      final e = await showTimePicker(context: context, initialTime: _end);
+                      if (e == null) return;
+                      setState(() {
+                        _start = s;
+                        _end = e;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  DropdownButtonFormField<int>(
+                    initialValue: _party,
+                    decoration: InputDecoration(labelText: S.partySize),
+                    items: List.generate(20, (i) => i + 1)
+                        .map((n) => DropdownMenuItem<int>(value: n, child: Text('$n')))
+                        .toList(),
+                    onChanged: (v) => setState(() => _party = v ?? 2),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  TextField(
+                    controller: _note,
+                    decoration: InputDecoration(labelText: S.reservationNote),
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  FilledButton(
+                    onPressed: _saving || _branchId == null ? null : _submit,
+                    child: _saving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(S.submitReservation),
+                  ),
+                ],
+              ),
       ),
     );
   }

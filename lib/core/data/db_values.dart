@@ -104,6 +104,20 @@ class Db {
     return defaultValue;
   }
 
+
+  static DateTime asDateTime(dynamic value, {DateTime? fallback}) =>
+      parseDateTime(value, fallback: fallback);
+
+  static DateTime? asDateTimeOrNull(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    if (value is int || value is double) {
+      return DateTime.tryParse(value.toString());
+    }
+    return null;
+  }
+
   /// A Postgres `uuid` when the value really is one, otherwise null.
   ///
   /// A uuid column turns a wild string into a `22P02` server error, and the

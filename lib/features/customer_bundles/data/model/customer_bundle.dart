@@ -109,9 +109,9 @@ class CustomerBundle {
       description: Db.textOrNull(json['description']),
       isFavorite: Db.asBool(json['is_favorite']),
       isActive: Db.asBool(json['is_active'], fallback: true),
-      lastUsedAt: Db.asDateTime(json['last_used_at']),
-      createdAt: Db.asDateTime(json['created_at']),
-      updatedAt: Db.asDateTime(json['updated_at']),
+      lastUsedAt: Db.asDateTimeOrNull(json['last_used_at']),
+      createdAt: Db.asDateTimeOrNull(json['created_at']),
+      updatedAt: Db.asDateTimeOrNull(json['updated_at']),
       items: rawItems is List
           ? rawItems
               .whereType<Map>()

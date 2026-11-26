@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:new_coffee/features/customer_bundles/data/repositories/customer_bundle_repository.dart';
 import 'package:new_coffee/features/customer_bundles/presentation/manager/customer_bundles_cubit.dart';
 import 'package:new_coffee/features/customer_bundles/presentation/manager/customer_bundles_state.dart';
 import 'package:new_coffee/features/customer_bundles/presentation/views/customer_bundle_editor_page.dart';
+import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/shared/widgets/design_text.dart';
+import 'package:new_coffee/shared/widgets/empty_state.dart';
 
 class MyBundlesPage extends StatelessWidget {
   const MyBundlesPage({super.key});
@@ -16,70 +18,139 @@ class MyBundlesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => CustomerBundlesCubit(CustomerBundleRepository())..load(),
-      child: Scaffold(
-        appBar: AppBar(title: Text(S.myBundles)),
-        floatingActionButton: Builder(
-          builder: (context) => FloatingActionButton(
-            onPressed: () async {
-              final changed = await Navigator.of(context).pushNamed(CustomerBundleEditorPage.routeName);
-              if (changed == true && context.mounted) context.read<CustomerBundlesCubit>().load();
-            },
-            child: const Icon(Icons.add),
+    return AuthGuard(
+      child: BlocProvider(
+        create: (_) => CustomerBundlesCubit(CustomerBundleRepository())..load(),
+        child: const _MyBundlesView(),
+      ),
+    );
+  }
+}
+
+class _MyBundlesView extends StatelessWidget {
+  const _MyBundlesView();
+
+  Future<void> _openEditor(BuildContext context, {Object? arguments}) async {
+    await Navigator.of(context).pushNamed(
+      CustomerBundleEditorPage.routeName,
+      arguments: arguments,
+    );
+    if (context.mounted) context.read<CustomerBundlesCubit>().load();
+  }
+
+  Future<void> _confirmDelete(BuildContext context, String id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(S.deleteBundleConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(S.cancel),
           ),
-        ),
-        body: BlocBuilder<CustomerBundlesCubit, CustomerBundlesState>(
-          builder: (context, state) {
-            if (state.status == CustomerBundlesStatus.loading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (state.status == CustomerBundlesStatus.failure) {
-              return Center(child: Text(state.error ?? 'Error'));
-            }
-            if (state.bundles.isEmpty) {
-              return Center(child: DesignText(S.myBundles, page: 'my_bundles', label: 'empty'));
-            }
-            return ListView.separated(
-              padding: const EdgeInsets.all(AppSpacing.md),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(S.delete, style: const TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      context.read<CustomerBundlesCubit>().delete(id);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: DesignText(S.myBundles, page: 'my_bundles', label: 'myBundles'),
+      ),
+      body: BlocConsumer<CustomerBundlesCubit, CustomerBundlesState>(
+        listener: (context, state) {
+          if (state.error != null) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(SnackBar(content: Text(state.error!)));
+          }
+        },
+        builder: (context, state) {
+          if (state.status == CustomerBundlesStatus.loading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (state.status == CustomerBundlesStatus.failure) {
+            return EmptyState(
+              icon: AppIcons.bundle,
+              title: S.couldNotLoadBundles,
+              actionLabel: S.retry,
+              onAction: () => context.read<CustomerBundlesCubit>().load(),
+            );
+          }
+          if (state.bundles.isEmpty) {
+            return EmptyState(
+              icon: AppIcons.bundle,
+              title: S.noBundlesYet,
+              subtitle: S.bundlesHint,
+              actionLabel: S.createBundle,
+              onAction: () => _openEditor(context),
+            );
+          }
+          return RefreshIndicator(
+            onRefresh: () => context.read<CustomerBundlesCubit>().load(),
+            child: ListView.separated(
+              padding: AppLayout.pageBody,
               itemCount: state.bundles.length,
-              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-              itemBuilder: (context, i) {
+              separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+              itemBuilder: (_, i) {
                 final b = state.bundles[i];
                 return Card(
                   child: ListTile(
-                    title: Text(b.name),
-                    subtitle: Text(b.description ?? '${b.items.length} items'),
+                    leading: Icon(
+                      b.isFavorite ? Icons.favorite : AppIcons.bundle,
+                      color: b.isFavorite ? Colors.red : null,
+                    ),
+                    title: Text(
+                      b.name.trim().isNotEmpty ? b.name : S.createBundle,
+                    ),
+                    subtitle: Text(
+                      '${b.items.length} ${S.bundleItems.toLowerCase()}',
+                    ),
+                    onTap: () => _openEditor(context, arguments: b),
                     trailing: PopupMenuButton<String>(
-                      onSelected: (v) async {
-                        final cubit = context.read<CustomerBundlesCubit>();
+                      onSelected: (v) {
                         if (v == 'edit') {
-                          final changed = await Navigator.of(context).pushNamed(
-                            CustomerBundleEditorPage.routeName,
-                            arguments: b,
-                          );
-                          if (changed == true && context.mounted) cubit.load();
+                          _openEditor(context, arguments: b);
                         } else if (v == 'dup') {
-                          cubit.duplicate(b.id);
+                          context.read<CustomerBundlesCubit>().duplicate(b.id);
                         } else if (v == 'fav') {
-                          cubit.toggleFavorite(b);
+                          context.read<CustomerBundlesCubit>().toggleFavorite(b);
                         } else if (v == 'del') {
-                          cubit.delete(b.id);
+                          _confirmDelete(context, b.id);
                         }
                       },
-                      itemBuilder: (_) => const [
-                        PopupMenuItem(value: 'edit', child: Text('Edit')),
-                        PopupMenuItem(value: 'dup', child: Text('Duplicate')),
-                        PopupMenuItem(value: 'fav', child: Text('Favorite')),
-                        PopupMenuItem(value: 'del', child: Text('Delete')),
+                      itemBuilder: (_) => [
+                        PopupMenuItem(value: 'edit', child: Text(S.edit)),
+                        PopupMenuItem(value: 'dup', child: Text(S.duplicate)),
+                        PopupMenuItem(
+                          value: 'fav',
+                          child: Text(b.isFavorite ? S.unfavorite : S.favorite),
+                        ),
+                        PopupMenuItem(
+                          value: 'del',
+                          child: Text(S.delete, style: const TextStyle(color: Colors.red)),
+                        ),
                       ],
                     ),
                   ),
                 );
               },
-            );
-          },
-        ),
+            ),
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _openEditor(context),
+        child: const Icon(Icons.add),
       ),
     );
   }

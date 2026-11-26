@@ -37,8 +37,8 @@ class ProductSubscription {
       frequency: Db.text(j['frequency'], 'weekly'),
       branchId: Db.text(j['branch_id']),
       name: Db.textOrNull(j['name']),
-      nextRunAt: Db.asDateTime(j['next_run_at']),
-      lastRunAt: Db.asDateTime(j['last_run_at']),
+      nextRunAt: Db.asDateTimeOrNull(j['next_run_at']),
+      lastRunAt: Db.asDateTimeOrNull(j['last_run_at']),
       fulfillmentType: Db.text(j['fulfillment_type'], 'pickup'),
       items: rawItems is List ? rawItems.whereType<Map>().map((e)=>ProductSubscriptionItem.fromJson(Map<String,dynamic>.from(e))).toList() : const [],
     );

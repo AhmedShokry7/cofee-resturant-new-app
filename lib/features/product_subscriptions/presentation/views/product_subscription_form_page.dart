@@ -1,69 +1,210 @@
 import 'package:flutter/material.dart';
-import 'package:new_coffee/core/services/supabase_service.dart';
+
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/services/supabase_service.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:new_coffee/features/product_subscriptions/data/repositories/product_subscription_repository.dart';
+import 'package:new_coffee/shared/widgets/auth_guard.dart';
+import 'package:new_coffee/shared/widgets/design_text.dart';
 
 class ProductSubscriptionFormPage extends StatefulWidget {
   const ProductSubscriptionFormPage({super.key});
   static const routeName = '/product-subscription-form';
-  @override State<ProductSubscriptionFormPage> createState()=>_ProductSubscriptionFormPageState();
-}
-class _ProductSubscriptionFormPageState extends State<ProductSubscriptionFormPage> {
-  final _repo = ProductSubscriptionRepository();
-  String? _branchId; String _frequency='weekly'; String _fulfillment='pickup'; String? _productId; int _qty=1;
-  bool _saving=false; List<Map<String,dynamic>> _branches=[]; List<Map<String,dynamic>> _products=[];
-  final _name = TextEditingController();
 
-  @override void initState(){ super.initState(); _load(); }
+  @override
+  State<ProductSubscriptionFormPage> createState() =>
+      _ProductSubscriptionFormPageState();
+}
+
+class _ProductSubscriptionFormPageState
+    extends State<ProductSubscriptionFormPage> {
+  final _name = TextEditingController();
+  String _frequency = 'weekly';
+  String _fulfillment = 'pickup';
+  bool _saving = false;
+  bool _loading = true;
+  String? _branchId;
+  String? _productId;
+  int _qty = 1;
+  List<Map<String, dynamic>> _branches = const [];
+  List<Map<String, dynamic>> _products = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
   Future<void> _load() async {
-    final c = SupabaseService.client; if(c==null) return;
     try {
-      final b = await c.from('branches').select('id,name_ar,name_en').eq('is_active',true);
-      final p = await c.from('products').select('id,name_ar,name_en').eq('is_active',true).limit(50);
-      setState((){
-        _branches = (b as List).whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList();
-        _products = (p as List).whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList();
-        if(_branches.isNotEmpty) _branchId=_branches.first['id']?.toString();
-        if(_products.isNotEmpty) _productId=_products.first['id']?.toString();
+      final c = SupabaseService.client;
+      final b = await c.from('branches').select('id,name_ar,name_en').eq('is_active', true);
+      final p = await c
+          .from('products')
+          .select('id,name_ar,name_en')
+          .eq('is_active', true)
+          .limit(100);
+      if (!mounted) return;
+      setState(() {
+        _branches = List<Map<String, dynamic>>.from(b);
+        _products = List<Map<String, dynamic>>.from(p);
+        _branchId = _branches.isNotEmpty ? _branches.first['id'] as String : null;
+        _productId = _products.isNotEmpty ? _products.first['id'] as String : null;
+        _loading = false;
       });
-    } catch(_){}
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
   }
 
   Future<void> _submit() async {
-    if(_branchId==null || _productId==null) return;
-    setState(()=>_saving=true);
+    final name = _name.text.trim();
+    if (name.isEmpty || _branchId == null || _productId == null) return;
+    setState(() => _saving = true);
     try {
-      await _repo.create({
-        'name': _name.text.trim().isEmpty ? null : _name.text.trim(),
-        'branch_id': _branchId,
-        'frequency': _frequency,
+      await ProductSubscriptionRepository().create({
+        'name': name,
+        'branch_id': _branchId!,
         'fulfillment_type': _fulfillment,
-        'start_at': DateTime.now().toUtc().toIso8601String(),
-        'items': [{'product_id': _productId, 'quantity': _qty}],
+        'frequency': _frequency,
+        'items': [
+          {'product_id': _productId, 'quantity': _qty}
+        ],
       });
-      if(mounted) Navigator.of(context).pop(true);
-    } catch(e){ if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()))); }
-    finally { if(mounted) setState(()=>_saving=false); }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.createSubscription)));
+      Navigator.of(context).pop(true);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.couldNotCreateProductSubscription)),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
-  @override Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(S.productSubscriptions)),
-      body: ListView(padding: const EdgeInsets.all(16), children:[
-        TextField(controller:_name, decoration: const InputDecoration(labelText:'Name (optional)')),
-        const SizedBox(height:12),
-        DropdownButtonFormField<String>(value:_branchId, decoration: const InputDecoration(labelText:'Branch'), items:_branches.map((b)=>DropdownMenuItem(value:b['id']?.toString(), child: Text((b['name_ar']??b['name_en']??'').toString()))).toList(), onChanged:(v)=>setState(()=>_branchId=v)),
-        const SizedBox(height:12),
-        DropdownButtonFormField<String>(value:_frequency, decoration: const InputDecoration(labelText:'Frequency'), items: const [DropdownMenuItem(value:'daily',child:Text('Daily')),DropdownMenuItem(value:'weekly',child:Text('Weekly')),DropdownMenuItem(value:'monthly',child:Text('Monthly'))], onChanged:(v)=>setState(()=>_frequency=v??'weekly')),
-        const SizedBox(height:12),
-        DropdownButtonFormField<String>(value:_fulfillment, decoration: const InputDecoration(labelText:'Fulfillment'), items: const [DropdownMenuItem(value:'pickup',child:Text('Pickup')),DropdownMenuItem(value:'delivery',child:Text('Delivery'))], onChanged:(v)=>setState(()=>_fulfillment=v??'pickup')),
-        const SizedBox(height:12),
-        DropdownButtonFormField<String>(value:_productId, decoration: const InputDecoration(labelText:'Product'), items:_products.map((p)=>DropdownMenuItem(value:p['id']?.toString(), child: Text((p['name_ar']??p['name_en']??'').toString()))).toList(), onChanged:(v)=>setState(()=>_productId=v)),
-        const SizedBox(height:12),
-        DropdownButtonFormField<int>(value:_qty, decoration: const InputDecoration(labelText:'Quantity'), items: List.generate(10,(i)=>DropdownMenuItem(value:i+1, child: Text('${i+1}'))), onChanged:(v)=>setState(()=>_qty=v??1)),
-        const SizedBox(height:20),
-        ElevatedButton(onPressed:_saving?null:_submit, child:_saving?const CircularProgressIndicator():const Text('Create subscription')),
-      ]),
+  String _frequencyLabel(String f) {
+    switch (f) {
+      case 'daily':
+        return S.daily;
+      case 'monthly':
+        return S.monthly;
+      default:
+        return S.weekly;
+    }
+  }
+
+  String _fulfillmentLabel(String f) => f == 'delivery' ? S.delivery : S.pickup;
+
+  @override
+  Widget build(BuildContext context) {
+    return AuthGuard(
+      child: Scaffold(
+        appBar: AppBar(
+          title: DesignText(
+            S.newProductSubscription,
+            page: 'product_subscription_form',
+            label: 'title',
+          ),
+        ),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView(
+                padding: AppLayout.pageBody,
+                children: [
+                  TextField(
+                    controller: _name,
+                    textInputAction: TextInputAction.next,
+                    decoration: InputDecoration(labelText: S.subscriptionName),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  DropdownButtonFormField<String>(
+                    value: _branchId,
+                    decoration: InputDecoration(labelText: S.branch),
+                    isExpanded: true,
+                    items: _branches
+                        .map((b) => DropdownMenuItem<String>(
+                              value: b['id'] as String,
+                              child: Text(
+                                (b['name_ar'] ?? b['name_en'] ?? '').toString(),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ))
+                        .toList(),
+                    onChanged: (v) => setState(() => _branchId = v),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  DropdownButtonFormField<String>(
+                    value: _frequency,
+                    decoration: InputDecoration(labelText: S.frequency),
+                    items: ['daily', 'weekly', 'monthly']
+                        .map((f) => DropdownMenuItem<String>(
+                              value: f,
+                              child: Text(_frequencyLabel(f)),
+                            ))
+                        .toList(),
+                    onChanged: (v) => setState(() => _frequency = v ?? 'weekly'),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  DropdownButtonFormField<String>(
+                    initialValue: _fulfillment,
+                    decoration: InputDecoration(labelText: S.fulfillment),
+                    items: ['pickup', 'delivery']
+                        .map((f) => DropdownMenuItem<String>(
+                              value: f,
+                              child: Text(_fulfillmentLabel(f)),
+                            ))
+                        .toList(),
+                    onChanged: (v) => setState(() => _fulfillment = v ?? 'pickup'),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  DropdownButtonFormField<String>(
+                    initialValue: _productId,
+                    decoration: InputDecoration(labelText: S.product),
+                    isExpanded: true,
+                    items: _products
+                        .map((p) => DropdownMenuItem<String>(
+                              value: p['id'] as String,
+                              child: Text(
+                                (p['name_ar'] ?? p['name_en'] ?? '').toString(),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ))
+                        .toList(),
+                    onChanged: (v) => setState(() => _productId = v),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  DropdownButtonFormField<int>(
+                    initialValue: _qty,
+                    decoration: InputDecoration(labelText: S.quantity),
+                    items: List.generate(10, (i) => i + 1)
+                        .map((q) => DropdownMenuItem<int>(value: q, child: Text('$q')))
+                        .toList(),
+                    onChanged: (v) => setState(() => _qty = v ?? 1),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  FilledButton(
+                    onPressed: _saving ? null : _submit,
+                    child: _saving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(S.createSubscription),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 }

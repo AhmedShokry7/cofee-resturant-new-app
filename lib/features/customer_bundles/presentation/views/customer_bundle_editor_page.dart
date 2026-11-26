@@ -1,36 +1,45 @@
 import 'package:flutter/material.dart';
+
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:new_coffee/features/customer_bundles/data/model/customer_bundle.dart';
 import 'package:new_coffee/features/customer_bundles/data/repositories/customer_bundle_repository.dart';
+import 'package:new_coffee/shared/widgets/auth_guard.dart';
+import 'package:new_coffee/shared/widgets/design_text.dart';
 
 class CustomerBundleEditorPage extends StatefulWidget {
   const CustomerBundleEditorPage({super.key});
   static const routeName = '/customer-bundle-editor';
+
   @override
-  State<CustomerBundleEditorPage> createState() => _CustomerBundleEditorPageState();
+  State<CustomerBundleEditorPage> createState() =>
+      _CustomerBundleEditorPageState();
 }
 
 class _CustomerBundleEditorPageState extends State<CustomerBundleEditorPage> {
-  final _repo = CustomerBundleRepository();
   final _name = TextEditingController();
   final _desc = TextEditingController();
+  final List<CustomerBundleItem> _items = <CustomerBundleItem>[];
   bool _saving = false;
-  bool _loadedArgs = false;
-  CustomerBundle? _existing;
-  List<Map<String, dynamic>> _products = [];
-  final List<CustomerBundleItem> _items = [];
+  bool _loading = true;
+  List<Map<String, dynamic>> _products = const [];
+  String? _error;
+  bool _initialized = false;
+
+  CustomerBundle? _editing;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_loadedArgs) return;
-    _loadedArgs = true;
-    final arg = ModalRoute.of(context)?.settings.arguments;
-    if (arg is CustomerBundle) {
-      _existing = arg;
-      _name.text = arg.name;
-      _desc.text = arg.description ?? '';
-      _items.addAll(arg.items);
+    if (_initialized) return;
+    _initialized = true;
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is CustomerBundle) {
+      _editing = args;
+      _name.text = args.name;
+      _desc.text = args.description ?? '';
+      _items.addAll(args.items);
     }
     _loadProducts();
   }
@@ -38,76 +47,130 @@ class _CustomerBundleEditorPageState extends State<CustomerBundleEditorPage> {
   Future<void> _loadProducts() async {
     try {
       final c = SupabaseService.client;
-      if (c == null) return;
-      final rows = await c.from('products').select('id,name_ar,name_en,base_price,image_url').eq('is_active', true).limit(100);
+      final rows = await c
+          .from('products')
+          .select('id,name_ar,name_en,base_price,image_url')
+          .eq('is_active', true)
+          .limit(100);
+      if (!mounted) return;
       setState(() {
-        _products = (rows as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+        _products = List<Map<String, dynamic>>.from(rows);
+        _loading = false;
       });
-    } catch (_) {}
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
   }
 
-  void _addItem() async {
-    if (_products.isEmpty) return;
-    String? selected = _products.first['id']?.toString();
+  @override
+  void dispose() {
+    _name.dispose();
+    _desc.dispose();
+    super.dispose();
+  }
+
+  Future<void> _addItemDialog() async {
+    String? productId;
     int qty = 1;
     await showDialog<void>(
       context: context,
-      builder: (ctx) => StatefulBuilder(builder: (ctx, setD) => AlertDialog(
-        title: const Text('Add product'),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          DropdownButtonFormField<String>(
-            value: selected,
-            items: _products.map((p) => DropdownMenuItem(value: p['id']?.toString(), child: Text((p['name_ar'] ?? p['name_en'] ?? '').toString()))).toList(),
-            onChanged: (v) => setD(() => selected = v),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialog) => AlertDialog(
+          title: Text(S.addItem),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                value: productId,
+                hint: Text(S.product),
+                isExpanded: true,
+                items: _products
+                    .map((p) => DropdownMenuItem<String>(
+                          value: p['id'] as String,
+                          child: Text(
+                            (p['name_ar'] ?? p['name_en'] ?? '').toString(),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ))
+                    .toList(),
+                onChanged: (v) => setDialog(() => productId = v),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              DropdownButtonFormField<int>(
+                value: qty,
+                decoration: InputDecoration(labelText: S.quantity),
+                items: List.generate(10, (i) => i + 1)
+                    .map((q) => DropdownMenuItem<int>(value: q, child: Text('$q')))
+                    .toList(),
+                onChanged: (v) => setDialog(() => qty = v ?? 1),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<int>(
-            value: qty,
-            items: List.generate(10, (i) => DropdownMenuItem(value: i + 1, child: Text('${i + 1}'))),
-            onChanged: (v) => setD(() => qty = v ?? 1),
-            decoration: const InputDecoration(labelText: 'Qty'),
-          ),
-        ]),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () {
-            if (selected == null) return;
-            final p = _products.firstWhere((e) => e['id']?.toString() == selected, orElse: () => {});
-            setState(() {
-              _items.add(CustomerBundleItem(
-                id: '',
-                bundleId: _existing?.id ?? '',
-                productId: selected!,
-                quantity: qty,
-                productNameAr: p['name_ar']?.toString(),
-                productNameEn: p['name_en']?.toString(),
-                productImageUrl: p['image_url']?.toString(),
-                unitPrice: (p['base_price'] as num?)?.toDouble(),
-              ));
-            });
-            Navigator.pop(ctx);
-          }, child: const Text('Add')),
-        ],
-      )),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(S.cancel),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (productId == null) return;
+                final p = _products.firstWhere((e) => e['id'] == productId);
+                setState(() {
+                  _items.add(CustomerBundleItem(
+                    id: '',
+                    bundleId: '',
+                    productId: productId!,
+                    quantity: qty,
+                    productNameAr: p['name_ar'] as String?,
+                    productNameEn: p['name_en'] as String?,
+                    productImageUrl: p['image_url'] as String?,
+                    unitPrice: (p['base_price'] as num?)?.toDouble(),
+                  ));
+                });
+                Navigator.of(ctx).pop();
+              },
+              child: Text(S.addItem),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Future<void> _save() async {
+  Future<void> _submit() async {
     final name = _name.text.trim();
-    if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Name required')));
-      return;
-    }
+    if (name.isEmpty) return;
     setState(() => _saving = true);
+    final repo = CustomerBundleRepository();
     try {
-      if (_existing == null) {
-        await _repo.createBundle(name: name, description: _desc.text.trim(), items: _items);
+      if (_editing == null) {
+        await repo.createBundle(
+          name: name,
+          description: _desc.text.trim().isEmpty ? null : _desc.text.trim(),
+          isFavorite: false,
+          items: _items,
+        );
       } else {
-        await _repo.updateBundle(id: _existing!.id, name: name, description: _desc.text.trim(), items: _items);
+        await repo.updateBundle(
+          id: _editing!.id,
+          name: name,
+          description: _desc.text.trim().isEmpty ? null : _desc.text.trim(),
+          isFavorite: _editing!.isFavorite,
+          items: _items,
+        );
       }
-      if (mounted) Navigator.of(context).pop(true);
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.bundleSaved)));
+      Navigator.of(context).pop(true);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.couldNotSaveBundle)));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -115,31 +178,104 @@ class _CustomerBundleEditorPageState extends State<CustomerBundleEditorPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(_existing == null ? 'New Bundle' : 'Edit Bundle'), actions: [
-        IconButton(onPressed: _saving ? null : _save, icon: const Icon(Icons.save)),
-      ]),
-      floatingActionButton: FloatingActionButton(onPressed: _addItem, child: const Icon(Icons.add_shopping_cart)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          TextField(controller: _name, decoration: const InputDecoration(labelText: 'Bundle name')),
-          const SizedBox(height: 12),
-          TextField(controller: _desc, decoration: const InputDecoration(labelText: 'Description'), maxLines: 2),
-          const SizedBox(height: 16),
-          const Text('Items', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          for (int i = 0; i < _items.length; i++)
-            Card(
-              child: ListTile(
-                title: Text(_items[i].displayName),
-                subtitle: Text('Qty: ${_items[i].quantity}'),
-                trailing: IconButton(icon: const Icon(Icons.delete_outline), onPressed: () => setState(() => _items.removeAt(i))),
-              ),
-            ),
-          if (_items.isEmpty) const Padding(padding: EdgeInsets.all(24), child: Center(child: Text('No items yet'))),
-          const SizedBox(height: 80),
-        ],
+    return AuthGuard(
+      child: Scaffold(
+        appBar: AppBar(
+          title: DesignText(
+            _editing == null ? S.createBundle : S.edit,
+            page: 'customer_bundle_editor',
+            label: 'title',
+          ),
+        ),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? Center(
+                    child: Padding(
+                      padding: AppLayout.pageBody,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(S.couldNotLoadBundles),
+                          const SizedBox(height: AppSpacing.md),
+                          FilledButton.tonal(
+                            onPressed: () {
+                              setState(() {
+                                _loading = true;
+                                _error = null;
+                              });
+                              _loadProducts();
+                            },
+                            child: Text(S.retry),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : ListView(
+                    padding: AppLayout.pageBody,
+                    children: [
+                      TextField(
+                        controller: _name,
+                        textInputAction: TextInputAction.next,
+                        decoration: InputDecoration(labelText: S.bundleName),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextField(
+                        controller: _desc,
+                        decoration: InputDecoration(labelText: S.bundleDescription),
+                        maxLines: 2,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              S.bundleItems,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: _addItemDialog,
+                            icon: const Icon(Icons.add),
+                            label: Text(S.addItem),
+                          ),
+                        ],
+                      ),
+                      if (_items.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                          child: Center(child: Text(S.noBundleItems)),
+                        ),
+                      ..._items.asMap().entries.map((entry) {
+                        final i = entry.key;
+                        final it = entry.value;
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                          child: ListTile(
+                            title: Text(it.productNameAr ?? it.productNameEn ?? it.productId),
+                            subtitle: Text('${S.quantity}: ${it.quantity}'),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete_outline),
+                              onPressed: () => setState(() => _items.removeAt(i)),
+                            ),
+                          ),
+                        );
+                      }),
+                      const SizedBox(height: AppSpacing.xl),
+                      FilledButton(
+                        onPressed: _saving ? null : _submit,
+                        child: _saving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Text(S.save),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                    ],
+                  ),
       ),
     );
   }

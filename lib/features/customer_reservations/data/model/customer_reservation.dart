@@ -40,15 +40,15 @@ class CustomerReservation {
       tableId: Db.textOrNull(json['table_id']),
       status: Db.text(json['status'], 'pending'),
       source: Db.text(json['source'], 'customer'),
-      reservedFor: Db.asDateTime(json['reserved_for']) ?? DateTime.now(),
-      requestedEndAt: Db.asDateTime(json['requested_end_at']),
-      reservedUntil: Db.asDateTime(json['reserved_until']),
+      reservedFor: Db.asDateTime(json['reserved_for']),
+      requestedEndAt: Db.asDateTimeOrNull(json['requested_end_at']),
+      reservedUntil: Db.asDateTimeOrNull(json['reserved_until']),
       partySize: json['party_size'] == null ? null : Db.asInt(json['party_size']),
       customerNote: Db.textOrNull(json['customer_note'] ?? json['note']),
       adminNote: Db.textOrNull(json['admin_note']),
       cancellationReason: Db.textOrNull(json['cancellation_reason']),
       reservationType: Db.text(json['reservation_type'], 'table'),
-      createdAt: Db.asDateTime(json['created_at']),
+      createdAt: Db.asDateTimeOrNull(json['created_at']),
     );
   }
 }
