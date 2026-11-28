@@ -13,6 +13,7 @@ import 'package:new_coffee/features/checkout/data/model/delivery_zone_model.dart
 import 'package:new_coffee/features/checkout/data/model/order_model.dart';
 import 'package:new_coffee/features/checkout/data/model/payment_method_model.dart';
 import 'package:new_coffee/features/payment/data/model/saved_card_model.dart';
+import 'package:new_coffee/features/payment/data/model/card_brand.dart';
 import 'package:new_coffee/features/addresses/data/repositories/address_repository.dart';
 import 'package:new_coffee/features/checkout/data/repositories/delivery_zone_repository.dart';
 import 'package:new_coffee/features/checkout/data/repositories/pickup_schedule_repository.dart';
@@ -23,6 +24,27 @@ import 'package:new_coffee/features/orders/data/repositories/order_repository.da
 import 'package:new_coffee/shared/utils/idempotency_key.dart';
 
 part 'checkout_state.dart';
+
+class _CheckoutLoadValue<T> {
+  const _CheckoutLoadValue.success(this.value)
+    : error = null,
+      stackTrace = null;
+  const _CheckoutLoadValue.failure(this.error, this.stackTrace) : value = null;
+
+  final T? value;
+  final Object? error;
+  final StackTrace? stackTrace;
+}
+
+Future<_CheckoutLoadValue<T>> _loadCheckoutValue<T>(
+  Future<T> Function() load,
+) async {
+  try {
+    return _CheckoutLoadValue<T>.success(await load());
+  } catch (error, stackTrace) {
+    return _CheckoutLoadValue<T>.failure(error, stackTrace);
+  }
+}
 
 class CheckoutCubit extends Cubit<CheckoutState> {
   CheckoutCubit({
@@ -56,47 +78,81 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     final branch = branchId?.trim() ?? '';
     if (branch.isEmpty) return;
     _pickupSlotsDate = DateTime(date.year, date.month, date.day);
-    emit(state.copyWith(pickupSlotsLoading: true, pickupSlots: const [], clearScheduledPickup: true));
+    emit(
+      state.copyWith(
+        pickupSlotsLoading: true,
+        pickupSlots: const [],
+        clearScheduledPickup: true,
+      ),
+    );
     try {
       final slots = await _pickupScheduleRepository.available(branch, date);
       if (branchId != branch || isClosed) return;
-      emit(state.copyWith(pickupSlots: slots.map((slot) => slot.startsAt).toList(), pickupSlotsLoading: false));
+      emit(
+        state.copyWith(
+          pickupSlots: slots.map((slot) => slot.startsAt).toList(),
+          pickupSlotsLoading: false,
+        ),
+      );
     } catch (_) {
-      if (!isClosed) emit(state.copyWith(pickupSlotsLoading: false, pickupSlots: const []));
+      if (!isClosed)
+        emit(state.copyWith(pickupSlotsLoading: false, pickupSlots: const []));
     }
   }
 
   Future<void> loadPickupDays() async {
     final branch = branchId?.trim() ?? '';
     if (branch.isEmpty) return;
-    emit(state.copyWith(pickupDaysLoading: true, pickupAvailableDays: const [], pickupSlots: const [], clearScheduledPickup: true));
+    emit(
+      state.copyWith(
+        pickupDaysLoading: true,
+        pickupAvailableDays: const [],
+        pickupSlots: const [],
+        clearScheduledPickup: true,
+      ),
+    );
     try {
-      final days = await _pickupScheduleRepository.availableDays(branch, DateTime.now());
+      final days = await _pickupScheduleRepository.availableDays(
+        branch,
+        DateTime.now(),
+      );
       if (branchId != branch || isClosed) return;
       emit(state.copyWith(pickupDaysLoading: false, pickupAvailableDays: days));
       if (days.isNotEmpty) {
         final currentDay = _pickupSlotsDate;
-        final selected = currentDay != null && days.any((d) => d == currentDay) ? currentDay : days.first;
+        final selected = currentDay != null && days.any((d) => d == currentDay)
+            ? currentDay
+            : days.first;
         await loadPickupSlots(selected);
       }
     } catch (_) {
-      if (!isClosed) emit(state.copyWith(pickupDaysLoading: false, pickupAvailableDays: const [], pickupSlots: const []));
+      if (!isClosed)
+        emit(
+          state.copyWith(
+            pickupDaysLoading: false,
+            pickupAvailableDays: const [],
+            pickupSlots: const [],
+          ),
+        );
     }
   }
 
   void setScheduledPickup(DateTime? value) {
-    if (value != null && !state.pickupSlots.any((slot) => slot.isAtSameMomentAs(value))) return;
-    emit(state.copyWith(
-      scheduledPickup: value,
-      clearScheduledPickup: value == null,
-      pickupScheduleSelected: value != null,
-    ));
+    if (value != null &&
+        !state.pickupSlots.any((slot) => slot.isAtSameMomentAs(value)))
+      return;
+    emit(
+      state.copyWith(
+        scheduledPickup: value,
+        clearScheduledPickup: value == null,
+        pickupScheduleSelected: value != null,
+      ),
+    );
   }
 
-  void enablePickupScheduling() => emit(state.copyWith(
-    pickupScheduleSelected: true,
-    clearScheduledPickup: true,
-  ));
+  void enablePickupScheduling() => emit(
+    state.copyWith(pickupScheduleSelected: true, clearScheduledPickup: true),
+  );
 
   /// Monotonic id of the newest coupon validation.
   ///
@@ -238,49 +294,58 @@ class CheckoutCubit extends Cubit<CheckoutState> {
 
   Future<void> load() async {
     emit(state.copyWith(isLoading: true, clearError: true));
-    try {
-      final results = await Future.wait([
-        _addresses.listAddresses(),
-        _paymentMethods.activeMethods(),
-        _coupons.activeCoupons(),
-      ]);
-      if (isClosed) return;
-      final addresses = results[0] as List<AddressModel>;
-      final paymentMethods = results[1] as List<PaymentMethodModel>;
-      final coupons = results[2] as List<CouponModel>;
+    // These reads are independent. A coupons or address schema problem must
+    // never erase the payment methods returned successfully by Supabase.
+    final results = await Future.wait([
+      _loadCheckoutValue(_addresses.listAddresses),
+      _loadCheckoutValue(_paymentMethods.activeMethods),
+      _loadCheckoutValue(_coupons.activeCoupons),
+    ]);
+    if (isClosed) return;
+    final addressResult = results[0] as _CheckoutLoadValue<List<AddressModel>>;
+    final methodResult =
+        results[1] as _CheckoutLoadValue<List<PaymentMethodModel>>;
+    final couponResult = results[2] as _CheckoutLoadValue<List<CouponModel>>;
+    final addresses = addressResult.value ?? const <AddressModel>[];
+    final paymentMethods = methodResult.value ?? const <PaymentMethodModel>[];
+    final coupons = couponResult.value ?? const <CouponModel>[];
+    final failures = [
+      addressResult,
+      methodResult,
+      couponResult,
+    ].where((result) => result.error != null).toList();
 
-      emit(
-        state.copyWith(
-          addresses: addresses,
-          paymentMethods: paymentMethods,
-          availableCoupons: coupons,
-          selectedAddress: addresses.isEmpty
-              ? null
-              : addresses.firstWhere(
-                  (address) => address.isDefault,
-                  orElse: () => addresses.first,
-                ),
-          selectedPaymentMethod: paymentMethods.isEmpty
-              ? null
-              : paymentMethods.firstWhere(
-                  (method) => method.isOnline,
-                  orElse: () => paymentMethods.last,
-                ),
-          isLoading: false,
-        ),
-      );
-      await _loadDeliveryZones();
-      // Zones only tell us what the branch serves; which one covers this
-      // customer's address is a second question, asked once the address is
-      // known.
-      await resolveZoneForSelectedAddress();
-    } catch (error, stackTrace) {
-      if (isClosed) return;
-      emit(
-        state.copyWith(isLoading: false, error: AppCopy.couldNotLoadCheckout),
-      );
-      addError(error, stackTrace);
+    emit(
+      state.copyWith(
+        addresses: addresses,
+        paymentMethods: paymentMethods,
+        availableCoupons: coupons,
+        selectedAddress: addresses.isEmpty
+            ? null
+            : addresses.firstWhere(
+                (address) => address.isDefault,
+                orElse: () => addresses.first,
+              ),
+        selectedPaymentMethod: paymentMethods.isEmpty
+            ? null
+            : paymentMethods.firstWhere(
+                (method) => method.isOnline,
+                orElse: () => paymentMethods.last,
+              ),
+        clearSelectedPaymentMethod: paymentMethods.isEmpty,
+        isLoading: false,
+        error: failures.isEmpty ? null : AppCopy.couldNotLoadCheckout,
+        clearError: failures.isEmpty,
+      ),
+    );
+    for (final failure in failures) {
+      addError(failure.error!, failure.stackTrace!);
     }
+    await _loadDeliveryZones();
+    // Zones only tell us what the branch serves; which one covers this
+    // customer's address is a second question, asked once the address is
+    // known.
+    await resolveZoneForSelectedAddress();
   }
 
   /// Loads the zones the current branch serves.
@@ -358,11 +423,13 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     if (state.pickupScheduleSelected) {
       loadPickupDays();
     } else {
-      emit(state.copyWith(
-        pickupSlots: const [],
-        clearScheduledPickup: true,
-        pickupScheduleSelected: false,
-      ));
+      emit(
+        state.copyWith(
+          pickupSlots: const [],
+          clearScheduledPickup: true,
+          pickupScheduleSelected: false,
+        ),
+      );
     }
     // A category-scoped coupon can become valid or invalid at another branch,
     // so a stored approval never silently follows a branch change. The same is
@@ -456,7 +523,9 @@ class CheckoutCubit extends Cubit<CheckoutState> {
             ? (state.selectedDeliveryZone ?? state.deliveryZones.first)
             : null,
         clearScheduledPickup: fulfillment.isDelivery,
-        pickupScheduleSelected: fulfillment.isDelivery ? false : state.pickupScheduleSelected,
+        pickupScheduleSelected: fulfillment.isDelivery
+            ? false
+            : state.pickupScheduleSelected,
         pickupSlots: fulfillment.isDelivery ? const [] : state.pickupSlots,
       ),
     );
@@ -554,7 +623,13 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       emit(state.copyWith(clearSelectedSavedCard: true));
       return;
     }
-    emit(state.copyWith(selectedSavedCard: card));
+    final code = card.brand == CardBrand.mada ? 'mada' : 'card';
+    final method = state.paymentMethods.where((item) => item.code == code);
+    if (method.isEmpty) return;
+    emit(state.copyWith(
+      selectedSavedCard: card,
+      selectedPaymentMethod: method.first,
+    ));
   }
 
   /// Adopts an address list owned by someone else.
@@ -715,14 +790,12 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   }
 
   void selectPaymentMethod(PaymentMethodModel method) {
-    // A saved card can only pay a card method. Keeping the selection while
-    // another method is chosen would silently charge the stored card for an
-    // Apple Pay or cash order.
-    final keepsSavedCard = method.isCardMethod;
+    // Tapping a payment option means a new payment through that option.
+    // A saved card must be charged only when its own row was selected.
     emit(
       state.copyWith(
         selectedPaymentMethod: method,
-        clearSelectedSavedCard: !keepsSavedCard,
+        clearSelectedSavedCard: true,
       ),
     );
   }
@@ -958,7 +1031,9 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         return false;
       }
     }
-    if (!isDelivery && state.pickupScheduleSelected && state.scheduledPickup == null) {
+    if (!isDelivery &&
+        state.pickupScheduleSelected &&
+        state.scheduledPickup == null) {
       emit(state.copyWith(orderError: AppCopy.pickupScheduleRequired));
       return false;
     }
@@ -1077,6 +1152,129 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     }
   }
 
+  /// Builds the server-validated data needed to start a card payment without
+  /// placing an order. Moyasar returns a captured payment first; the server
+  /// then commits this draft as an order in the same transaction that records
+  /// the verified payment.
+  Future<Map<String, dynamic>> createMoyasarCheckoutDraft(
+    List<CartItem> items,
+  ) async {
+    final branch = branchId?.trim() ?? '';
+    final quote = state.checkoutQuote;
+    if (branch.isEmpty || items.isEmpty || _currentOrderUserId == null) {
+      throw StateError('Checkout is not ready.');
+    }
+    if (_orders is! CheckoutQuoteRepository || quote == null) {
+      throw StateError('A server checkout quote is required.');
+    }
+    if (state.deliveryBlocked ||
+        state.addressOutOfZone ||
+        state.isResolvingZone) {
+      throw StateError('Delivery selection is not valid.');
+    }
+    if (state.fulfillment.isDelivery &&
+        (state.selectedDeliveryZone == null || state.selectedAddress == null)) {
+      throw StateError('Delivery address is required.');
+    }
+    if (state.pickupScheduleSelected && state.scheduledPickup == null) {
+      throw StateError('Pickup time is required.');
+    }
+    final signature = _orderRequestSignature(
+      branchId: branch,
+      items: items,
+      fulfillmentType: state.fulfillment.value,
+      deliveryZoneId: state.fulfillment.isDelivery
+          ? state.selectedDeliveryZone!.id
+          : null,
+      addressId: state.fulfillment.isDelivery
+          ? state.selectedAddress!.id
+          : null,
+      savedCardId: null,
+      couponCode: state.appliedCoupon?.coupon.code,
+      subscriptionRunId: _subscriptionRunId,
+      scheduledPickupAt: state.scheduledPickup,
+    );
+    final requestSignature =
+        '${_cartSignature(items)}|${state.fulfillment.value}|'
+        '${state.selectedDeliveryZone?.id ?? ''}|${state.selectedAddress?.id ?? ''}|'
+        '${state.appliedCoupon?.coupon.code ?? ''}';
+    if (_requestedQuoteSignature != requestSignature) {
+      throw StateError('The checkout quote no longer matches this cart.');
+    }
+    final idempotencyKey = await _orderAttemptFor(signature);
+    return <String, dynamic>{
+      'branch_id': branch,
+      'lines': _lines(items).map((line) => line.toJson()).toList(),
+      'idempotency_key': idempotencyKey,
+      'fulfillment_type': state.fulfillment.value,
+      'payment_method_code':
+          state.selectedPaymentMethod?.code?.trim().toLowerCase() ?? 'card',
+      'expected_total': quote.grandTotal,
+      if (state.fulfillment.isDelivery)
+        'delivery_zone_id': state.selectedDeliveryZone!.id,
+      if (state.fulfillment.isDelivery) 'address_id': state.selectedAddress!.id,
+      if (state.appliedCoupon != null)
+        'coupon_code': state.appliedCoupon!.coupon.code,
+      if (state.scheduledPickup != null)
+        'scheduled_pickup_at': state.scheduledPickup!.toUtc().toIso8601String(),
+      if (_subscriptionRunId != null) 'subscription_run_id': _subscriptionRunId,
+    };
+  }
+
+  /// Installs the order returned by the payment verifier so receipt and
+  /// checkout screens only see it after the server has captured the payment.
+  void acceptVerifiedMoyasarOrder({
+    required Map<String, dynamic> order,
+    required List<CartItem> items,
+  }) {
+    final placed = PlacedOrder(
+      orderId: order['order_id']?.toString() ?? '',
+      orderNumber: order['order_number']?.toString() ?? '',
+      subtotal: _number(order['subtotal']),
+      discountTotal: _number(order['discount_total']),
+      deliveryFee: _number(order['delivery_fee']),
+      taxTotal: _number(order['tax_total']),
+      grandTotal: _number(order['grand_total']),
+      pointsEarned: (order['points_earned'] as num?)?.toInt() ?? 0,
+      placedAt:
+          DateTime.tryParse(order['placed_at']?.toString() ?? '') ??
+          DateTime.now(),
+      productDiscountTotal: _number(order['product_discount_total']),
+    );
+    if (placed.orderId.isEmpty || placed.orderNumber.isEmpty) {
+      throw StateError('The paid order could not be confirmed by the server.');
+    }
+    emit(
+      state.copyWith(
+        lastOrder: OrderModel(
+          id: placed.orderNumber,
+          orderId: placed.orderId,
+          date: placed.placedAt,
+          items: items,
+          total: placed.grandTotal,
+          fulfillmentType: state.fulfillment.value,
+          deliveryFee: placed.deliveryFee,
+          deliveryZoneName: state.fulfillment.isDelivery
+              ? state.selectedDeliveryZone?.name
+              : null,
+          deliveryAddress:
+              state.fulfillment.isDelivery && state.selectedAddress != null
+              ? '${state.selectedAddress!.label} - ${state.selectedAddress!.details}'
+              : null,
+          discountLines: state.appliedCoupon?.lines ?? const [],
+          productDiscount: placed.productDiscountTotal,
+          pointsEarned: placed.pointsEarned,
+        ),
+        clearOrderError: true,
+      ),
+    );
+    _subscriptionRunId = null;
+  }
+
+  double _number(dynamic value) => value is num
+      ? value.toDouble()
+      : double.tryParse(value?.toString() ?? '') ?? 0;
+
   /// Maps backend/technical failures to a customer-facing message while the
   /// original error is still reported through [addError] for diagnostics.
   AppCopy _customerFacingOrderError(Object error) {
@@ -1109,6 +1307,9 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   Future<void> settleOrderAttempt() async {
     _pendingOrderSignature = null;
     _pendingOrderIdempotencyKey = null;
+    // A stored card is an explicit choice for one checkout only. Never carry
+    // it into the next purchase after a completed payment.
+    if (!isClosed) emit(state.copyWith(clearSelectedSavedCard: true));
     final userId = _currentOrderUserId;
     if (userId != null) {
       await SharedPref.setValue(

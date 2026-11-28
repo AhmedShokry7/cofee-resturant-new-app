@@ -1,325 +1,149 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
-import 'package:new_coffee/features/payment/data/repositories/tap_payment_repository.dart';
+import 'package:new_coffee/features/payment/data/repositories/moyasar_payment_repository.dart';
+import 'package:new_coffee/features/payment/data/repositories/payment_repository.dart';
 import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_state.dart';
 
-/// What a successful charge creation reports.
-const _created = TapChargeResult(
-  chargeId: chargeId,
-  status: 'INITIATED',
-  transactionUrl: 'https://tap.company/3ds',
-);
-
-class _FakeRepository implements TapPaymentRepository {
-  _FakeRepository({this.verifyResult, this.chargeError, this.verifyError});
-
-  final TapVerificationResult? verifyResult;
-  final Object? chargeError;
-  final Object? verifyError;
-
-  int chargeCallCount = 0;
-  int verifyCallCount = 0;
-  String? lastSourceToken;
-  String? lastSavedCardId;
-  String? lastOrderId;
-  String? lastIdempotencyKey;
-
-  @override
-  Future<TapChargeResult> createCharge({
-    required String orderId,
-    required String idempotencyKey,
-    bool saveCard = false,
-    String? savedCardId,
-    String? sourceToken,
-  }) async {
-    chargeCallCount++;
-    lastSourceToken = sourceToken;
-    lastSavedCardId = savedCardId;
-    lastOrderId = orderId;
-    lastIdempotencyKey = idempotencyKey;
-    if (chargeError != null) throw chargeError!;
-    return _created;
-  }
-
-  @override
-  Future<TapChargeResult> createSubscriptionCharge({
-    required String subscriptionId,
-    required String idempotencyKey,
-    bool saveCard = false,
-    String? savedCardId,
-    String? sourceToken,
-  }) async {
-    chargeCallCount++;
-    lastSourceToken = sourceToken;
-    lastSavedCardId = savedCardId;
-    lastOrderId = subscriptionId;
-    lastIdempotencyKey = idempotencyKey;
-    if (chargeError != null) throw chargeError!;
-    return _created;
-  }
-
-  @override
-  Future<TapVerificationResult> verifyCharge(String chargeId) async {
-    verifyCallCount++;
-    if (verifyError != null) throw verifyError!;
-    return verifyResult ??
-        TapVerificationResult(
-          chargeId: chargeId,
-          status: 'CAPTURED',
-          verified: true,
-          orderPaymentStatus: 'paid',
-        );
-  }
-}
-
-const orderId = 'order-123';
-const chargeId = 'ch_456';
-const tokenId = 'tok_test_123';
-
-/// What the hosted form reports: the token Tap created, inside the payload the
-/// SDK hands back.
-const tokenJson =
-    '{"id":"$tokenId","object":"token","type":"CARD","used":false}';
-
-typedef Tree = ({CardPaymentCubit cubit, _FakeRepository tap});
-
-Tree tree({
-  String? orderId,
-  String? subscriptionId,
-  String? savedCardId,
-  TapVerificationResult? verifyResult,
-  Object? chargeError,
-  Object? verifyError,
-}) {
-  final tap = _FakeRepository(
-    verifyResult: verifyResult,
-    chargeError: chargeError,
-    verifyError: verifyError,
+class _Payments implements PaymentRepository, MoyasarPaymentOperations {
+  int prepareCalls = 0;
+  int savedCardCalls = 0;
+  int verifyCalls = 0;
+  String? savedCardId;
+  PaymentVerificationResult verification = const PaymentVerificationResult(
+    chargeId: 'pay_123',
+    status: 'paid',
+    verified: true,
+    orderPaymentStatus: 'paid',
   );
-  final cubit = CardPaymentCubit(repository: tap)
-    ..start(
-      orderId: orderId,
-      subscriptionId: subscriptionId,
-      savedCardId: savedCardId,
+  Completer<PaymentChargeResult>? savedCardGate;
+
+  @override
+  Future<MoyasarPaymentIntent> preparePayment({
+    String? orderId,
+    String? subscriptionId,
+    Map<String, dynamic>? checkoutDraft,
+  }) async {
+    prepareCalls++;
+    return const MoyasarPaymentIntent(
+      paymentId: 'pay_123',
+      amount: 1045,
+      currency: 'SAR',
+      description: 'Order',
     );
-  return (cubit: cubit, tap: tap);
-}
+  }
 
-/// A payment the customer filled correctly and pressed pay on, which is the
-/// only state a token result can arrive in.
-Tree tokenRequested({
-  TapVerificationResult? verifyResult,
-  Object? chargeError,
-  Object? verifyError,
-}) {
-  final built = tree(
-    orderId: orderId,
-    verifyResult: verifyResult,
-    chargeError: chargeError,
-    verifyError: verifyError,
-  );
-  built.cubit.onCardValidInput(true);
-  built.cubit.requestCardToken();
-  return built;
+  @override
+  Future<PaymentChargeResult> createSavedCardCharge({
+    String? orderId,
+    String? subscriptionId,
+    Map<String, dynamic>? checkoutDraft,
+    required String savedCardId,
+  }) async {
+    savedCardCalls++;
+    this.savedCardId = savedCardId;
+    return savedCardGate?.future ??
+        const PaymentChargeResult(chargeId: 'pay_123', status: 'initiated');
+  }
+
+  @override
+  Future<PaymentVerificationResult> verifyCharge(String chargeId) async {
+    verifyCalls++;
+    return verification;
+  }
 }
 
 void main() {
-  group('card input', () {
-    test('starts idle and cannot submit', () {
-      final built = tree(orderId: orderId);
-      expect(built.cubit.state.status, CardPaymentStatus.initial);
-      expect(built.cubit.state.canSubmit, isFalse);
-    });
+  test('preparing a checkout does not report payment success', () async {
+    final payments = _Payments();
+    final cubit = CardPaymentCubit(repository: payments)
+      ..start(checkoutDraft: {'idempotency_key': 'checkout-1'});
+    addTearDown(cubit.close);
 
-    test('a valid card enables the pay button', () {
-      final built = tree(orderId: orderId);
-      built.cubit.onCardValidInput(true);
-      expect(built.cubit.state.status, CardPaymentStatus.cardInputValid);
-      expect(built.cubit.state.canSubmit, isTrue);
-    });
+    await cubit.prepareMoyasarPayment();
 
-    test('an invalid card disables the pay button', () {
-      final built = tree(orderId: orderId);
-      built.cubit.onCardValidInput(false);
-      expect(built.cubit.state.status, CardPaymentStatus.cardInputInvalid);
-      expect(built.cubit.state.canSubmit, isFalse);
-    });
-
-    test('input changes do not override a busy payment', () {
-      final built = tokenRequested();
-      built.cubit.onCardValidInput(false);
-      expect(built.cubit.state.status, CardPaymentStatus.tokenizing);
-    });
+    expect(payments.prepareCalls, 1);
+    expect(payments.verifyCalls, 0);
+    expect(cubit.state.status, CardPaymentStatus.chargeCreated);
+    expect(cubit.state.chargeId, 'pay_123');
+    expect(cubit.state.paymentAmountMinor, 1045);
   });
 
-  group('the hosted form', () {
-    test('paying with a valid card asks it for a token', () {
-      final built = tree(orderId: orderId);
-      built.cubit.onCardValidInput(true);
-      built.cubit.requestCardToken();
-      expect(built.cubit.state.status, CardPaymentStatus.tokenizing);
-      expect(built.cubit.state.isBusy, isTrue);
-    });
+  test('only a server verified paid charge reports success', () async {
+    final payments = _Payments();
+    final cubit = CardPaymentCubit(repository: payments)..start(orderId: 'o1');
+    addTearDown(cubit.close);
+    await cubit.prepareMoyasarPayment();
 
-    test('paying with an invalid card does not ask for a token', () {
-      final built = tree(orderId: orderId);
-      built.cubit.onCardValidInput(false);
-      built.cubit.requestCardToken();
-      expect(built.cubit.state.status, CardPaymentStatus.cardInputInvalid);
-      expect(built.tap.chargeCallCount, 0);
-    });
-
-    test('a form error while tokenizing lets the customer try again', () {
-      final built = tokenRequested();
-      built.cubit.onHostedFormError();
-      expect(built.cubit.state.status, CardPaymentStatus.tokenizationFailed);
-      expect(built.cubit.state.isBusy, isFalse);
-    });
-
-    test('a result outside a token request is ignored', () async {
-      final built = tree(orderId: orderId);
-      built.cubit.onCardValidInput(true);
-      await built.cubit.onHostedFormResult(tokenJson);
-      expect(built.tap.chargeCallCount, 0);
-    });
+    expect(await cubit.verifyCharge(), PaymentOutcome.succeeded);
+    expect(cubit.state.status, CardPaymentStatus.paymentSucceeded);
   });
 
-  group('the charge', () {
-    test('is created from the token id, not the payload', () async {
-      final built = tokenRequested();
-      await built.cubit.onHostedFormResult(tokenJson);
-      expect(built.tap.chargeCallCount, 1);
-      // The server turns the id into the card source; the rest of what the form
-      // reports is not a token the charge can be built from.
-      expect(built.tap.lastSourceToken, tokenId);
-      expect(built.tap.lastOrderId, orderId);
-      expect(built.tap.lastIdempotencyKey, orderId);
-    });
-
-    test('reports the charge id and the redirect to follow', () async {
-      final built = tokenRequested();
-      await built.cubit.onHostedFormResult(tokenJson);
-      expect(built.cubit.state.status, CardPaymentStatus.chargeCreated);
-      expect(built.cubit.state.chargeId, chargeId);
-      expect(built.cubit.state.transactionUrl, 'https://tap.company/3ds');
-    });
-
-    test('a result that carries no token fails the tokenization', () async {
-      for (final payload in ['not json', '{"foo":"bar"}', '']) {
-        final built = tokenRequested();
-        await built.cubit.onHostedFormResult(payload);
-        expect(
-          built.cubit.state.status,
-          CardPaymentStatus.tokenizationFailed,
-          reason: 'a result without a token id: $payload',
-        );
-        expect(built.tap.chargeCallCount, 0);
-      }
-    });
-
-    test('a failed creation is a payment failure', () async {
-      final built = tokenRequested(chargeError: Exception('network'));
-      await built.cubit.onHostedFormResult(tokenJson);
-      expect(built.cubit.state.status, CardPaymentStatus.paymentFailed);
-    });
-
-    test('a second request while one is running charges once', () async {
-      final built = tokenRequested();
-      await Future.wait([
-        built.cubit.onHostedFormResult(tokenJson),
-        built.cubit.onHostedFormResult(tokenJson),
-      ]);
-      expect(built.tap.chargeCallCount, 1);
-    });
-
-    test('a subscription uses the subscription charge', () async {
-      final tap = _FakeRepository();
-      final cubit = CardPaymentCubit(repository: tap)
-        ..start(subscriptionId: 'sub-1');
-      cubit.onCardValidInput(true);
-      cubit.requestCardToken();
-      await cubit.onHostedFormResult(tokenJson);
-      expect(tap.lastOrderId, 'sub-1');
-      expect(tap.lastIdempotencyKey, 'sub-1');
-    });
-  });
-
-  group('a saved card', () {
-    test('is charged without a token', () async {
-      final built = tree(orderId: orderId, savedCardId: 'card-9');
-      await built.cubit.chargeSavedCard();
-      expect(built.tap.chargeCallCount, 1);
-      expect(built.tap.lastSavedCardId, 'card-9');
-      expect(built.tap.lastSourceToken, isNull);
-      expect(built.cubit.state.status, CardPaymentStatus.chargeCreated);
-    });
-
-    test('charging one that was never named does nothing', () async {
-      final built = tree(orderId: orderId);
-      await built.cubit.chargeSavedCard();
-      expect(built.tap.chargeCallCount, 0);
-    });
-
-    test('two requests at once charge once', () async {
-      final built = tree(orderId: orderId, savedCardId: 'card-9');
-      await Future.wait([
-        built.cubit.chargeSavedCard(),
-        built.cubit.chargeSavedCard(),
-      ]);
-      expect(built.tap.chargeCallCount, 1);
-    });
-  });
-
-  group('verifying after the bank', () {
-    Future<Tree> charged({TapVerificationResult? verifyResult}) async {
-      final built = tokenRequested(verifyResult: verifyResult);
-      await built.cubit.onHostedFormResult(tokenJson);
-      return built;
-    }
-
-    test('a verified charge is succeeded', () async {
-      final built = await charged();
-      expect(await built.cubit.verifyCharge(), PaymentOutcome.succeeded);
-      expect(built.cubit.state.status, CardPaymentStatus.paymentSucceeded);
-    });
-
-    test('a pending order is pending', () async {
-      final built = await charged(
-        verifyResult: const TapVerificationResult(
-          chargeId: chargeId,
-          status: 'PENDING',
-          verified: false,
-          orderPaymentStatus: 'pending',
-        ),
+  test('unverified provider response cannot mark the order paid', () async {
+    final payments = _Payments()
+      ..verification = const PaymentVerificationResult(
+        chargeId: 'pay_123',
+        status: 'paid',
+        verified: false,
+        orderPaymentStatus: 'failed',
       );
-      expect(await built.cubit.verifyCharge(), PaymentOutcome.pending);
-      expect(built.cubit.state.status, CardPaymentStatus.paymentPending);
-    });
+    final cubit = CardPaymentCubit(repository: payments)..start(orderId: 'o1');
+    addTearDown(cubit.close);
+    await cubit.prepareMoyasarPayment();
 
-    test('a rejected charge is failed', () async {
-      final built = await charged(
-        verifyResult: const TapVerificationResult(
-          chargeId: chargeId,
-          status: 'FAILED',
-          verified: false,
-          orderPaymentStatus: 'failed',
-        ),
+    expect(await cubit.verifyCharge(), PaymentOutcome.failed);
+    expect(cubit.state.status, CardPaymentStatus.paymentFailed);
+  });
+
+  test('pending 3DS verification stays pending', () async {
+    final payments = _Payments()
+      ..verification = const PaymentVerificationResult(
+        chargeId: 'pay_123',
+        status: 'initiated',
+        verified: false,
+        orderPaymentStatus: 'pending',
       );
-      expect(await built.cubit.verifyCharge(), PaymentOutcome.failed);
-      expect(built.cubit.state.status, CardPaymentStatus.paymentFailed);
-    });
+    final cubit = CardPaymentCubit(repository: payments)..start(orderId: 'o1');
+    addTearDown(cubit.close);
+    await cubit.prepareMoyasarPayment();
 
-    test('a verification error is failed', () async {
-      final built = tokenRequested(verifyError: Exception('timeout'));
-      await built.cubit.onHostedFormResult(tokenJson);
-      expect(await built.cubit.verifyCharge(), PaymentOutcome.failed);
-      expect(built.cubit.state.status, CardPaymentStatus.paymentFailed);
-    });
+    expect(await cubit.verifyCharge(), PaymentOutcome.pending);
+    expect(cubit.state.status, CardPaymentStatus.paymentPending);
+  });
 
-    test('nothing is verified before a charge exists', () async {
-      final built = tree(orderId: orderId);
-      expect(await built.cubit.verifyCharge(), isNull);
-      expect(built.tap.verifyCallCount, 0);
-    });
+  test('a response for another payment is rejected', () async {
+    final payments = _Payments()
+      ..verification = const PaymentVerificationResult(
+        chargeId: 'someone-elses-payment',
+        status: 'paid',
+        verified: true,
+        orderPaymentStatus: 'paid',
+      );
+    final cubit = CardPaymentCubit(repository: payments)..start(orderId: 'o1');
+    addTearDown(cubit.close);
+    await cubit.prepareMoyasarPayment();
+
+    expect(await cubit.verifyCharge(), PaymentOutcome.failed);
+    expect(cubit.state.status, CardPaymentStatus.paymentFailed);
+  });
+
+  test('double tap charges a saved card once', () async {
+    final payments = _Payments()
+      ..savedCardGate = Completer<PaymentChargeResult>();
+    final cubit = CardPaymentCubit(repository: payments)
+      ..start(orderId: 'o1', savedCardId: 'card-1');
+    addTearDown(cubit.close);
+
+    final first = cubit.chargeSavedCard();
+    await cubit.chargeSavedCard();
+    expect(payments.savedCardCalls, 1);
+    expect(payments.savedCardId, 'card-1');
+
+    payments.savedCardGate!.complete(
+      const PaymentChargeResult(chargeId: 'pay_123', status: 'initiated'),
+    );
+    await first;
+    expect(cubit.state.status, CardPaymentStatus.chargeCreated);
   });
 }

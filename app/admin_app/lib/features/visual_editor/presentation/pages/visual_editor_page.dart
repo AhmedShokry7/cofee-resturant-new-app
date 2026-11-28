@@ -32,6 +32,7 @@ class VisualEditorPage extends StatefulWidget {
 
 class _VisualEditorPageState extends State<VisualEditorPage> {
   late final VisualEditorCubit _cubit;
+  late final bool _ownsCubit;
   String _pageId = 'home';
   PreviewDevice _device = PreviewDevice.phone;
   bool _interactive = false;
@@ -54,18 +55,14 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'القاعدة تحمل مراجعة أحدث لصفحة «${conflict.pageId}» '
-              '(مراجعة ${conflict.serverRevision}) من مرجعك '
-              '(مراجعة ${conflict.knownRevision}) — جلسة أخرى عدّلت هذه '
-              'الصفحة بعد تحميلك. اختر:',
+              S.visualEditorConflictBody(
+                conflict.pageId,
+                conflict.serverRevision,
+                conflict.knownRevision,
+              ),
             ),
             const SizedBox(height: 12),
-            const Text(
-              '• تحميل نسخة القاعدة: تفقد تعديلاتك المحلية على هذه الصفحة '
-              'فقط، ولا تُلمس صفحات أخرى.\n'
-              '• إجبار الحفظ: تكتب نسختك وتتجاوز ما كتبته الجلسة الأخرى '
-              'على هذه الصفحة.',
-            ),
+            Text(S.visualEditorConflictOptions),
           ],
         ),
         actions: [
@@ -91,13 +88,14 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
   @override
   void initState() {
     super.initState();
+    _ownsCubit = widget.cubit == null;
     _cubit = widget.cubit ?? VisualEditorCubit();
     _cubit.initialize();
   }
 
   @override
   void dispose() {
-    _cubit.close();
+    if (_ownsCubit) _cubit.close();
     super.dispose();
   }
 

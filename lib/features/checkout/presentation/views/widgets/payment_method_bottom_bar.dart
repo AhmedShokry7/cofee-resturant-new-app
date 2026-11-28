@@ -5,6 +5,7 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/views/payment_success_page.dart';
+import 'package:new_coffee/features/checkout/data/model/order_model.dart';
 import 'package:new_coffee/features/loyalty/presentation/manager/loyalty/loyalty_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_state.dart';
@@ -12,57 +13,96 @@ import 'package:new_coffee/features/payment/presentation/views/card_payment_page
 import 'package:new_coffee/features/payment/data/moyasar_checkout_config.dart';
 import 'package:new_coffee/shared/widgets/primary_bottom_bar.dart';
 
-class PaymentMethodBottomBar extends StatelessWidget {
+class PaymentMethodBottomBar extends StatefulWidget {
   const PaymentMethodBottomBar({super.key});
 
+  @override
+  State<PaymentMethodBottomBar> createState() => _PaymentMethodBottomBarState();
+}
+
+class _PaymentMethodBottomBarState extends State<PaymentMethodBottomBar> {
+  bool _confirming = false;
+
   Future<void> _confirm(BuildContext context) async {
+    if (_confirming) return;
+    setState(() => _confirming = true);
+    try {
+      await _runCheckout(context);
+    } finally {
+      if (mounted) setState(() => _confirming = false);
+    }
+  }
+
+  Future<void> _runCheckout(BuildContext context) async {
     final cart = context.read<CartCubit>();
     final checkout = context.read<CheckoutCubit>();
     final loyalty = context.read<LoyaltyCubit>();
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
-
-    final items = cart.state.items;
-    final total = checkout.finalTotal(cart.state.total);
-
-    final placed = await checkout.placeOrder(
-      items: items,
-      savedCardId: MoyasarCheckoutConfig.enabled
-          ? null
-          : checkout.state.selectedSavedCard?.id,
-    );
-    if (!context.mounted) return;
-
-    if (!placed) {
-      final message = checkout.state.orderErrorCopy ?? S.orderFailed;
-      messenger.showSnackBar(SnackBar(content: Text(message)));
+    final selectedMethod = checkout.state.selectedPaymentMethod;
+    final selectedCard = checkout.state.selectedSavedCard;
+    final savedCard = selectedMethod?.isCardMethod == true &&
+            selectedCard != null &&
+            selectedCard.provider == 'moyasar'
+        ? selectedCard
+        : null;
+    if (selectedMethod == null) {
+      messenger.showSnackBar(SnackBar(content: Text(S.noPaymentMethods)));
+      return;
+    }
+    if (!selectedMethod.isOnline && selectedMethod.code != 'cash') {
+      messenger.showSnackBar(SnackBar(content: Text(S.noPaymentMethods)));
+      return;
+    }
+    // An online card method cannot be treated like cash when the app was
+    // built without Moyasar configuration.
+    // Check before placing the order so a misconfigured build cannot create an
+    // order that looks like a successful online checkout.
+    if (selectedMethod.isOnline &&
+        selectedMethod.isCardMethod &&
+        !MoyasarCheckoutConfig.enabled) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'الدفع الإلكتروني غير مفعّل في هذه النسخة. أعد تشغيل التطبيق عبر tools/run_flutter.ps1 أو ابنِه عبر tools/build_apk.ps1.',
+          ),
+        ),
+      );
+      return;
+    }
+    if (selectedMethod.isOnline &&
+        !const {
+          'card',
+          'mada',
+          'stc_pay',
+          'apple_pay',
+          'samsung_pay',
+        }.contains(selectedMethod.code)) {
+      messenger.showSnackBar(SnackBar(content: Text(S.noPaymentMethods)));
       return;
     }
 
-    final order = checkout.state.lastOrder;
-    // The server id of the order, never the number the customer reads. The
-    // payment functions look the order up by its uuid.
-    final orderId = order?.orderId ?? '';
-    final warning = checkout.state.orderWarningCopy;
-    if (warning != null && warning.isNotEmpty) {
-      messenger.showSnackBar(SnackBar(content: Text(warning)));
-    }
-    final selectedMethod = checkout.state.selectedPaymentMethod;
-    final isOnline = selectedMethod?.isOnline ?? false;
-    // A stored card can only pay a card method. Apple Pay and cash must never
-    // be settled with the card the customer saved earlier.
-    final savedCard =
-        !MoyasarCheckoutConfig.enabled && selectedMethod?.isCardMethod == true
-        ? checkout.state.selectedSavedCard
-        : null;
+    final items = cart.state.items;
+    final isOnline = selectedMethod.isOnline;
+    final chargeCubit = context.read<CardPaymentCubit>();
+    OrderModel? order;
+    if (isOnline) {
+      late final Map<String, dynamic> checkoutDraft;
+      try {
+        checkoutDraft = await checkout.createMoyasarCheckoutDraft(items);
+      } catch (_) {
+        messenger.showSnackBar(SnackBar(content: Text(S.paymentRetryLater)));
+        return;
+      }
+      if (!context.mounted) return;
 
-    if (isOnline && orderId.isNotEmpty) {
-      final chargeCubit = context.read<CardPaymentCubit>();
+      // No order is inserted here. The payment screen finalizes the checkout
+      // on the server only after Moyasar confirms a captured payment.
       if (savedCard != null) {
-        // A saved card pays without the hosted form: the server charges it
-        // directly, so the customer is never asked for a number they already
-        // gave.
-        chargeCubit.start(orderId: orderId, savedCardId: savedCard.id);
+        chargeCubit.start(
+          savedCardId: savedCard.id,
+          checkoutDraft: checkoutDraft,
+        );
         await chargeCubit.chargeSavedCard();
         if (!context.mounted) return;
         if (chargeCubit.state.status != CardPaymentStatus.chargeCreated) {
@@ -76,22 +116,18 @@ class PaymentMethodBottomBar extends StatelessWidget {
           return;
         }
       }
-
-      // The page verifies the charge when the customer comes back from the
-      // bank and only returns true when the money was really taken.
       final paid = await navigator.push<bool>(
         MaterialPageRoute(
           builder: (_) => CardPaymentPage(
-            orderId: orderId,
-            amount: order?.total ?? total,
+            paymentMethod: selectedMethod.code ?? 'card',
+            checkoutDraft: checkoutDraft,
+            amount: checkout.finalTotal(cart.state.total),
             savedCardId: savedCard?.id,
           ),
         ),
       );
       if (!context.mounted) return;
       if (paid != true) {
-        // The charge was not completed. The order stays unpaid and the cart
-        // stays intact, so nothing is lost and the customer can try again.
         messenger.showSnackBar(
           SnackBar(
             content: Text(
@@ -100,6 +136,35 @@ class PaymentMethodBottomBar extends StatelessWidget {
           ),
         );
         return;
+      }
+      final verifiedOrder = chargeCubit.state.finalizedOrder;
+      if (verifiedOrder == null) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(S.paymentVerificationFailed)),
+        );
+        return;
+      }
+      try {
+        checkout.acceptVerifiedMoyasarOrder(order: verifiedOrder, items: items);
+      } catch (_) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(S.paymentVerificationFailed)),
+        );
+        return;
+      }
+      order = checkout.state.lastOrder;
+    } else {
+      final placed = await checkout.placeOrder(items: items);
+      if (!context.mounted) return;
+      if (!placed) {
+        final message = checkout.state.orderErrorCopy ?? S.orderFailed;
+        messenger.showSnackBar(SnackBar(content: Text(message)));
+        return;
+      }
+      order = checkout.state.lastOrder;
+      final warning = checkout.state.orderWarningCopy;
+      if (warning != null && warning.isNotEmpty) {
+        messenger.showSnackBar(SnackBar(content: Text(warning)));
       }
     }
 
@@ -112,12 +177,15 @@ class PaymentMethodBottomBar extends StatelessWidget {
       checkout.pointsBase(cart.state.total),
       serverPointsEarned: order?.pointsEarned,
     );
-    cart.clear();
-    await cart.flushServerSync();
     navigator.pushNamedAndRemoveUntil(
       PaymentSuccessPage.routeName,
       (route) => route.isFirst,
+      arguments: isOnline,
     );
+    // Show the verified result before clearing the cart. Otherwise the old
+    // payment page briefly reprices an empty cart and flashes an order error.
+    cart.clear();
+    await cart.flushServerSync();
   }
 
   @override
@@ -129,14 +197,17 @@ class PaymentMethodBottomBar extends StatelessWidget {
           previous.quoteLoading != current.quoteLoading ||
           previous.addressOutOfZone != current.addressOutOfZone ||
           previous.isResolvingZone != current.isResolvingZone ||
+          previous.selectedPaymentMethod != current.selectedPaymentMethod ||
           previous.deliveryBlocked != current.deliveryBlocked,
       builder: (context, state) => PrimaryBottomBar(
         text: S.confirmPayment,
-        isLoading: state.isPlacingOrder,
+        isLoading: _confirming || state.isPlacingOrder,
         enabled:
+            !_confirming &&
             !state.isPlacingOrder &&
             !state.addressOutOfZone &&
             !state.isResolvingZone &&
+            state.selectedPaymentMethod != null &&
             !state.deliveryBlocked &&
             !state.quoteLoading &&
             state.checkoutQuote != null,

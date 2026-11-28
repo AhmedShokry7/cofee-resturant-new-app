@@ -3,16 +3,27 @@
 # No credentials live in this file; the access token comes from the environment.
 project_id = "webzzasosevzymftgszn"
 
-# Tap calls this endpoint directly and authenticates with Tap's `hashstring`.
-# The webhook handler verifies that HMAC before processing the payload.
-[functions.tap-webhook]
-verify_jwt = false
-
 [functions.moyasar-prepare-payment]
 verify_jwt = true
 
 [functions.moyasar-verify-payment]
 verify_jwt = true
+
+[functions.moyasar-charge-saved-card]
+verify_jwt = true
+
+[functions.moyasar-save-card]
+verify_jwt = true
+
+[functions.moyasar-delete-card]
+verify_jwt = true
+
+[functions.moyasar-token-callback]
+verify_jwt = false
+
+# Moyasar authenticates its webhooks with the configured shared secret token.
+[functions.moyasar-webhook]
+verify_jwt = false
 
 [functions.invoice-documents]
 verify_jwt = true

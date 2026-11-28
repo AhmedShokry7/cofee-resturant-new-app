@@ -1,11 +1,19 @@
 import 'package:flutter/foundation.dart';
+import 'dart:convert';
 
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import 'package:new_coffee/core/config/app_config.dart';
 import 'package:new_coffee/core/locale/app_copy.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/payment/data/model/saved_card_model.dart';
+import 'package:new_coffee/features/payment/data/moyasar_checkout_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
     show
         FunctionResponse,
+        FunctionException,
         FunctionsHttpException,
         PostgrestException,
         SupabaseClient;
@@ -93,11 +101,15 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
   Future<List<SavedCardModel>> listSavedCards() async {
     _requireSignedIn();
     final userId = _client.auth.currentUser!.id;
+    // The OS may reclaim the app while the bank's 3DS page is open. Recover
+    // the pending token when the customer next opens their card list.
+    await _recoverPendingCard(userId);
     final rows = await _client
         .from('saved_cards')
         .select()
         .eq('user_id', userId)
         .eq('is_active', true)
+        .eq('provider', 'moyasar')
         .order('created_at', ascending: false);
     return [
       for (final row in (rows as List))
@@ -114,53 +126,126 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
     required String holderName,
   }) async {
     _requireSignedIn();
-    // A non-2xx invoke throws rather than resolving, and its `details` is the
-    // decoded body — so the function's own error code is recovered from there.
-    // Without this a declined card would read as saved.
-    final FunctionResponse response;
+    // Cardholder data goes directly from the app to Moyasar with its public
+    // key. Supabase only receives the resulting token ID after 3DS.
+    final key = MoyasarCheckoutConfig.publishableKey;
+    if (!key.startsWith('pk_test_') && !key.startsWith('pk_live_')) {
+      throw const SaveCardException(
+        AppCopy.cardSavingNotConfigured,
+        failure: SaveCardFailure.notConfigured,
+      );
+    }
+    final http.Response tokenResponse;
     try {
-      response = await _client.functions.invoke(
-        'tap-tokenize-card',
-        body: {
-          'number': number,
-          'expiryMonth': expiryMonth,
-          'expiryYear': expiryYear,
-          'cvv': cvv,
-          'holderName': holderName,
+      tokenResponse = await http.post(
+        Uri.parse('https://api.moyasar.com/v1/tokens'),
+        headers: {
+          'Authorization': 'Basic ${base64Encode(utf8.encode('$key:'))}',
+          'Content-Type': 'application/json',
         },
+        body: jsonEncode({
+          'name': holderName,
+          'number': number,
+          'month': int.parse(expiryMonth),
+          'year': int.parse(expiryYear),
+          'cvc': cvv,
+          'callback_url':
+              '${AppConfig.supabaseUrl}/functions/v1/moyasar-token-callback',
+          'metadata': {'user_id': _client.auth.currentUser!.id},
+        }),
       );
-    } on FunctionsHttpException catch (error) {
-      throw classifyHttpError(error);
-    } catch (error) {
-      // No HTTP response at all: the network, or the function could not be
-      // reached. Retryable.
-      debugPrint('Save card failed before a response: $error');
-      throw SaveCardException(
+    } catch (_) {
+      throw const SaveCardException(
         AppCopy.saveCardFailed,
         failure: SaveCardFailure.temporary,
       );
     }
+    if (tokenResponse.statusCode < 200 || tokenResponse.statusCode >= 300) {
+      throw const SaveCardException(
+        AppCopy.cardDeclined,
+        failure: SaveCardFailure.declined,
+      );
+    }
+    final token = jsonDecode(tokenResponse.body);
+    if (token is! Map || token['id'] is! String ||
+        token['verification_url'] is! String) {
+      throw const SaveCardException(AppCopy.saveCardFailed);
+    }
+    final tokenId = token['id'] as String;
+    final userId = _client.auth.currentUser!.id;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('moyasar_pending_card_$userId', tokenId);
+    final verificationUrl = Uri.tryParse(token['verification_url'] as String);
+    if (verificationUrl == null || verificationUrl.scheme != 'https') {
+      throw const SaveCardException(AppCopy.saveCardFailed);
+    }
+    final launched = await launchUrl(
+      verificationUrl,
+      mode: LaunchMode.inAppBrowserView,
+    );
+    if (!launched) throw const SaveCardException(AppCopy.saveCardFailed);
+    // The function fetches the token with Moyasar's secret key on every try.
+    // Only an active, 3DS-verified token can become a saved card.
+    for (var attempt = 0; attempt < 150; attempt++) {
+      await Future<void>.delayed(const Duration(seconds: 2));
+      try {
+        final card = await _storeVerifiedCard(tokenId);
+        if (card != null) {
+          await prefs.remove('moyasar_pending_card_$userId');
+          return card;
+        }
+      } on FunctionException catch (error) {
+        // The 3DS redirect and the provider's token update are asynchronous.
+        // Supabase may also briefly return a relay/network error while the
+        // browser hands control back. Neither outcome means the card failed.
+        if (error.status == 0 ||
+            error.status == 409 ||
+            error.status == 502 ||
+            error.status == 503) {
+          continue;
+        }
+        if (error is FunctionsHttpException) throw classifyHttpError(error);
+        debugPrint('moyasar-save-card relay returned ${error.status}');
+        throw const SaveCardException(AppCopy.saveCardFailed);
+      }
+    }
+    throw const SaveCardException(AppCopy.saveCardFailed);
+  }
 
+  Future<SavedCardModel?> _storeVerifiedCard(String tokenId) async {
+    final response = await _client.functions.invoke(
+      'moyasar-save-card',
+      body: {'tokenId': tokenId},
+    );
     final data = response.data;
-    if (response.status != 201 || data is! Map<String, dynamic>) {
-      throw classifyCode(data is Map ? data['error'] : null);
+    if ((response.status == 200 || response.status == 201) &&
+        data is Map<String, dynamic>) {
+      final card = SavedCardModel.fromDatabase(data);
+      if (card.id.isNotEmpty) return card;
     }
-    final card = SavedCardModel.fromDatabase({
-      'id': data['id'],
-      'brand': data['brand'],
-      'last4': data['last4'],
-      'expiry_month': data['expiryMonth'],
-      'expiry_year': data['expiryYear'],
-      'holder_name': data['holderName'],
-      'is_active': true,
-    });
-    if (card.id.isEmpty) {
-      throw SaveCardException(
-        AppCopy.saveCardFailed,
-        failure: SaveCardFailure.temporary,
-      );
+    return null;
+  }
+
+  Future<void> _recoverPendingCard(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'moyasar_pending_card_$userId';
+    final tokenId = prefs.getString(key);
+    if (tokenId == null || tokenId.isEmpty) return;
+    try {
+      final saved = await _storeVerifiedCard(tokenId);
+      if (saved != null) await prefs.remove(key);
+    } on FunctionException catch (error) {
+      // A pending 3DS challenge is still retryable on the next visit. Invalid
+      // or rejected tokens are removed so they cannot block the card list.
+      if (error.status != 0 &&
+          error.status != 409 &&
+          error.status != 502 &&
+          error.status != 503) {
+        await prefs.remove(key);
+      }
+    } catch (_) {
+      // Card listing remains available during a temporary network failure.
     }
-    return card;
   }
 
   /// Classifies an HTTP-level failure.
@@ -177,7 +262,7 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
       // Logged because it is a build problem, not a customer one, and without
       // this it is invisible: every customer sees the same polite message.
       debugPrint(
-        'tap-tokenize-card is not deployed (404). Deploy the Edge Function '
+        'moyasar-save-card is not deployed (404). Deploy the Edge Function '
         'before saving cards.',
       );
       return SaveCardException(
@@ -193,7 +278,7 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
     }
     if (error.status == 422) return classifyCode(code ?? 'card_declined');
     if (error.status >= 500) {
-      debugPrint('tap-tokenize-card returned ${error.status}');
+      debugPrint('moyasar-save-card returned ${error.status}');
       return SaveCardException(
         AppCopy.saveCardFailed,
         failure: SaveCardFailure.temporary,
@@ -239,7 +324,7 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
     final FunctionResponse response;
     try {
       response = await _client.functions.invoke(
-        'tap-delete-card',
+        'moyasar-delete-card',
         body: {'cardId': id},
       );
     } on FunctionsHttpException catch (error) {
@@ -262,7 +347,7 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
     if (refusal != null) throw refusal;
   }
 
-  /// The one answer `tap-delete-card` gives that means the card is gone.
+  /// The one answer `moyasar-delete-card` gives that means the card is gone.
   ///
   /// Returns null for it, and a failure the list can show for everything else:
   /// a refused provider call, a status that is not 200, or a body that does not
@@ -274,7 +359,7 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
   }) {
     if (status == 200 && data is Map && data['deleted'] == true) return null;
     final reason = data is Map ? data['error'] : null;
-    debugPrint('tap-delete-card refused: status=$status error=$reason');
+    debugPrint('moyasar-delete-card refused: status=$status error=$reason');
     return SaveCardException(
       AppCopy.cardDeleteFailed,
       failure: SaveCardFailure.temporary,
@@ -324,8 +409,8 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
   /// Classifies a delete refusal the way [classifyHttpError] classifies a save.
   ///
   /// Kept apart because the two functions fail for different reasons: a 422
-  /// from `tap-tokenize-card` is a bad card number the customer can correct,
-  /// while a 4xx from `tap-delete-card` is a card that is not theirs, and
+  /// from Moyasar is a bad card number the customer can correct,
+  /// while a 4xx from card deletion is a card that is not theirs, and
   /// naming a field would send them back to a form they never opened.
   @visibleForTesting
   static SaveCardException classifyDeleteHttpError(
@@ -340,7 +425,7 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
       // session and the list on screen is stale.
       if (message?.toLowerCase().contains('function') ?? false) {
         debugPrint(
-          'tap-delete-card is not deployed (404). Deploy the Edge Function '
+          'moyasar-delete-card is not deployed (404). Deploy the Edge Function '
           'before deleting cards.',
         );
         return SaveCardException(
@@ -359,7 +444,7 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
         failure: SaveCardFailure.notSignedIn,
       );
     }
-    debugPrint('tap-delete-card returned ${error.status}');
+    debugPrint('moyasar-delete-card returned ${error.status}');
     return SaveCardException(
       AppCopy.cardDeleteFailed,
       failure: SaveCardFailure.temporary,

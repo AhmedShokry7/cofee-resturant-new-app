@@ -6216,6 +6216,16 @@ class S {
       _ar ? 'تحميل نسخة القاعدة' : 'Load the server copy';
   static String get visualEditorConflictForceSave =>
       _ar ? 'إجبار الحفظ' : 'Force save';
+  static String visualEditorConflictBody(
+    String pageId,
+    Object serverRevision,
+    Object knownRevision,
+  ) => _ar
+      ? 'القاعدة تحمل مراجعة أحدث لصفحة «$pageId» (مراجعة $serverRevision) من مرجعك (مراجعة $knownRevision) — جلسة أخرى عدّلت هذه الصفحة بعد تحميلك. اختر:'
+      : 'The server holds a newer revision of page “$pageId” (revision $serverRevision) than your copy (revision $knownRevision) — another session changed this page after you loaded it. Choose:';
+  static String get visualEditorConflictOptions => _ar
+      ? '• تحميل نسخة القاعدة: تفقد تعديلاتك المحلية على هذه الصفحة فقط، ولا تُلمس صفحات أخرى.\n• إجبار الحفظ: تكتب نسختك وتتجاوز ما كتبته الجلسة الأخرى على هذه الصفحة.'
+      : '• Load the server copy: you lose your local edits to this page only; other pages are untouched.\n• Force save: writes your copy and overrides what the other session wrote to this page.';
   static String get visualEditorPreviewConnected =>
       _ar ? 'المعاينة متصلة' : 'Preview connected';
   static String get visualEditorPreviewDisconnected =>

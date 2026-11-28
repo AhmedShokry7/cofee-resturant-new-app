@@ -36,6 +36,14 @@ class PlaceOrderLine {
   /// Set when this line is a bundle component, so the server keeps charging
   /// its share of the bundle price instead of the shelf price.
   final String? bundleId;
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'product_id': productId,
+    'quantity': quantity,
+    'note': note,
+    'option_value_ids': optionValueIds,
+    if (bundleId?.trim().isNotEmpty ?? false) 'bundle_id': bundleId!.trim(),
+  };
 }
 
 /// The server's answer to a successful `place_order`.

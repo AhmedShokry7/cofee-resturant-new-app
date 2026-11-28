@@ -28,7 +28,8 @@ import 'package:new_coffee/features/orders/data/model/order_status.dart';
 import 'package:new_coffee/features/orders/data/model/order_tracking.dart';
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
 import 'package:new_coffee/features/payment/data/model/saved_card_model.dart';
-import 'package:new_coffee/features/payment/data/repositories/tap_payment_repository.dart';
+import 'package:new_coffee/features/payment/data/repositories/payment_repository.dart';
+import 'package:new_coffee/features/payment/data/repositories/moyasar_payment_repository.dart';
 import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_cubit.dart';
 import 'package:new_coffee/features/payment/data/model/card_brand.dart';
 
@@ -42,6 +43,7 @@ class _FakeOrders implements OrdersRepository {
   _FakeOrders();
 
   String? receivedCoupon;
+  int placeCalls = 0;
 
   @override
   Future<List<OrderItemModel>> listOrders({
@@ -66,6 +68,7 @@ class _FakeOrders implements OrdersRepository {
     String? couponCode,
     String? note,
   }) async {
+    placeCalls++;
     receivedCoupon = couponCode;
     return PlacedOrder(
       orderId: serverOrderId,
@@ -87,54 +90,100 @@ class _FakeOrders implements OrdersRepository {
   Future<List<OrderStatusEvent>> orderHistory(String orderId) async => const [];
 }
 
-class _FakeTap implements TapPaymentRepository {
-  _FakeTap({this.verified = true});
+class _FakeOrdersWithQuote extends _FakeOrders
+    implements CheckoutQuoteRepository {
+  @override
+  Future<CheckoutQuote> quoteCheckout({
+    required String branchId,
+    required List<PlaceOrderLine> lines,
+    required String fulfillmentType,
+    String? deliveryZoneId,
+    String? addressId,
+    String? couponCode,
+  }) async => const CheckoutQuote(
+    subtotal: 35,
+    discountTotal: 0,
+    deliveryFee: 0,
+    taxTotal: 0,
+    grandTotal: 35,
+    currencyCode: 'SAR',
+  );
+
+  @override
+  Future<PlacedOrder> placeOrderWithQuote({
+    required String branchId,
+    required List<PlaceOrderLine> lines,
+    required String idempotencyKey,
+    required double expectedTotal,
+    String fulfillmentType = 'pickup',
+    String? deliveryZoneId,
+    String? addressId,
+    String? couponCode,
+    String? note,
+    String? subscriptionRunId,
+    DateTime? scheduledPickupAt,
+  }) => placeOrder(
+    branchId: branchId,
+    lines: lines,
+    idempotencyKey: idempotencyKey,
+    fulfillmentType: fulfillmentType,
+    deliveryZoneId: deliveryZoneId,
+    addressId: addressId,
+    couponCode: couponCode,
+    note: note,
+  );
+}
+
+class _FakeMoyasar implements PaymentRepository, MoyasarPaymentOperations {
+  _FakeMoyasar({this.verified = true});
 
   final bool verified;
 
-  final List<String> chargedOrderIds = <String>[];
+  final List<String> chargedSavedCardIds = <String>[];
+  int prepareCalls = 0;
   int verifyCalls = 0;
 
   @override
-  Future<TapChargeResult> createCharge({
-    required String orderId,
-    required String idempotencyKey,
-    bool saveCard = false,
-    String? savedCardId,
-    String? sourceToken,
+  Future<MoyasarPaymentIntent> preparePayment({
+    String? orderId,
+    String? subscriptionId,
+    Map<String, dynamic>? checkoutDraft,
   }) async {
-    chargedOrderIds.add(orderId);
-    return const TapChargeResult(
-      chargeId: 'ch_123',
-      status: 'INITIATED',
-      transactionUrl: 'https://tap.company/3ds',
+    prepareCalls++;
+    return const MoyasarPaymentIntent(
+      paymentId: 'pay_123',
+      amount: 3500,
+      currency: 'SAR',
+      description: 'Order',
     );
   }
 
   @override
-  Future<TapChargeResult> createSubscriptionCharge({
-    required String subscriptionId,
-    required String idempotencyKey,
-    bool saveCard = false,
-    String? savedCardId,
-    String? sourceToken,
+  Future<PaymentChargeResult> createSavedCardCharge({
+    String? orderId,
+    String? subscriptionId,
+    Map<String, dynamic>? checkoutDraft,
+    required String savedCardId,
   }) async {
-    chargedOrderIds.add(subscriptionId);
-    return const TapChargeResult(
-      chargeId: 'ch_123',
-      status: 'INITIATED',
-      transactionUrl: 'https://tap.company/3ds',
-    );
+    chargedSavedCardIds.add(savedCardId);
+    return const PaymentChargeResult(chargeId: 'pay_123', status: 'initiated');
   }
 
   @override
-  Future<TapVerificationResult> verifyCharge(String chargeId) async {
+  Future<PaymentVerificationResult> verifyCharge(String chargeId) async {
     verifyCalls++;
-    return TapVerificationResult(
+    return PaymentVerificationResult(
       chargeId: chargeId,
-      status: verified ? 'CAPTURED' : 'FAILED',
+      status: verified ? 'paid' : 'failed',
       verified: verified,
       orderPaymentStatus: verified ? 'paid' : 'failed',
+      finalizedOrder: verified
+          ? {
+              'order_id': serverOrderId,
+              'order_number': orderNumber,
+              'grand_total': 35,
+            }
+          : null,
     );
   }
 }
@@ -343,7 +392,8 @@ void main() {
         CartCubit cart,
         CheckoutCubit checkout,
         CardPaymentCubit charge,
-        _FakeTap tap,
+        _FakeMoyasar moyasar,
+        _FakeOrders orders,
       })
     >
     buildPaymentTree(
@@ -351,8 +401,8 @@ void main() {
       bool verified = true,
       bool withSavedCard = true,
     }) async {
-      final tap = _FakeTap(verified: verified);
-      final orders = _FakeOrders();
+      final moyasar = _FakeMoyasar(verified: verified);
+      final orders = _FakeOrdersWithQuote();
       final cart = CartCubit(
         cartRepository: const LocalCartRepository(),
         catalogRepository: MockProductRepository(),
@@ -368,7 +418,7 @@ void main() {
         branchId: 'branch-1',
         currentUserIdProvider: () => 'user-1',
       );
-      final charge = CardPaymentCubit(repository: tap);
+      final charge = CardPaymentCubit(repository: moyasar);
       final loyalty = LoyaltyCubit(repository: _FakeLoyalty());
 
       addTearDown(cart.close);
@@ -402,6 +452,7 @@ void main() {
 
       // The card method and the stored card, exactly as the payment page
       // leaves them.
+      await checkout.load();
       checkout.selectPaymentMethod(
         const PaymentMethodModel(
           id: 'card-1',
@@ -421,20 +472,32 @@ void main() {
       await checkout.refreshCheckoutQuote(cart.state.items);
       await tester.pumpAndSettle();
 
-      return (cart: cart, checkout: checkout, charge: charge, tap: tap);
+      return (
+        cart: cart,
+        checkout: checkout,
+        charge: charge,
+        moyasar: moyasar,
+        orders: orders,
+      );
     }
 
-    testWidgets('the charge is made for the order id, never for the number', (
+    testWidgets('starting Moyasar checkout does not insert an order', (
       tester,
     ) async {
-      final tree = await buildPaymentTree(tester);
+      final tree = await buildPaymentTree(tester, verified: false);
+      expect(tree.checkout.state.selectedSavedCard?.id, 'card-1');
+      expect(
+        await tree.checkout.createMoyasarCheckoutDraft(tree.cart.state.items),
+        containsPair('payment_method_code', 'card'),
+      );
 
       await tester.tap(find.text('Confirm Payment'));
       await _advance(tester);
 
-      expect(tree.tap.chargedOrderIds, isNotEmpty);
-      expect(tree.tap.chargedOrderIds.first, serverOrderId);
-      expect(tree.tap.chargedOrderIds.first, isNot(orderNumber));
+      expect(tree.orders.placeCalls, 0);
+      expect(tree.moyasar.chargedSavedCardIds, ['card-1']);
+      expect(tree.moyasar.verifyCalls, 1);
+      expect(tree.cart.state.items, isNotEmpty);
     });
 
     testWidgets('a verified charge empties the cart and confirms the order', (
@@ -445,13 +508,9 @@ void main() {
       await tester.tap(find.text('Confirm Payment'));
       await _advance(tester);
 
-      // The charge exists; the customer comes back from the bank and the
-      // charge is verified.
-      expect(tree.tap.verifyCalls, 0);
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      await _advance(tester);
-
-      expect(tree.tap.verifyCalls, 1);
+      // A saved-card charge without a 3DS redirect is verified immediately.
+      expect(tree.orders.placeCalls, 0);
+      expect(tree.moyasar.verifyCalls, 1);
       expect(tree.cart.state.items, isEmpty);
       expect(find.text('payment-success'), findsOneWidget);
       // The emptied cart is mirrored to the server; the timer it armed must
@@ -464,10 +523,9 @@ void main() {
 
       await tester.tap(find.text('Confirm Payment'));
       await _advance(tester);
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      await _advance(tester);
 
-      expect(tree.tap.verifyCalls, 1);
+      expect(tree.moyasar.verifyCalls, 1);
+      expect(tree.orders.placeCalls, 0);
       expect(tree.cart.state.items, isNotEmpty);
       expect(find.text('payment-success'), findsNothing);
     });

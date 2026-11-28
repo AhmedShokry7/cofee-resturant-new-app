@@ -26,7 +26,7 @@
 //   GEMINI_API_KEY     (+ GEMINI_MODEL)     - Google AI Studio free tier
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getUserFromRequest } from "../_shared/tap.ts";
+import { getUserFromRequest } from "../_shared/moyasar.ts";
 import {
   buildCallerIdentity,
   interpretQuotaRow,

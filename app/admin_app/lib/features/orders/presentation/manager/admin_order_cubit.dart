@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:admin_app/app_dependencies.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/catalog/catalog_data.dart';
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/core/models/admin_branch.dart';
 import 'package:admin_app/features/orders/data/services/order_realtime_feed.dart';
 import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
@@ -100,9 +101,21 @@ class AdminOrderCubit extends Cubit<AdminOrderState> {
           clearError: true,
         ),
       );
-    } catch (_) {
+    } catch (error) {
       if (isClosed || revision != _loadRevision) return;
-      emit(state.copyWith(errorMessage: S.ordersLoadFailed));
+      // The first load is superseded by this refresh and never emits, so a
+      // failed refresh must end the spinner itself when no data is shown yet.
+      emit(
+        state.copyWith(
+          status: state.status == AdminOrderStatus.loading
+              ? AdminOrderStatus.failure
+              : state.status,
+          errorMessage: adminErrorMessage(
+            error,
+            fallback: S.ordersLoadFailed,
+          ),
+        ),
+      );
     }
   }
 
@@ -125,12 +138,15 @@ class AdminOrderCubit extends Cubit<AdminOrderState> {
           clearError: true,
         ),
       );
-    } catch (_) {
+    } catch (error) {
       if (isClosed || revision != _loadRevision) return;
       emit(
         state.copyWith(
           status: AdminOrderStatus.failure,
-          errorMessage: S.ordersLoadFailed,
+          errorMessage: adminErrorMessage(
+            error,
+            fallback: S.ordersLoadFailed,
+          ),
         ),
       );
     }

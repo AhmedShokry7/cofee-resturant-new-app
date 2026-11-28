@@ -39,14 +39,17 @@ const SQL = [
   'coupon_scope',
   'resolve_delivery_zone',
   'coupon_line_breakdown',
+  'finalize_moyasar_checkout',
 ];
 
 const EDGE = [
-  'tap-create-charge',
-  'tap-verify-charge',
-  'tap-delete-card',
-  'tap-webhook',
-  'tap-tokenize-card',
+  'moyasar-prepare-payment',
+  'moyasar-verify-payment',
+  'moyasar-charge-saved-card',
+  'moyasar-save-card',
+  'moyasar-delete-card',
+  'moyasar-token-callback',
+  'moyasar-webhook',
 ];
 
 const present = [];
@@ -63,6 +66,7 @@ const SQL_ARGS = {
   'coupon_scope': { p_code: 'X' },
   'resolve_delivery_zone': { p_branch_id: null, p_lat: 0, p_lng: 0 },
   'coupon_line_breakdown': { p_branch_id: null, p_code: 'X', p_lines: [] },
+  'finalize_moyasar_checkout': { p_payment_id: null },
 };
 
 for (const name of SQL) {

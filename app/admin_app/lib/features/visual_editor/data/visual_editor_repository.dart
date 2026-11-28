@@ -244,12 +244,12 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     }
   }
 
-  Object? _rpc(String function, Map<String, dynamic> params) {
+  Future<Object?> _rpc(String function, Map<String, dynamic> params) async {
     final client = _client;
     if (client == null) {
       throw StateError('Supabase غير مهيأ للمحرر المرئي');
     }
-    return client.rpc(function, params: params);
+    return await client.rpc(function, params: params);
   }
 
   @override
@@ -267,7 +267,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
 
   @override
   Future<Map<String, dynamic>?> loadDraftDocument() async {
-    final raw = _rpc('admin_get_app_design', {'p_slot': 'draft'});
+    final raw = await _rpc('admin_get_app_design', {'p_slot': 'draft'});
     final value = raw;
     if (value == null) return null;
     return jsonDecode(jsonEncode(value)) as Map<String, dynamic>;
@@ -275,7 +275,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
 
   @override
   Future<Map<String, dynamic>?> loadPublishedDocument() async {
-    final raw = _rpc('admin_get_app_design', {'p_slot': 'published'});
+    final raw = await _rpc('admin_get_app_design', {'p_slot': 'published'});
     final value = raw;
     if (value == null) return null;
     return jsonDecode(jsonEncode(value)) as Map<String, dynamic>;
@@ -350,7 +350,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     if (invalid != null) {
       throw StateError('المستند غير صالح للحفظ: $invalid');
     }
-    final saved = _rpc('admin_save_app_design_draft', {'p_document': document});
+    final saved = await _rpc('admin_save_app_design_draft', {'p_document': document});
     _loadedTheme = jsonEncode(theme.toJson());
     final savedAt = saved is Map ? saved['saved_at']?.toString() : null;
     return PageSaveResult(
@@ -399,7 +399,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     Map<String, dynamic> params,
   ) async {
     try {
-      return _rpc(function, params);
+      return await _rpc(function, params);
     } on PostgrestException catch (e) {
       final conflict = _conflictFromMessage(e.message);
       if (conflict != null) throw conflict;
@@ -448,7 +448,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     String? name,
     String? note,
   }) async {
-    final version = _rpc('admin_publish_app_design', {
+    final version = await _rpc('admin_publish_app_design', {
       'p_document': designDocument,
       'p_name': name?.trim(),
       'p_note': note,
@@ -551,7 +551,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
 
   @override
   Future<List<PublishedVersionInfo>> listVersions({int limit = 1000000}) async {
-    final raw = _rpc('admin_list_app_design_versions', {
+    final raw = await _rpc('admin_list_app_design_versions', {
       'p_limit': limit.clamp(1, 1000000),
     });
     if (raw is! List) return const [];
@@ -568,7 +568,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     String? name,
     String? note,
   ) async {
-    _rpc('admin_update_app_design_version_details', {
+    await _rpc('admin_update_app_design_version_details', {
       'p_version_id': versionId,
       'p_name': name?.trim(),
       'p_note': note?.trim(),
@@ -577,12 +577,12 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
 
   @override
   Future<void> deleteVersion(String versionId) async {
-    _rpc('admin_delete_app_design_version', {'p_version_id': versionId});
+    await _rpc('admin_delete_app_design_version', {'p_version_id': versionId});
   }
 
   @override
   Future<Map<String, dynamic>?> getVersionDocument(String versionId) async {
-    final raw = _rpc('admin_get_app_design_version', {
+    final raw = await _rpc('admin_get_app_design_version', {
       'p_version_id': versionId,
     });
     if (raw == null) return null;
@@ -591,7 +591,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
 
   @override
   Future<PublishedVersionInfo> restoreVersion(String versionId) async {
-    final version = _rpc('admin_restore_app_design_version', {
+    final version = await _rpc('admin_restore_app_design_version', {
       'p_version_id': versionId,
     });
     final info = PublishedVersionInfo.fromJson(version);
@@ -605,12 +605,12 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
 
   @override
   Future<void> discardDraft() async {
-    _rpc('admin_discard_app_design_draft', const {});
+    await _rpc('admin_discard_app_design_draft', const {});
   }
 
   @override
   Future<List<DesignTemplateInfo>> listTemplates() async {
-    final raw = _rpc('admin_list_app_design_templates', const {});
+    final raw = await _rpc('admin_list_app_design_templates', const {});
     if (raw is! List) return const [];
     return [
       for (final item in raw)
@@ -621,7 +621,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
 
   @override
   Future<Map<String, dynamic>?> getTemplateDocument(String templateId) async {
-    final raw = _rpc('admin_get_app_design_template', {'p_id': templateId});
+    final raw = await _rpc('admin_get_app_design_template', {'p_id': templateId});
     if (raw == null) return null;
     return jsonDecode(jsonEncode(raw)) as Map<String, dynamic>;
   }
@@ -632,7 +632,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     required String name,
     required Map<String, dynamic> document,
   }) async {
-    final raw = _rpc('admin_save_app_design_template', {
+    final raw = await _rpc('admin_save_app_design_template', {
       'p_id': id,
       'p_name': name.trim(),
       'p_document': document,
@@ -646,6 +646,6 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
 
   @override
   Future<void> deleteTemplate(String templateId) async {
-    _rpc('admin_delete_app_design_template', {'p_id': templateId});
+    await _rpc('admin_delete_app_design_template', {'p_id': templateId});
   }
 }

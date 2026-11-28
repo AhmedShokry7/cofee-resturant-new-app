@@ -198,6 +198,7 @@ class CheckoutState {
     bool clearSelectedAddress = false,
     List<PaymentMethodModel>? paymentMethods,
     PaymentMethodModel? selectedPaymentMethod,
+    bool clearSelectedPaymentMethod = false,
     OrderModel? lastOrder,
     bool clearLastOrder = false,
     ValidatedCoupon? appliedCoupon,
@@ -243,8 +244,9 @@ class CheckoutState {
           ? null
           : selectedAddress ?? this.selectedAddress,
       paymentMethods: paymentMethods ?? this.paymentMethods,
-      selectedPaymentMethod:
-          selectedPaymentMethod ?? this.selectedPaymentMethod,
+      selectedPaymentMethod: clearSelectedPaymentMethod
+          ? null
+          : selectedPaymentMethod ?? this.selectedPaymentMethod,
       lastOrder: clearLastOrder ? null : lastOrder ?? this.lastOrder,
       appliedCoupon: clearCoupon ? null : appliedCoupon ?? this.appliedCoupon,
       availableCoupons: availableCoupons ?? this.availableCoupons,
@@ -280,8 +282,11 @@ class CheckoutState {
       pickupSlots: pickupSlots ?? this.pickupSlots,
       pickupAvailableDays: pickupAvailableDays ?? this.pickupAvailableDays,
       pickupDaysLoading: pickupDaysLoading ?? this.pickupDaysLoading,
-      scheduledPickup: clearScheduledPickup ? null : scheduledPickup ?? this.scheduledPickup,
-      pickupScheduleSelected: pickupScheduleSelected ?? this.pickupScheduleSelected,
+      scheduledPickup: clearScheduledPickup
+          ? null
+          : scheduledPickup ?? this.scheduledPickup,
+      pickupScheduleSelected:
+          pickupScheduleSelected ?? this.pickupScheduleSelected,
       pickupSlotsLoading: pickupSlotsLoading ?? this.pickupSlotsLoading,
     );
   }

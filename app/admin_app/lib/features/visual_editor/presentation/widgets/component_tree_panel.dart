@@ -1045,7 +1045,8 @@ class _ComponentRow extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(width: 4),
-                              Container(
+                              Flexible(
+                                child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 4,
                                   vertical: 0.5,
@@ -1065,7 +1066,10 @@ class _ComponentRow extends StatelessWidget {
                                     fontFamily: 'monospace',
                                     color: muted,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
+                              ),
                               ),
                             ],
                           ),

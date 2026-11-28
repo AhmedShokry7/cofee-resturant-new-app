@@ -2,7 +2,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cupertino_ui/cupertino_ui.dart' show GlobalCupertinoLocalizations;
 import 'package:flutter_localizations/flutter_localizations.dart'
-    show GlobalWidgetsLocalizations;
+    as flutter_localizations
+    show GlobalMaterialLocalizations, GlobalWidgetsLocalizations;
 
 import 'package:new_coffee/core/di/app_providers.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
@@ -114,7 +115,10 @@ class _MyAppState extends State<MyApp> {
                             ],
                             localizationsDelegates: const [
                               GlobalMaterialLocalizations.delegate,
-                              GlobalWidgetsLocalizations.delegate,
+                              flutter_localizations
+                                  .GlobalMaterialLocalizations.delegate,
+                              flutter_localizations
+                                  .GlobalWidgetsLocalizations.delegate,
                               GlobalCupertinoLocalizations.delegate,
                             ],
                             debugShowCheckedModeBanner: false,

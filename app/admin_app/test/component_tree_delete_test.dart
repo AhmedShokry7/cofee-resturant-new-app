@@ -130,7 +130,7 @@ void main() {
     await tester.pump();
 
     expect(find.byType(AdminNetworkThumb), findsOneWidget);
-    expect(tester.getSize(find.byType(AdminNetworkThumb)), const Size(34, 34));
+    expect(tester.getSize(find.byType(AdminNetworkThumb)), const Size(28, 28));
   });
 
   testWidgets(

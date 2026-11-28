@@ -64,6 +64,15 @@ class _FakeOrderRepository extends AdminOrderRepository {
   }
 }
 
+class _SequencedOrderRepository extends AdminOrderRepository {
+  _SequencedOrderRepository(this._next);
+
+  final Future<List<AdminOrder>> Function() _next;
+
+  @override
+  Future<List<AdminOrder>> loadOrders() => _next();
+}
+
 class _FakeOrderFeed extends OrderRealtimeFeed {
   VoidCallback? _onChanged;
   int starts = 0;
@@ -248,6 +257,29 @@ void main() {
 
       expect(feed.starts, 1);
       expect(feed.disposes, 1);
+    });
+  });
+
+  group('the first load', () {
+    test('a failed live refresh ends the spinner while no orders are shown', () async {
+      final firstLoad = Completer<List<AdminOrder>>();
+      var calls = 0;
+      final cubit = AdminOrderCubit(
+        repository: _SequencedOrderRepository(() {
+          calls += 1;
+          if (calls == 1) return firstLoad.future;
+          throw StateError('the live refresh failed');
+        }),
+      );
+      addTearDown(cubit.close);
+
+      final initial = cubit.load();
+      await cubit.refreshLive();
+      firstLoad.complete(const <AdminOrder>[]);
+      await initial;
+
+      expect(cubit.state.status, AdminOrderStatus.failure);
+      expect(cubit.state.errorMessage, isNotNull);
     });
   });
 }

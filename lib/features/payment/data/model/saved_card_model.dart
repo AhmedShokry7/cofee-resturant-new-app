@@ -8,9 +8,8 @@ class SavedCardModel {
     required this.last4,
     required this.holder,
     required this.expiry,
-    this.tapCustomerId,
-    this.tapCardId,
     this.paymentAgreementId,
+    this.provider = 'moyasar',
     this.expiryMonth,
     this.expiryYear,
     this.isActive = true,
@@ -22,9 +21,8 @@ class SavedCardModel {
   final String last4;
   final String holder;
   final String expiry;
-  final String? tapCustomerId;
-  final String? tapCardId;
   final String? paymentAgreementId;
+  final String provider;
   final String? expiryMonth;
   final String? expiryYear;
   final bool isActive;
@@ -71,9 +69,8 @@ class SavedCardModel {
       last4: last4,
       holder: json['holder_name']?.toString() ?? '',
       expiry: expiry,
-      tapCustomerId: json['tap_customer_id']?.toString(),
-      tapCardId: json['tap_card_id']?.toString(),
       paymentAgreementId: json['payment_agreement_id']?.toString(),
+      provider: json['provider']?.toString() ?? 'moyasar',
       expiryMonth: month,
       expiryYear: year,
       isActive: json['is_active'] != false,
@@ -94,9 +91,8 @@ class SavedCardModel {
     last4: last4 ?? this.last4,
     holder: holder ?? this.holder,
     expiry: expiry ?? this.expiry,
-    tapCustomerId: tapCustomerId,
-    tapCardId: tapCardId,
     paymentAgreementId: paymentAgreementId,
+    provider: provider,
     expiryMonth: expiryMonth,
     expiryYear: expiryYear,
     isActive: isActive ?? this.isActive,

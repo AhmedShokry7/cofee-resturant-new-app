@@ -20,6 +20,7 @@ class PaymentSuccessPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final paymentConfirmed = ModalRoute.of(context)?.settings.arguments == true;
     return Scaffold(
       appBar: AppBar(
         leading: const AppBackButton(),
@@ -47,7 +48,9 @@ class PaymentSuccessPage extends StatelessWidget {
                   ),
                   SizedBox(height: AppSpacing.xl),
                   Text(
-                    S.paymentSuccess,
+                    paymentConfirmed
+                        ? S.paymentSuccess
+                        : S.orderReceivedAwaitingPayment,
                     textAlign: TextAlign.center,
                     style: AppFonts.semiBold24(context)
                         .copyWith(color: AppColor.secondryColor),

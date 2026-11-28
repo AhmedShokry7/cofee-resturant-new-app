@@ -2,6 +2,7 @@ enum CardBrand {
   visa('VISA'),
   mastercard('MASTERCARD'),
   amex('AMEX'),
+  mada('mada'),
   discover('DISCOVER'),
   unknown('');
 

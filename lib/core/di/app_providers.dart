@@ -41,8 +41,7 @@ import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
 import 'package:new_coffee/features/orders/data/model/order_tracking.dart';
 import 'package:new_coffee/features/payment/data/repositories/saved_cards_repository.dart';
-import 'package:new_coffee/features/payment/data/repositories/tap_payment_repository.dart';
-import 'package:new_coffee/features/payment/data/moyasar_checkout_config.dart';
+import 'package:new_coffee/features/payment/data/repositories/payment_repository.dart';
 import 'package:new_coffee/features/payment/data/repositories/moyasar_payment_repository.dart';
 import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
@@ -164,12 +163,10 @@ class AppProviders extends StatelessWidget {
         // The charge repository. Not tied to one checkout — the same cubit can
         // be started for any order, so it is resolved from here rather than
         // created per payment page.
-        RepositoryProvider<TapPaymentRepository>(
+        RepositoryProvider<PaymentRepository>(
           create: (_) => previewMode
               ? const PreviewPaymentRepository()
-              : MoyasarCheckoutConfig.enabled
-              ? SupabaseMoyasarPaymentRepository()
-              : SupabaseTapPaymentRepository(),
+              : SupabaseMoyasarPaymentRepository(),
         ),
         RepositoryProvider<DeliveryZoneRepository>(
           create: (_) => previewMode
@@ -260,9 +257,8 @@ class AppProviders extends StatelessWidget {
           // a subscription. Without it here the checkout had no cubit to read
           // and every card payment failed before it started.
           BlocProvider(
-            create: (context) => CardPaymentCubit(
-              repository: context.read<TapPaymentRepository>(),
-            ),
+            create: (context) =>
+                CardPaymentCubit(repository: context.read<PaymentRepository>()),
           ),
           BlocProvider(
             create: (context) => SearchCubit(

@@ -12,7 +12,7 @@ if (-not (Test-Path -LiteralPath $envPath -PathType Leaf)) {
 
 $values = @{}
 foreach ($line in Get-Content -LiteralPath $envPath) {
-  if ($line -match '^\s*(SUPABASE_URL|SUPABASE_PUBLISHABLE_KEY|GOOGLE_SERVER_CLIENT_ID|MOYASAR_PUBLISHABLE_KEY|USE_MOYASAR)\s*=\s*(.*?)\s*$') {
+  if ($line -match '^\s*(SUPABASE_URL|SUPABASE_PUBLISHABLE_KEY|GOOGLE_SERVER_CLIENT_ID|MOYASAR_PUBLISHABLE_KEY|MOYASAR_STC_PAY_ENABLED|MOYASAR_APPLE_PAY_MERCHANT_ID|MOYASAR_SAMSUNG_PAY_SERVICE_ID|MOYASAR_MERCHANT_NAME|USE_MOYASAR)\s*=\s*(.*?)\s*$') {
     $values[$matches[1]] = $matches[2].Trim('"').Trim("'")
   }
 }
@@ -44,6 +44,9 @@ if ($useMoyasar -eq 'true') {
   $jsonValues['USE_MOYASAR'] = 'true'
 } elseif ($useMoyasar -and $useMoyasar -ne 'false') {
   throw 'USE_MOYASAR must be true or false.'
+}
+foreach ($publicSetting in @('MOYASAR_STC_PAY_ENABLED','MOYASAR_APPLE_PAY_MERCHANT_ID','MOYASAR_SAMSUNG_PAY_SERVICE_ID','MOYASAR_MERCHANT_NAME')) {
+  if ($values[$publicSetting]) { $jsonValues[$publicSetting] = $values[$publicSetting] }
 }
 $json = $jsonValues | ConvertTo-Json
 [System.IO.File]::WriteAllText(

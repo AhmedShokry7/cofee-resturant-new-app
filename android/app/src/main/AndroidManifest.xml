@@ -14,6 +14,7 @@
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:usesCleartextTraffic="false">
+        <meta-data android:name="spay_sdk_api_level" android:value="2.19" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -41,6 +42,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Impeller's OpenGL renderer crashes on this Android emulator when
+             the device reports a zero-sized render target during startup. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
     </application>
 
     <!-- Required to query activities that can process text, see:

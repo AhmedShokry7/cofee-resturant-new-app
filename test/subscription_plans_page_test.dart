@@ -11,7 +11,7 @@ import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/branch/data/model/branch_model.dart';
 import 'package:new_coffee/features/branch/data/repositories/branch_repository.dart';
 import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
-import 'package:new_coffee/features/payment/data/repositories/tap_payment_repository.dart';
+import 'package:new_coffee/features/payment/data/repositories/payment_repository.dart';
 import 'package:new_coffee/features/payment/presentation/views/card_payment_page.dart';
 import 'package:new_coffee/features/subscriptions/data/model/customer_subscription.dart';
 import 'package:new_coffee/features/subscriptions/data/model/subscription_plan.dart';
@@ -68,6 +68,10 @@ class _FakeRepository implements SubscriptionRepository {
   Future<CustomerSubscription?> mySubscription() async => subscriptionToReturn;
 
   @override
+  Future<List<CustomerSubscription>> mySubscriptions() async =>
+      subscriptionToReturn == null ? const [] : [subscriptionToReturn!];
+
+  @override
   Future<List<SubscriptionUsage>> usageHistory({
     String? subscriptionId,
   }) async => const [];
@@ -104,36 +108,34 @@ class _FakeBranchRepository implements BranchRepository {
 
 /// The hosted checkout is only reached through [CardPaymentPage], which needs a
 /// payment repository to exist; no charge is made by these tests.
-class _FakeTap implements TapPaymentRepository {
-  @override
-  Future<TapChargeResult> createCharge({
+class _FakePayment implements PaymentRepository {
+  Future<PaymentChargeResult> createCharge({
     required String orderId,
     required String idempotencyKey,
     bool saveCard = false,
     String? savedCardId,
     String? sourceToken,
-  }) async => const TapChargeResult(
+  }) async => const PaymentChargeResult(
     chargeId: 'ch_1',
     status: 'INITIATED',
-    transactionUrl: 'https://tap.company/3ds',
+    transactionUrl: 'https://example.test/3ds',
   );
 
-  @override
-  Future<TapChargeResult> createSubscriptionCharge({
+  Future<PaymentChargeResult> createSubscriptionCharge({
     required String subscriptionId,
     required String idempotencyKey,
     bool saveCard = false,
     String? savedCardId,
     String? sourceToken,
-  }) async => const TapChargeResult(
+  }) async => const PaymentChargeResult(
     chargeId: 'ch_1',
     status: 'INITIATED',
-    transactionUrl: 'https://tap.company/3ds',
+    transactionUrl: 'https://example.test/3ds',
   );
 
   @override
-  Future<TapVerificationResult> verifyCharge(String chargeId) async =>
-      TapVerificationResult(
+  Future<PaymentVerificationResult> verifyCharge(String chargeId) async =>
+      PaymentVerificationResult(
         chargeId: chargeId,
         status: 'CAPTURED',
         verified: true,
@@ -170,7 +172,7 @@ Future<BranchCubit> _pumpPage(
     MultiRepositoryProvider(
       providers: [
         RepositoryProvider<SubscriptionRepository>.value(value: repo),
-        RepositoryProvider<TapPaymentRepository>.value(value: _FakeTap()),
+        RepositoryProvider<PaymentRepository>.value(value: _FakePayment()),
       ],
       child: MaterialApp(
         routes: {

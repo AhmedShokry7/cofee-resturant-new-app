@@ -1,19 +1,22 @@
 import 'dart:async';
 
-import 'package:card_flutter/card_flutter.dart';
 import 'package:moyasar/moyasar.dart';
 import 'package:material_ui/material_ui.dart';
+// Moyasar 3.x still uses legacy Material fields; keep matching ancestors.
+// ignore: deprecated_member_use
+import 'package:flutter/material.dart' as sdk_material;
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/features/payment/data/repositories/tap_payment_repository.dart';
-import 'package:new_coffee/features/payment/data/tap_checkout_config.dart';
 import 'package:new_coffee/features/payment/data/moyasar_checkout_config.dart';
+import 'package:new_coffee/features/payment/data/repositories/payment_repository.dart';
 import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_state.dart';
+import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
-import 'package:new_coffee/shared/widgets/primary_bottom_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:new_coffee/shared/widgets/app_back_button.dart';
@@ -28,14 +31,17 @@ class CardPaymentPage extends StatefulWidget {
     super.key,
     this.orderId = '',
     this.subscriptionId,
+    this.checkoutDraft,
     this.savedCardId,
     this.amount = 0,
-    this.currency = TapCheckoutConfig.defaultCurrency,
+    this.currency = 'SAR',
+    this.paymentMethod = 'card',
   });
 
   /// The server id of the order being paid (a uuid), never the order number.
   final String orderId;
   final String? subscriptionId;
+  final Map<String, dynamic>? checkoutDraft;
 
   /// Opens the form for a subscription the customer just started or renewed.
   ///
@@ -47,7 +53,7 @@ class CardPaymentPage extends StatefulWidget {
     required double amount,
     required String currency,
   }) {
-    final repository = context.read<TapPaymentRepository>();
+    final repository = context.read<PaymentRepository>();
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => BlocProvider(
@@ -73,6 +79,7 @@ class CardPaymentPage extends StatefulWidget {
   /// form that shows anything else is a lie.
   final double amount;
   final String currency;
+  final String paymentMethod;
 
   @override
   State<CardPaymentPage> createState() => _CardPaymentPageState();
@@ -84,9 +91,10 @@ class _CardPaymentPageState extends State<CardPaymentPage>
   /// app comes back from it, so this is what tells the resume handler that
   /// there is something to verify.
   bool _redirectLaunched = false;
+  bool _saveCardForFuture = false;
+  bool _finished = false;
 
   /// The order or subscription the form is opened for.
-  String get _targetId => widget.subscriptionId ?? widget.orderId;
 
   /// Whether a stored card pays this order, so the card form is not shown.
   bool get _chargesSavedCard {
@@ -102,13 +110,23 @@ class _CardPaymentPageState extends State<CardPaymentPage>
     // The saved-card flow creates the charge before this page is opened. That
     // charge belongs to this order, so it is kept: resetting it would lose the
     // charge id and the redirect URL the customer still has to follow.
+    // Only preserve a pre-created saved-card charge when it belongs to this
+    // exact checkout. This cubit is app-wide; a previous order can otherwise
+    // leave a stale successful charge here and make a new payment look paid
+    // before the customer enters a card.
     final alreadyCharged =
-        cubit.state.status == CardPaymentStatus.chargeCreated &&
-        (cubit.state.chargeId ?? '').isNotEmpty;
+        _chargesSavedCard &&
+        cubit.hasChargeCreatedFor(
+          orderId: widget.orderId.isEmpty ? null : widget.orderId,
+          subscriptionId: widget.subscriptionId,
+          savedCardId: widget.savedCardId,
+          checkoutKey: widget.checkoutDraft?['idempotency_key']?.toString(),
+        );
     cubit.start(
       orderId: widget.orderId.isEmpty ? null : widget.orderId,
       subscriptionId: widget.subscriptionId,
       savedCardId: widget.savedCardId,
+      checkoutDraft: widget.checkoutDraft,
       reset: !alreadyCharged,
     );
     if (MoyasarCheckoutConfig.enabled && !alreadyCharged) {
@@ -121,6 +139,10 @@ class _CardPaymentPageState extends State<CardPaymentPage>
       final url = cubit.state.transactionUrl;
       if (url != null && url.isNotEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) => _launch3DS(url));
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          unawaited(_verifySavedCardAfterCreate());
+        });
       }
     }
   }
@@ -167,11 +189,33 @@ class _CardPaymentPageState extends State<CardPaymentPage>
     if (!mounted) return;
     switch (outcome) {
       case PaymentOutcome.succeeded:
+        if (_saveCardForFuture) {
+          unawaited(context.read<SavedCardsCubit>().load());
+        }
         _finish();
       case PaymentOutcome.pending:
         _showMessage(S.paymentProcessing);
       case PaymentOutcome.failed:
         _showMessage(cubit.state.errorMessageCopy ?? S.paymentFailed);
+      case null:
+        break;
+    }
+  }
+
+  Future<void> _verifySavedCardAfterCreate() async {
+    if (!mounted) return;
+    final outcome = await context.read<CardPaymentCubit>().verifyCharge();
+    if (!mounted) return;
+    switch (outcome) {
+      case PaymentOutcome.succeeded:
+        _finish();
+      case PaymentOutcome.pending:
+        _showMessage(S.paymentProcessing);
+      case PaymentOutcome.failed:
+        _showMessage(
+          context.read<CardPaymentCubit>().state.errorMessageCopy ??
+              S.paymentFailed,
+        );
       case null:
         break;
     }
@@ -187,7 +231,17 @@ class _CardPaymentPageState extends State<CardPaymentPage>
   /// A subscription goes to its own details page. An order returns `true` to
   /// the checkout, which then empties the cart and awards the loyalty points.
   void _finish() {
-    if (!mounted) return;
+    if (!mounted ||
+        _finished ||
+        context.read<CardPaymentCubit>().state.status !=
+            CardPaymentStatus.paymentSucceeded) {
+      return;
+    }
+    _finished = true;
+    if (_saveCardForFuture &&
+        context.read<CardPaymentCubit>().state.savedCardStatus != 'saved') {
+      _showMessage(S.paymentSucceededCardNotSaved);
+    }
     final subscriptionId = widget.subscriptionId;
     if (subscriptionId != null && subscriptionId.isNotEmpty) {
       Navigator.of(context).pushNamedAndRemoveUntil(
@@ -204,14 +258,14 @@ class _CardPaymentPageState extends State<CardPaymentPage>
     return BlocProvider.value(
       value: context.read<CardPaymentCubit>(),
       child: _CardPaymentView(
-        sdkConfiguration: TapCheckoutConfig.payload(
-          targetId: _targetId,
-          amount: widget.amount,
-          currency: widget.currency,
-        ),
+        paymentMethod: widget.paymentMethod,
         chargesSavedCard: _chargesSavedCard,
+        saveCard: _saveCardForFuture,
+        onSaveCardChanged: (value) =>
+            setState(() => _saveCardForFuture = value),
         on3DSLaunch: _launch3DS,
         onMoyasarResult: _handleMoyasarResult,
+        onRetryVerification: _verifySavedCardAfterCreate,
       ),
     );
   }
@@ -222,6 +276,9 @@ class _CardPaymentPageState extends State<CardPaymentPage>
     if (!mounted) return;
     switch (outcome) {
       case PaymentOutcome.succeeded:
+        if (_saveCardForFuture) {
+          unawaited(context.read<SavedCardsCubit>().load());
+        }
         _finish();
       case PaymentOutcome.pending:
         _showMessage(S.paymentProcessing);
@@ -241,19 +298,25 @@ class _CardPaymentPageState extends State<CardPaymentPage>
 
 class _CardPaymentView extends StatelessWidget {
   const _CardPaymentView({
-    required this.sdkConfiguration,
     required this.chargesSavedCard,
+    required this.saveCard,
+    required this.onSaveCardChanged,
     required this.on3DSLaunch,
     required this.onMoyasarResult,
+    required this.paymentMethod,
+    required this.onRetryVerification,
   });
 
-  final Map<String, dynamic> sdkConfiguration;
+  final String paymentMethod;
+  final VoidCallback onRetryVerification;
   final Function(String) on3DSLaunch;
   final Function(dynamic) onMoyasarResult;
 
   /// A stored card is charged without the card form: there is nothing for the
   /// customer to type.
   final bool chargesSavedCard;
+  final bool saveCard;
+  final ValueChanged<bool> onSaveCardChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -265,7 +328,6 @@ class _CardPaymentView extends StatelessWidget {
         }
       },
       builder: (context, state) {
-        final cubit = context.read<CardPaymentCubit>();
         return Scaffold(
           appBar: AppBar(
             leading: const AppBackButton(),
@@ -273,27 +335,33 @@ class _CardPaymentView extends StatelessWidget {
           ),
           body: Column(
             children: [
+              if (!chargesSavedCard &&
+                  MoyasarCheckoutConfig.enabled &&
+                  (paymentMethod == 'card' || paymentMethod == 'mada'))
+                CheckboxListTile(
+                  value: saveCard,
+                  onChanged: state.isBusy
+                      ? null
+                      : (value) => onSaveCardChanged(value ?? false),
+                  title: Text(S.saveCardForFuture),
+                  controlAffinity: ListTileControlAffinity.trailing,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
+                ),
               Expanded(
                 child: chargesSavedCard
                     ? _SavedCardPaymentNotice(state: state)
                     : MoyasarCheckoutConfig.enabled
-                    ? _buildMoyasarForm(context, state, onMoyasarResult)
-                    : SingleChildScrollView(
-                        padding: EdgeInsets.all(AppSpacing.lg),
-                        child: TapCardViewWidget(
-                          sdkConfiguration: sdkConfiguration,
-                          generateToken:
-                              state.status == CardPaymentStatus.tokenizing,
-                          onValidInput: (value) => cubit.onCardValidInput(
-                            value?.toLowerCase() == 'true',
-                          ),
-                          onSuccess: cubit.onHostedFormResult,
-                          onError: (_) => cubit.onHostedFormError(),
-                          // The SDK calls these two through a force unwrap, so
-                          // they must not be null even though nothing uses them.
-                          onReady: () {},
-                          onFocus: () {},
-                          showLoading: true,
+                    ? _buildMoyasarForm(
+                        context,
+                        state,
+                        onMoyasarResult,
+                        saveCard,
+                      )
+                    : const Center(
+                        child: Text(
+                          'الدفع الإلكتروني غير مهيأ. أعد تشغيل التطبيق بإعدادات Moyasar.',
                         ),
                       ),
               ),
@@ -309,11 +377,12 @@ class _CardPaymentView extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                 ),
-              if (!chargesSavedCard && !MoyasarCheckoutConfig.enabled)
-                PrimaryBottomBar(
-                  text: S.confirmPayment,
-                  isLoading: state.isBusy,
-                  onPressed: state.canSubmit ? cubit.requestCardToken : () {},
+              if ((state.chargeId ?? '').isNotEmpty &&
+                  (state.status == CardPaymentStatus.paymentPending ||
+                      state.status == CardPaymentStatus.paymentFailed))
+                TextButton(
+                  onPressed: onRetryVerification,
+                  child: Text(S.retry),
                 ),
             ],
           ),
@@ -326,6 +395,7 @@ class _CardPaymentView extends StatelessWidget {
     BuildContext context,
     CardPaymentState state,
     Function(dynamic) onResult,
+    bool saveCard,
   ) {
     if (MoyasarCheckoutConfig.publishableKey.isEmpty) {
       return const Center(
@@ -333,6 +403,15 @@ class _CardPaymentView extends StatelessWidget {
       );
     }
     if (state.chargeId == null || state.paymentAmountMinor == null) {
+      if (state.status == CardPaymentStatus.paymentFailed) {
+        return Center(
+          child: TextButton(
+            onPressed: () =>
+                context.read<CardPaymentCubit>().prepareMoyasarPayment(),
+            child: Text(S.retry),
+          ),
+        );
+      }
       return const Center(child: CircularProgressIndicator());
     }
     final config = PaymentConfig(
@@ -340,17 +419,70 @@ class _CardPaymentView extends StatelessWidget {
       amount: state.paymentAmountMinor!,
       currency: state.paymentCurrency ?? 'SAR',
       description: 'New Coffee payment',
-      metadata: {'payment_id': state.chargeId!},
+      // These are card schemes within the single card method. Amex is not in
+      // the SDK's default allowlist, so opt in explicitly alongside the other
+      // Moyasar-supported schemes.
+      supportedNetworks: const [
+        PaymentNetwork.mada,
+        PaymentNetwork.visa,
+        PaymentNetwork.masterCard,
+        PaymentNetwork.amex,
+        PaymentNetwork.unionPay,
+      ],
+      metadata: {
+        'payment_id': state.chargeId!,
+        'save_card_requested': saveCard ? 'true' : 'false',
+      },
       givenID: state.chargeId,
+      creditCard: CreditCardConfig(saveCard: saveCard, manual: false),
+      applePay: MoyasarCheckoutConfig.applePayMerchantId.isEmpty
+          ? null
+          : ApplePayConfig(
+              merchantId: MoyasarCheckoutConfig.applePayMerchantId,
+              label: MoyasarCheckoutConfig.merchantName,
+              manual: false,
+              saveCard: false,
+            ),
+      samsungPay: MoyasarCheckoutConfig.samsungPayServiceId.isEmpty
+          ? null
+          : SamsungPayConfig(
+              serviceId: MoyasarCheckoutConfig.samsungPayServiceId,
+              merchantName: MoyasarCheckoutConfig.merchantName,
+              orderNumber: state.chargeId,
+            ),
     );
-    return Material(
+    return sdk_material.Material(
       color: Theme.of(context).scaffoldBackgroundColor,
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(AppSpacing.lg),
-        child: CreditCard(
-          config: config,
-          locale: const Localization.ar(),
-          onPaymentResult: onResult,
+      child: Localizations.override(
+        context: context,
+        delegates: const [
+          // ignore: deprecated_member_use
+          sdk_localizations.GlobalMaterialLocalizations.delegate,
+        ],
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(AppSpacing.lg),
+          child: switch (paymentMethod) {
+            'stc_pay' when MoyasarCheckoutConfig.stcPayEnabled => STCPay(
+              config: config,
+              locale: const Localization.ar(),
+              onPaymentResult: onResult,
+            ),
+            'apple_pay' when config.applePay != null => ApplePay(
+              config: config,
+              onPaymentResult: onResult,
+            ),
+            'samsung_pay' when config.samsungPay != null => SamsungPay(
+              config: config,
+              onPaymentResult: onResult,
+            ),
+            'card' || 'mada' => CreditCard(
+              key: ValueKey('moyasar-credit-card-$saveCard'),
+              config: config,
+              locale: const Localization.ar(),
+              onPaymentResult: onResult,
+            ),
+            _ => Center(child: Text(S.noPaymentMethods)),
+          },
         ),
       ),
     );

@@ -26,7 +26,7 @@ import 'package:new_coffee/features/location/data/model/place_suggestion.dart';
 import 'package:new_coffee/features/location/data/repositories/place_search_repository.dart';
 import 'package:new_coffee/features/notifications/data/model/notification_model.dart';
 import 'package:new_coffee/features/notifications/data/repositories/notification_repository.dart';
-import 'package:new_coffee/features/payment/data/repositories/tap_payment_repository.dart';
+import 'package:new_coffee/features/payment/data/repositories/payment_repository.dart';
 import 'package:new_coffee/features/profile/data/model/profile_photo_exception.dart';
 import 'package:new_coffee/features/profile/data/repositories/profile_photo_repository.dart';
 import 'package:new_coffee/features/weather/data/model/weather_model.dart';
@@ -320,27 +320,11 @@ class PreviewAddressRepository implements AddressRepository {
   Future<void> removeAddress(String id) async => throw _blocked;
 }
 
-class PreviewPaymentRepository implements TapPaymentRepository {
+class PreviewPaymentRepository implements PaymentRepository {
   const PreviewPaymentRepository();
   StateError get _blocked => StateError('Payments are disabled in preview.');
   @override
-  Future<TapChargeResult> createCharge({
-    required String orderId,
-    required String idempotencyKey,
-    bool saveCard = false,
-    String? savedCardId,
-    String? sourceToken,
-  }) async => throw _blocked;
-  @override
-  Future<TapChargeResult> createSubscriptionCharge({
-    required String subscriptionId,
-    required String idempotencyKey,
-    bool saveCard = false,
-    String? savedCardId,
-    String? sourceToken,
-  }) async => throw _blocked;
-  @override
-  Future<TapVerificationResult> verifyCharge(String chargeId) async =>
+  Future<PaymentVerificationResult> verifyCharge(String chargeId) async =>
       throw _blocked;
 }
 

@@ -1,4 +1,8 @@
-import { normalizedStatus, paymentMatchesTransaction } from "./index.ts";
+import {
+  monotonicPaymentStatus,
+  normalizedStatus,
+  paymentMatchesTransaction,
+} from "./index.ts";
 
 function assertEquals(actual: unknown, expected: unknown): void {
   if (actual !== expected) {
@@ -50,4 +54,11 @@ Deno.test("Only completed Moyasar payments are captured", () => {
   assertEquals(normalizedStatus("expired"), "failed");
   assertEquals(normalizedStatus("initiated"), "pending");
   assertEquals(normalizedStatus("authorized"), "pending");
+});
+
+Deno.test("A captured payment cannot be downgraded by a stale verification", () => {
+  assertEquals(monotonicPaymentStatus("captured", "initiated"), "captured");
+  assertEquals(monotonicPaymentStatus("captured", "failed"), "captured");
+  assertEquals(monotonicPaymentStatus("pending", "failed"), "failed");
+  assertEquals(monotonicPaymentStatus("pending", "paid"), "captured");
 });

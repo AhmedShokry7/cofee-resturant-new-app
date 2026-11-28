@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/services/admin_avatar_links.dart';
@@ -19,10 +20,9 @@ class AdminOrderRepository implements OrderRepository {
       await _supabase.rpc('admin_orders'),
       client: _supabase,
     );
-    final scheduleResponse = await _supabase.rpc('admin_order_pickup_schedules');
-    final schedules = scheduleResponse is Map
-        ? Map<String, dynamic>.from(scheduleResponse)
-        : const <String, dynamic>{};
+    // Pickup times are an add-on to the order list: a missing or failing
+    // schedule RPC must not hide every order behind the load error.
+    final schedules = await _pickupSchedules();
     if (response is List) {
       return response
           .whereType<Map>()
@@ -73,6 +73,18 @@ class AdminOrderRepository implements OrderRepository {
         'p_quantity': quantity,
       },
     );
+  }
+
+  Future<Map<String, dynamic>> _pickupSchedules() async {
+    try {
+      final response = await _supabase.rpc('admin_order_pickup_schedules');
+      return response is Map
+          ? Map<String, dynamic>.from(response)
+          : const <String, dynamic>{};
+    } catch (error) {
+      debugPrint('[AdminOrderRepository] pickup schedules unavailable: $error');
+      return const <String, dynamic>{};
+    }
   }
 
   @override

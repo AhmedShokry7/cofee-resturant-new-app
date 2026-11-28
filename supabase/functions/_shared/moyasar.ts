@@ -25,10 +25,18 @@ export function moyasarPaymentUrl(paymentId: string): string {
   return `https://api.moyasar.com/v1/payments/${encodeURIComponent(paymentId)}`;
 }
 
-export async function moyasarRequest(path: string): Promise<any> {
+export async function moyasarApiRequest(
+  path: string,
+  init: RequestInit = {},
+): Promise<any> {
   const credentials = btoa(`${moyasarSecretKey()}:`);
-  const response = await fetch(moyasarPaymentUrl(path), {
-    headers: { "Authorization": `Basic ${credentials}` },
+  const response = await fetch(`https://api.moyasar.com/v1/${path}`, {
+    ...init,
+    headers: {
+      "Authorization": `Basic ${credentials}`,
+      "Content-Type": "application/json",
+      ...(init.headers ?? {}),
+    },
   });
   const text = await response.text();
   let json: any;
@@ -42,6 +50,12 @@ export async function moyasarRequest(path: string): Promise<any> {
     throw new Error(`Moyasar API returned ${response.status}`);
   }
   return json;
+}
+
+export async function moyasarRequest(paymentId: string): Promise<any> {
+  return await moyasarApiRequest(
+    `payments/${encodeURIComponent(paymentId)}`,
+  );
 }
 
 export function supabaseUrl(): string {
@@ -98,6 +112,43 @@ export async function serviceFetch(
         json?.message ?? "request failed"
       }`,
     );
+  }
+  return json;
+}
+
+/// Calls an authenticated RPC with the customer's JWT preserved. This keeps
+/// auth.uid() meaningful for checkout quoting/finalization while still using
+/// the configured Supabase project key.
+export async function userRpc(
+  req: Request,
+  functionName: string,
+  body: Record<string, unknown>,
+): Promise<any> {
+  const authorization = req.headers.get("Authorization");
+  if (!authorization?.startsWith("Bearer ")) {
+    throw new Error("Authenticated request required");
+  }
+  const response = await fetch(
+    `${supabaseUrl()}/rest/v1/rpc/${encodeURIComponent(functionName)}`,
+    {
+      method: "POST",
+      headers: {
+        "apikey": serviceRoleKey(),
+        "Authorization": authorization,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    },
+  );
+  const text = await response.text();
+  let json: any;
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch {
+    json = null;
+  }
+  if (!response.ok) {
+    throw new Error(`Supabase RPC ${functionName} returned ${response.status}`);
   }
   return json;
 }

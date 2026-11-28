@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/features/payment/data/repositories/tap_payment_repository.dart';
+import 'package:new_coffee/features/payment/data/repositories/payment_repository.dart';
 import 'package:new_coffee/features/payment/presentation/views/card_payment_page.dart';
 import 'package:new_coffee/features/subscriptions/data/model/customer_subscription.dart';
 import 'package:new_coffee/features/subscriptions/data/model/subscription_plan.dart';
@@ -110,7 +110,7 @@ Future<void> _pumpPage(
     MultiRepositoryProvider(
       providers: [
         RepositoryProvider<SubscriptionRepository>.value(value: repo),
-        RepositoryProvider<TapPaymentRepository>(create: (_) => _FakeTap()),
+        RepositoryProvider<PaymentRepository>(create: (_) => _FakePayment()),
       ],
       child: MaterialApp(home: SubscriptionPlanDetailsPage(plan: plan)),
     ),
@@ -308,18 +308,17 @@ void main() {
 
 /// The hosted checkout is only reached through [CardPaymentPage], which needs a
 /// payment repository to exist; no charge is made by these tests.
-class _FakeTap implements TapPaymentRepository {
-  @override
-  Future<TapChargeResult> createCharge({
+class _FakePayment implements PaymentRepository {
+  Future<PaymentChargeResult> createCharge({
     required String orderId,
     required String idempotencyKey,
     bool saveCard = false,
     String? savedCardId,
     String? sourceToken,
-  }) async => const TapChargeResult(
+  }) async => const PaymentChargeResult(
     chargeId: 'ch_1',
     status: 'INITIATED',
-    transactionUrl: 'https://tap.company/3ds',
+    transactionUrl: 'https://example.test/3ds',
   );
 
   @override

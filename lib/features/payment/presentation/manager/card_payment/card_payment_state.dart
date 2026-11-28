@@ -31,6 +31,8 @@ class CardPaymentState {
     this.transactionUrl,
     this.paymentAmountMinor,
     this.paymentCurrency,
+    this.savedCardStatus,
+    this.finalizedOrder,
   });
 
   final CardPaymentStatus status;
@@ -42,6 +44,8 @@ class CardPaymentState {
   final String? transactionUrl;
   final int? paymentAmountMinor;
   final String? paymentCurrency;
+  final String? savedCardStatus;
+  final Map<String, dynamic>? finalizedOrder;
 
   bool get isBusy =>
       status == CardPaymentStatus.tokenizing ||
@@ -60,6 +64,8 @@ class CardPaymentState {
     bool clearTransactionUrl = false,
     int? paymentAmountMinor,
     String? paymentCurrency,
+    String? savedCardStatus,
+    Map<String, dynamic>? finalizedOrder,
   }) {
     return CardPaymentState(
       status: status ?? this.status,
@@ -70,6 +76,8 @@ class CardPaymentState {
           : (transactionUrl ?? this.transactionUrl),
       paymentAmountMinor: paymentAmountMinor ?? this.paymentAmountMinor,
       paymentCurrency: paymentCurrency ?? this.paymentCurrency,
+      savedCardStatus: savedCardStatus ?? this.savedCardStatus,
+      finalizedOrder: finalizedOrder ?? this.finalizedOrder,
     );
   }
 }

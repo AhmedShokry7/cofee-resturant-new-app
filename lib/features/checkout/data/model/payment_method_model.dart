@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:new_coffee/features/payment/data/moyasar_checkout_config.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/data/db_values.dart';
@@ -74,11 +75,27 @@ class PaymentMethodModel {
   /// customer can use, and offering it there only leads to a failed payment.
   bool get isAvailableOnThisDevice {
     switch (code) {
+      case 'pos':
+        return false;
       case 'apple_pay':
-        return defaultTargetPlatform == TargetPlatform.iOS ||
-            defaultTargetPlatform == TargetPlatform.macOS;
+        return !kIsWeb &&
+            defaultTargetPlatform == TargetPlatform.iOS &&
+            MoyasarCheckoutConfig.applePayMerchantId.isNotEmpty;
+      case 'samsung_pay':
+        return !kIsWeb &&
+            defaultTargetPlatform == TargetPlatform.android &&
+            MoyasarCheckoutConfig.samsungPayServiceId.isNotEmpty;
+      case 'stc_pay':
+        return !kIsWeb &&
+            MoyasarCheckoutConfig.stcPayEnabled &&
+            (defaultTargetPlatform == TargetPlatform.iOS ||
+                defaultTargetPlatform == TargetPlatform.android);
+      case 'google_pay':
+      case 'sadad':
+      case 'sadad_bill':
+        return false;
       default:
-        return true;
+        return !MoyasarCheckoutConfig.enabled || !isOnline || isCardMethod;
     }
   }
 

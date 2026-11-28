@@ -383,6 +383,9 @@ class S {
   static String get addressNameHint =>
       _ar ? 'اسم العنوان (مثال: المنزل)' : 'Address name (e.g. Home)';
   static String get totalToPay => _ar ? 'الإجمالي للدفع' : 'Total to pay';
+  static String get orderReceivedAwaitingPayment => _ar
+      ? 'تم استلام طلبك — الدفع عند الاستلام'
+      : 'Order received — payment on delivery';
   static String get paymentSuccess =>
       _ar ? 'تم الدفع بنجاح!' : 'Payment Successful!';
   static String get thankYouPurchase =>
@@ -808,6 +811,9 @@ class S {
       _ar ? 'بطاقة ائتمانية / مدى' : 'Credit & Debit Card';
   static String get morePaymentOptions =>
       _ar ? 'خيارات دفع أخرى' : 'More Payment Options';
+  static String get noPaymentMethods => _ar
+      ? 'لا توجد طريقة دفع متاحة الآن. حدّث القائمة أو تواصل مع الدعم.'
+      : 'No payment methods are available right now. Refresh the list or contact support.';
   static String get noSavedCards =>
       _ar ? 'لا توجد بطاقات محفوظة بعد' : 'No saved cards yet';
   static String get couldNotLoadSavedCards => _ar
@@ -827,6 +833,12 @@ class S {
       _ar ? 'تعذّر تحميل هذا المنتج' : 'This product could not be loaded';
   static String get yourName => _ar ? 'اسمك' : 'YOUR NAME';
   static String get saveCard => _ar ? 'حفظ البطاقة' : 'Save Card';
+  static String get paymentSucceededCardNotSaved => _ar
+      ? 'تم الدفع، لكن لم يتم تأكيد حفظ البطاقة. راجع بطاقاتك المحفوظة.'
+      : 'Payment succeeded, but saving the card was not confirmed. Check your saved cards.';
+  static String get saveCardForFuture => _ar
+      ? 'احفظ البطاقة لاستخدامها في المرات القادمة'
+      : 'Save this card for future purchases';
   static String get cardHolderRequired =>
       _ar ? 'اسم حامل البطاقة مطلوب' : 'Card holder name is required';
   static String get validCardNumber =>
@@ -1588,7 +1600,7 @@ class S {
       ? 'الباقة قائمة محفوظة وليست اشتراكًا. الأسعار الظاهرة تقديرية، والسعر النهائي يتحدد حسب الفرع عند الطلب.'
       : 'A personal bundle is a saved list, not a subscription. Prices are estimates; the branch sets the final price when you order.';
   static String get currentEstimate =>
-      _ar ? 'السعر الحالي التقريبي' : 'Current estimate';
+      _ar ? 'السعر التقريبي' : 'Current estimate';
   static String get productBasePrice => _ar ? 'السعر الأساسي' : 'Base price';
   static String get addAtLeastOneBundleProduct => _ar
       ? 'أضف منتجًا واحدًا على الأقل للباقة.'

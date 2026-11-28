@@ -12,7 +12,7 @@ import 'package:supabase_flutter/supabase_flutter.dart'
 
 part 'saved_cards_state.dart';
 
-/// Saved payment cards, sourced from the Tap Payments backend.
+/// Saved payment cards, sourced from the Moyasar backend.
 ///
 /// The Flutter app never stores PAN, CVV or raw card data. A card typed into
 /// the add-card form is tokenized by the backend and stored server-side; this
